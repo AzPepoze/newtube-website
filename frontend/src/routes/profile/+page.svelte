@@ -40,7 +40,7 @@
         loading = true;
         try {
             const response = await fetch(
-                `${PUBLIC_API_URL}/api/profile?userId=${userId}`,
+                `${PUBLIC_API_URL}/profile?userId=${userId}`,
             );
             const data = await response.json();
             myThemes = data.themes || [];
@@ -58,7 +58,7 @@
 
     async function deleteTheme(themeId: string) {
         try {
-            await fetch(`${PUBLIC_API_URL}/api/themes/${themeId}`, {
+            await fetch(`${PUBLIC_API_URL}/themes/${themeId}`, {
                 method: "DELETE",
             });
             myThemes = myThemes.filter((t) => t.id !== themeId);

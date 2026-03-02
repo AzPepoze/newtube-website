@@ -118,8 +118,8 @@
         try {
             const method = isEdit ? "PUT" : "POST";
             const url = isEdit
-                ? `${PUBLIC_API_URL}/api/themes/${initialData?.id}`
-                : `${PUBLIC_API_URL}/api/themes`;
+                ? `${PUBLIC_API_URL}/themes/${initialData?.id}`
+                : `${PUBLIC_API_URL}/themes`;
 
             const response = await fetch(url, {
                 method,

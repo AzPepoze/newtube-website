@@ -11,7 +11,7 @@
         const userId = getUserId();
         if (userId) {
             try {
-                const response = await fetch(`${PUBLIC_API_URL}/api/me`, {
+                const response = await fetch(`${PUBLIC_API_URL}/me`, {
                     credentials: "include",
                 });
                 if (response.ok) {
@@ -24,7 +24,7 @@
     });
 
     function loginWithGoogle() {
-        window.location.href = `${PUBLIC_API_URL}/api/auth/google`;
+        window.location.href = `${PUBLIC_API_URL}/auth/google`;
     }
 </script>
 

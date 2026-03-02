@@ -27,18 +27,18 @@ export default {
     }
 
     // Auth Routes
-    if (pathname === '/api/auth/google') {
-      const redirectUri = `${url.origin}/api/auth/callback`;
+    if (pathname === '/auth/google') {
+      const redirectUri = `${url.origin}/auth/callback`;
       const authUrl = await getGoogleAuthUrl(env, redirectUri);
       return Response.redirect(authUrl);
     }
 
-    if (pathname === '/api/auth/callback') {
+    if (pathname === '/auth/callback') {
       const code = url.searchParams.get('code');
       if (!code) return new Response('Missing code', { status: 400 });
 
       try {
-        const redirectUri = `${url.origin}/api/auth/callback`;
+        const redirectUri = `${url.origin}/auth/callback`;
         const googleUser = await getGoogleUser(env, code, redirectUri);
 
         await env.DB.prepare(
@@ -62,7 +62,7 @@ export default {
     }
 
     // Theme Routes
-    if (pathname === '/api/themes' && request.method === 'GET') {
+    if (pathname === '/themes' && request.method === 'GET') {
       const search = url.searchParams.get('q') || '';
       const sort = url.searchParams.get('sort') || 'popular';
 
@@ -78,7 +78,7 @@ export default {
       return Response.json(results, { headers: corsHeaders(request) });
     }
 
-    if (pathname === '/api/themes' && request.method === 'POST') {
+    if (pathname === '/themes' && request.method === 'POST') {
       const data: any = await request.json();
       const id = crypto.randomUUID();
 
@@ -99,7 +99,7 @@ export default {
       return Response.json({ id }, { headers: corsHeaders(request) });
     }
 
-    if (pathname.startsWith('/api/themes/') && request.method === 'PUT') {
+    if (pathname.startsWith('/themes/') && request.method === 'PUT') {
       const id = pathname.split('/').pop();
       const data: any = await request.json();
 
@@ -119,7 +119,7 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
 
-    if (pathname.startsWith('/api/themes/') && request.method === 'GET') {
+    if (pathname.startsWith('/themes/') && request.method === 'GET') {
       const id = pathname.split('/').pop();
       const result = await env.DB.prepare(
         `SELECT t.*, u.name AS creator_name, u.avatar_url AS creator_avatar
@@ -131,13 +131,13 @@ export default {
       return Response.json(result, { headers: corsHeaders(request) });
     }
 
-    if (pathname.startsWith('/api/themes/') && request.method === 'DELETE') {
+    if (pathname.startsWith('/themes/') && request.method === 'DELETE') {
       const id = pathname.split('/').pop();
       await env.DB.prepare('DELETE FROM Themes WHERE id = ?').bind(id).run();
       return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
 
-    if (pathname === '/api/profile' && request.method === 'GET') {
+    if (pathname === '/profile' && request.method === 'GET') {
       const userId = url.searchParams.get('userId');
       if (!userId) return new Response('Unauthorized', { status: 401 });
 
@@ -147,7 +147,7 @@ export default {
       return Response.json({ themes: themes.results, user }, { headers: corsHeaders(request) });
     }
 
-    if (pathname === '/api/me' && request.method === 'GET') {
+    if (pathname === '/me' && request.method === 'GET') {
       const cookieHeader = request.headers.get('Cookie') || '';
       const match = cookieHeader.match(/(?:^|;\s*)userId=([^;]*)/);
       const userId = match ? decodeURIComponent(match[1]) : null;

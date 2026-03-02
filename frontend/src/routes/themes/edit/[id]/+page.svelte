@@ -14,7 +14,7 @@
 
     onMount(async () => {
         try {
-            const response = await fetch(`${PUBLIC_API_URL}/api/themes/${id}`);
+            const response = await fetch(`${PUBLIC_API_URL}/themes/${id}`);
             if (!response.ok) throw new Error("Theme not found");
             theme = await response.json();
 

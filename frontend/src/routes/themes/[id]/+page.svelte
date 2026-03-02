@@ -26,7 +26,7 @@
 		const id = page.params.id;
 		loading = true;
 		try {
-			const response = await fetch(`${PUBLIC_API_URL}/api/themes/${id}`);
+			const response = await fetch(`${PUBLIC_API_URL}/themes/${id}`);
 			const data = await response.json();
 			theme = {
 				...data,
@@ -68,10 +68,9 @@
 		if (!theme || !confirm("Are you sure you want to delete this theme?"))
 			return;
 		try {
-			const res = await fetch(
-				`${PUBLIC_API_URL}/api/themes/${theme.id}`,
-				{ method: "DELETE" },
-			);
+			const res = await fetch(`${PUBLIC_API_URL}/themes/${theme.id}`, {
+				method: "DELETE",
+			});
 			if (res.ok) window.location.href = "/store";
 			else alert("Failed to delete theme");
 		} catch (e) {

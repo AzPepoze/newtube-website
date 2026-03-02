@@ -27,7 +27,7 @@
         loading = true;
         try {
             const response = await fetch(
-                `${PUBLIC_API_URL}/api/themes?q=${searchQuery}&sort=${sortBy}`,
+                `${PUBLIC_API_URL}/themes?q=${searchQuery}&sort=${sortBy}`,
             );
             themes = await response.json();
         } catch (error) {
