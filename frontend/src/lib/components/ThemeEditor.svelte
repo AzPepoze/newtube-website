@@ -18,6 +18,7 @@
 	let description = $state("");
 	let images = $state<string[]>([]);
 	let coverImage = $state("");
+	let coverImagePending = $state<File | null>(null);
 	let pendingImages = $state<File[]>([]);
 	let settingsCode = $state("");
 
@@ -69,12 +70,19 @@
 				pendingImagesData.push(compressed);
 			}
 
+			// Compress pending cover image
+			let pendingCoverImageData = null;
+			if (coverImagePending) {
+				pendingCoverImageData = await compressImage(coverImagePending);
+			}
+
 			const payload: any = {
 				name,
 				description,
 				imgs: images,
 				coverImage,
 				pendingImages: pendingImagesData,
+				pendingCoverImage: pendingCoverImageData,
 				settings: JSON.parse(settingsCode),
 				customStyleshift: props.initialData?.customStyleshift || [],
 			};
@@ -154,54 +162,60 @@
 	{/if}
 
 	<form onsubmit={handleSubmit} class="editor-grid">
-		{#if activeTab === "info"}
-			<div class="editor-main" in:fly={{ y: 20, duration: 400 }}>
-				<ThemeEditorBasicInfo
-					bind:name
-					bind:description
-					bind:images
-					bind:coverImage
-					bind:pendingImages
-					bind:errorMessage
-				/>
-				<button
-					type="submit"
-					class="submit-btn premium-button"
-					disabled={submitting || !!jsonError}
+		<div class="sections-wrapper">
+			{#if activeTab === "info"}
+				<div
+					class="editor-main"
+					in:fly={{ y: 20, duration: 400, delay: 150 }}
+					out:fly={{ y: -20, duration: 250 }}
 				>
-					{submitting
-						? "Saving..."
-						: isEdit
-							? "Update Theme"
-							: "Publish Theme"}
-				</button>
-			</div>
-		{:else if activeTab === "settings"}
-			<div class="editor-main" in:fly={{ y: 20, duration: 400 }}>
-				<ThemeEditorSettings bind:settingsCode bind:jsonError />
-				<button
-					type="submit"
-					class="submit-btn premium-button"
-					disabled={submitting || !!jsonError}
+					<ThemeEditorBasicInfo
+						bind:name
+						bind:description
+						bind:images
+						bind:coverImage
+						bind:coverImagePending
+						bind:pendingImages
+						bind:errorMessage
+					/>
+				</div>
+			{:else if activeTab === "settings"}
+				<div
+					class="editor-main"
+					in:fly={{ y: 20, duration: 400, delay: 150 }}
+					out:fly={{ y: -20, duration: 250 }}
 				>
-					{submitting
-						? "Saving..."
-						: isEdit
-							? "Update Theme"
-							: "Publish Theme"}
-				</button>
-			</div>
-		{:else}
-			<div class="preview-main" in:fly={{ y: 20, duration: 400 }}>
-				<ThemeEditorPreview
-					{name}
-					{description}
-					{images}
-					{coverImage}
-					{settingsCode}
-				/>
-			</div>
-		{/if}
+					<ThemeEditorSettings bind:settingsCode bind:jsonError />
+				</div>
+			{:else}
+				<div
+					class="preview-main"
+					in:fly={{ y: 20, duration: 400, delay: 150 }}
+					out:fly={{ y: -20, duration: 250 }}
+				>
+					<ThemeEditorPreview
+						{name}
+						{description}
+						{images}
+						{coverImage}
+						{coverImagePending}
+						{settingsCode}
+					/>
+				</div>
+			{/if}
+		</div>
+
+		<button
+			type="submit"
+			class="submit-btn premium-button"
+			disabled={submitting || !!jsonError}
+		>
+			{submitting
+				? "Saving..."
+				: isEdit
+					? "Update Theme"
+					: "Publish Theme"}
+		</button>
 	</form>
 </div>
 
@@ -227,7 +241,7 @@
 	.tabs {
 		display: flex;
 		gap: 0.5rem;
-		background: rgba(255, 255, 255, 0.03);
+		background: rgba(var(--text-primary-rgb), 0.05);
 		padding: 0.3rem;
 		border-radius: var(--radius-md);
 		border: 1px solid var(--border-glass);
@@ -277,6 +291,20 @@
 		gap: 2rem;
 	}
 
+	.sections-wrapper {
+		display: grid;
+		grid-template-areas: "content";
+		min-width: 0;
+		width: 100%;
+		overflow: hidden;
+
+		& > div {
+			grid-area: content;
+			min-width: 0;
+			width: 100%;
+		}
+	}
+
 	.editor-main,
 	.preview-main {
 		display: flex;
@@ -288,5 +316,6 @@
 		width: 100%;
 		padding: 1.5rem 2rem;
 		font-size: 1.1rem;
+		margin-top: 2rem;
 	}
 </style>

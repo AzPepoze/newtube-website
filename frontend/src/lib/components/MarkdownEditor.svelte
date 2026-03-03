@@ -25,7 +25,7 @@
 		grid-template-columns: 1fr 1fr;
 		gap: 0;
 		height: 400px;
-		background: #050505;
+		background: var(--bg-dark);
 		border: 1px solid var(--border-glass);
 		border-radius: var(--radius-md);
 		overflow: hidden;
@@ -39,9 +39,9 @@
 	.header {
 		font-size: 0.7rem;
 		font-weight: 800;
-		color: var(--text-muted);
+		color: var(--text-secondary);
 		padding: 0.5rem 1rem;
-		background: rgba(255, 255, 255, 0.02);
+		background: rgba(var(--text-primary-rgb), 0.05);
 		border-bottom: 1px solid var(--border-glass);
 		letter-spacing: 0.1em;
 	}
@@ -56,10 +56,11 @@
 
 	.editor-pane {
 		border-right: 1px solid var(--border-glass);
+		background: rgba(var(--text-primary-rgb), 0.01);
 	}
 
 	.preview-pane {
-		background: #080808;
+		background: rgba(var(--text-primary-rgb), 0.02);
 	}
 
 	.preview-content {

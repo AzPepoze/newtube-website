@@ -41,6 +41,7 @@ export async function createTheme(db: Database, ownerId: string, data: {
 	imgs?: string[];
 	coverImage?: string;
 	pendingImages?: Array<{ data: string; mimeType: string }>;
+	pendingCoverImage?: { data: string; mimeType: string };
 	settings?: unknown;
 	customStyleshift?: unknown[];
 }) {
@@ -59,6 +60,16 @@ export async function createTheme(db: Database, ownerId: string, data: {
 		}
 	}
 
+	// Upload pending cover image
+	let finalCoverImage = data.coverImage;
+	if (data.pendingCoverImage) {
+		try {
+			finalCoverImage = await uploadImageToR2(data.pendingCoverImage.data, data.pendingCoverImage.mimeType);
+		} catch (error) {
+			console.error('Error uploading cover image:', error);
+		}
+	}
+
 	// Combine with provided image URLs
 	const allImages = [...(data.imgs ?? []), ...uploadedUrls];
 
@@ -68,10 +79,10 @@ export async function createTheme(db: Database, ownerId: string, data: {
 		name: data.name,
 		description: data.description,
 		images: JSON.stringify(allImages),
-		coverImage: data.coverImage,
+		coverImage: finalCoverImage,
 		settings: JSON.stringify(data.settings ?? {}),
 		customStyleshift: JSON.stringify(data.customStyleshift ?? []),
-	}).returning({ id: themes.id }).get();
+	}).returning({ id: themes.id }).then(res => res[0]);
 }
 
 export async function updateTheme(db: Database, id: string, ownerId: string, data: {
@@ -80,6 +91,7 @@ export async function updateTheme(db: Database, id: string, ownerId: string, dat
 	imgs?: string[];
 	coverImage?: string;
 	pendingImages?: Array<{ data: string; mimeType: string }>;
+	pendingCoverImage?: { data: string; mimeType: string };
 	settings?: unknown;
 	customStyleshift?: unknown[];
 }) {
@@ -110,6 +122,29 @@ export async function updateTheme(db: Database, id: string, ownerId: string, dat
 		}
 	}
 
+	// Upload pending cover image
+	let finalCoverImage = data.coverImage;
+	if (data.pendingCoverImage) {
+		try {
+			finalCoverImage = await uploadImageToR2(data.pendingCoverImage.data, data.pendingCoverImage.mimeType);
+			// Delete old cover image if it was on R2
+			if (existingTheme.coverImage && existingTheme.coverImage !== finalCoverImage) {
+				const r2Prefix = 'https://pub-'; // Adjust based on your R2 URL pattern if needed
+				if (existingTheme.coverImage.includes(r2Prefix)) {
+					await deleteImageFromR2(existingTheme.coverImage);
+				}
+			}
+		} catch (error) {
+			console.error('Error uploading cover image:', error);
+		}
+	} else if (existingTheme.coverImage && data.coverImage === '') {
+		// User explicitly removed cover image
+		const r2Prefix = 'https://pub-';
+		if (existingTheme.coverImage.includes(r2Prefix)) {
+			await deleteImageFromR2(existingTheme.coverImage);
+		}
+	}
+
 	// Combine with provided image URLs
 	const allImages = [...newImages, ...uploadedUrls];
 
@@ -126,7 +161,7 @@ export async function updateTheme(db: Database, id: string, ownerId: string, dat
 			name: data.name,
 			description: data.description,
 			images: JSON.stringify(allImages),
-			coverImage: data.coverImage,
+			coverImage: finalCoverImage,
 			settings: JSON.stringify(data.settings ?? {}),
 			customStyleshift: JSON.stringify(data.customStyleshift ?? []),
 		})

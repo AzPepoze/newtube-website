@@ -2,6 +2,9 @@
 	import { fade } from "svelte/transition";
 	import type { Theme } from "$lib/types";
 	import { PUBLIC_API_URL } from "$lib/constants";
+	import DownloadIcon from "$lib/icons/DownloadIcon.svelte";
+	import CheckIcon from "$lib/icons/CheckIcon.svelte";
+	import PlusIcon from "$lib/icons/PlusIcon.svelte";
 
 	let { theme }: { theme: Theme } = $props();
 
@@ -28,8 +31,7 @@
 	function startImageCarousel() {
 		if (displayImages.length <= 1) return;
 		hoverTimer = setInterval(() => {
-			currentImageIndex =
-				(currentImageIndex + 1) % displayImages.length;
+			currentImageIndex = (currentImageIndex + 1) % displayImages.length;
 		}, 2000);
 	}
 
@@ -42,10 +44,34 @@
 	}
 
 	function getDisplayImage(): string {
+		if (hoverTimer && displayImages.length > 0) {
+			return displayImages[currentImageIndex] || "";
+		}
 		if (theme.coverImage) {
 			return theme.coverImage;
 		}
-		return displayImages[currentImageIndex] || "";
+		return displayImages[0] || "";
+	}
+
+	let isInstalled = $state(false);
+
+	$effect(() => {
+		const checkInstalled = () => {
+			const activeId = localStorage.getItem("activeThemeId");
+			isInstalled = activeId === theme.id;
+		};
+		checkInstalled();
+		window.addEventListener("storage", checkInstalled);
+		return () => window.removeEventListener("storage", checkInstalled);
+	});
+
+	function handleInstall(e: Event) {
+		e.preventDefault();
+		e.stopPropagation();
+		localStorage.setItem("activeThemeId", theme.id);
+		isInstalled = true;
+		// Trigger custom event for other cards
+		window.dispatchEvent(new Event("storage"));
 	}
 </script>
 
@@ -57,7 +83,7 @@
 >
 	<div class="theme-card glass-panel">
 		<div class="card-image">
-			{#if displayImages.length > 0}
+			{#if displayImages.length > 0 || theme.coverImage}
 				{#key currentImageIndex}
 					<img
 						src={getDisplayImage()}
@@ -67,8 +93,7 @@
 				{/key}
 			{:else}
 				<div class="placeholder">
-					<span class="premium-font">{theme.name.charAt(0)}</span
-					>
+					<span class="premium-font">{theme.name.charAt(0)}</span>
 				</div>
 			{/if}
 			<div class="overlay">
@@ -79,27 +104,33 @@
 		<div class="card-content">
 			<div class="header">
 				<h3>{theme.name}</h3>
-				<span class="downloads">📥 {theme.downloads}</span>
+				<span class="downloads">
+					<DownloadIcon size={14} />
+					{theme.downloads}
+				</span>
 			</div>
 			<p>{theme.description || "No description provided."}</p>
 			<div class="footer">
 				<div class="owner-info">
 					{#if ownerAvatar}
-						<img
-							src={ownerAvatar}
-							alt={ownerName}
-							class="avatar"
-						/>
+						<img src={ownerAvatar} alt={ownerName} class="avatar" />
 					{/if}
 					<span class="owner">{ownerName || theme.ownerId}</span>
 				</div>
-				<button
-					class="install-btn"
-					onclick={(e) => {
-						e.preventDefault();
-						e.stopPropagation(); /* install logic here */
-					}}>Install</button
-				>
+				{#if isInstalled}
+					<div class="installed-badge">
+						<CheckIcon size={14} />
+						<span>Installed</span>
+					</div>
+				{:else}
+					<button
+						class="install-btn icon-btn"
+						title="Install Theme"
+						onclick={handleInstall}
+					>
+						<PlusIcon size={18} />
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -202,6 +233,9 @@
 					font-size: 0.85rem;
 					color: var(--text-muted);
 					white-space: nowrap;
+					display: flex;
+					align-items: center;
+					gap: 0.35rem;
 				}
 			}
 
@@ -248,10 +282,49 @@
 					white-space: nowrap;
 				}
 
-				.install-btn {
-					padding: 6px 16px;
+				.installed-badge {
+					display: flex;
+					align-items: center;
+					gap: 0.35rem;
+					color: #00ff96;
 					font-size: 0.85rem;
-					white-space: nowrap;
+					font-weight: 700;
+					background: rgba(0, 255, 150, 0.1);
+					padding: 6px 12px;
+					border-radius: var(--radius-sm);
+					border: 1px solid rgba(0, 255, 150, 0.2);
+				}
+
+				.install-btn {
+					&.icon-btn {
+						width: 40px;
+						height: 40px;
+						padding: 0;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						border-radius: 50%;
+						background: var(--text-primary);
+						color: var(--bg-dark);
+						border: 1px solid var(--border-glass);
+						box-shadow: none;
+						transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+						:global(.light) & {
+							background: #1a1a1a;
+							color: #ffffff;
+						}
+
+						&:hover {
+							transform: scale(1.1) rotate(90deg);
+							box-shadow: 0 8px 25px
+								rgba(var(--text-primary-rgb), 0.25);
+						}
+
+						&:active {
+							transform: scale(0.95);
+						}
+					}
 				}
 			}
 		}

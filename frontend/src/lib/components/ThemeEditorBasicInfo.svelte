@@ -12,6 +12,7 @@
 		coverImage = $bindable(""),
 		pendingImages = $bindable<File[]>([]),
 		errorMessage = $bindable(""),
+		coverImagePending = $bindable(null),
 	}: {
 		name: string;
 		description: string;
@@ -19,12 +20,12 @@
 		coverImage: string;
 		pendingImages: File[];
 		errorMessage: string;
+		coverImagePending: File | null;
 	} = $props();
 
 	let newImageUrl = $state("");
 	let isDragging = $state(false);
 	let coverImageDragging = $state(false);
-	let coverImagePending: File | null = $state(null);
 
 	function handleFile(file: File) {
 		if (!file.type.startsWith("image/")) {
@@ -182,7 +183,7 @@
 			<div class="image-item glass-panel" in:fade>
 				<img
 					src={URL.createObjectURL(coverImagePending)}
-					alt="Cover image pending"
+					alt="Cover pending"
 				/>
 				<div class="pending-badge">Pending</div>
 				<button
@@ -197,7 +198,7 @@
 		{/if}
 		{#if coverImage}
 			<div class="image-item glass-panel" in:fade>
-				<img src={coverImage} alt="Cover image" />
+				<img src={coverImage} alt="Cover" />
 				<button
 					type="button"
 					class="remove-btn"
@@ -309,8 +310,9 @@
 
 		h3 {
 			margin: 0;
-			font-size: 1.1rem;
-			color: var(--text-secondary);
+			font-size: 1.25rem;
+			font-weight: 700;
+			color: var(--text-primary);
 		}
 
 		.card-header {
@@ -318,11 +320,12 @@
 			justify-content: space-between;
 			align-items: center;
 			flex-wrap: wrap;
+			margin-bottom: 0.5rem;
 
 			.hint {
 				margin: 0;
 				font-size: 0.9rem;
-				color: var(--text-muted);
+				color: var(--text-secondary);
 			}
 		}
 	}
@@ -330,18 +333,18 @@
 	.field {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.75rem;
 
 		label {
-			font-size: 0.95rem;
-			color: var(--text-muted);
+			font-size: 0.85rem;
+			color: var(--text-secondary);
 			text-transform: uppercase;
-			letter-spacing: 0.05em;
-			font-weight: 700;
+			letter-spacing: 0.1em;
+			font-weight: 800;
 		}
 
 		input {
-			background: rgba(255, 255, 255, 0.02);
+			background: rgba(var(--text-primary-rgb), 0.03);
 			border: 1px solid var(--border-glass);
 			padding: 1rem 1.25rem;
 			border-radius: var(--radius-md);
@@ -350,10 +353,14 @@
 			font-size: 1.1rem;
 			transition: all 0.2s;
 
+			&::placeholder {
+				color: var(--text-muted);
+			}
+
 			&:focus {
 				outline: none;
-				border-color: rgba(255, 255, 255, 0.3);
-				background: rgba(255, 255, 255, 0.05);
+				border-color: var(--text-primary);
+				background: rgba(var(--text-primary-rgb), 0.05);
 			}
 		}
 	}
@@ -361,22 +368,24 @@
 	.drop-zone {
 		border: 2px dashed var(--border-glass);
 		border-radius: var(--radius-md);
-		padding: 3rem 2rem;
+		padding: 3.5rem 2rem;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 1.5rem;
-		transition: all 0.2s ease;
+		transition: all 0.3s ease;
 		background: rgba(var(--text-primary-rgb), 0.02);
 		cursor: pointer;
 		text-align: center;
 		margin-bottom: 1.5rem;
+		color: var(--text-secondary);
 
 		&:hover,
 		&.dragging {
 			border-color: var(--text-primary);
 			background: rgba(var(--text-primary-rgb), 0.05);
 			color: var(--text-primary);
+			transform: translateY(-2px);
 		}
 
 		.drop-text {
@@ -413,7 +422,7 @@
 
 			input {
 				width: 100%;
-				background: rgba(255, 255, 255, 0.02);
+				background: rgba(var(--text-primary-rgb), 0.03);
 				border: 1px solid var(--border-glass);
 				padding: 0.8rem 1rem 0.8rem 2.8rem;
 				border-radius: var(--radius-sm);
@@ -424,8 +433,8 @@
 
 				&:focus {
 					outline: none;
-					border-color: rgba(255, 255, 255, 0.3);
-					background: rgba(255, 255, 255, 0.05);
+					border-color: var(--text-primary);
+					background: rgba(var(--text-primary-rgb), 0.05);
 				}
 			}
 

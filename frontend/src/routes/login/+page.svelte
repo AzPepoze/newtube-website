@@ -29,7 +29,7 @@
 
 <div class="login-container">
 	<div class="login-card glass-panel" in:fly={{ y: 30, duration: 800 }}>
-		<h1 class="premium-font">Welcome Back</h1>
+		<h1 class="premium-font">Get Started</h1>
 		<p>Sign in to create and manage your NewTube themes</p>
 
 		<button onclick={loginWithGoogle} class="google-login-btn">
@@ -42,13 +42,8 @@
 			<span>Sign in with Google</span>
 		</button>
 
-		<div class="divider">
-			<span>or</span>
-		</div>
-
 		<p class="terms">
-			By signing in, you agree to our <a href="/terms"
-				>Terms of Service</a
+			By signing in, you agree to our <a href="/terms">Terms of Service</a
 			>
 			and <a href="/privacy">Privacy Policy</a>.
 		</p>
@@ -102,24 +97,8 @@
 			}
 		}
 
-		.divider {
-			margin: 2rem 0;
-			position: relative;
-			border-bottom: 1px solid var(--border-glass);
-
-			span {
-				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
-				background: var(--bg-dark);
-				padding: 0 1rem;
-				color: var(--text-muted);
-				font-size: 0.9rem;
-			}
-		}
-
 		.terms {
+			margin-top: 2rem;
 			font-size: 0.85rem;
 			color: var(--text-muted);
 			margin-bottom: 0;

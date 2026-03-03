@@ -41,8 +41,9 @@
 
 		h3 {
 			margin: 0;
-			font-size: 1.1rem;
-			color: var(--text-secondary);
+			font-size: 1.25rem;
+			font-weight: 700;
+			color: var(--text-primary);
 		}
 
 		.card-header {
@@ -56,8 +57,7 @@
 			}
 			.json-valid {
 				font-size: 0.8rem;
-				color: #ffffff;
-				opacity: 0.6;
+				color: var(--text-secondary);
 			}
 		}
 	}

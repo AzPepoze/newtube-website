@@ -44,16 +44,21 @@
 
 	onMount(() => {
 		searchQuery = page.url.searchParams.get("q") || "";
-		fetchThemes();
 	});
 
 	const debouncedSearch = debounce(fetchThemes, 500);
 
+	let initialized = false;
 	$effect(() => {
-		if (sortBy) fetchThemes();
-	});
+		searchQuery;
+		sortBy;
 
-	$effect(() => {
+		if (!initialized) {
+			fetchThemes();
+			initialized = true;
+			return;
+		}
+
 		debouncedSearch();
 	});
 </script>

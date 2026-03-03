@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import type { Theme } from "$lib/types";
-	import { fade } from "svelte/transition";
-	import { getUserId } from "$lib/auth";
+	import { getUserId, requireAuth } from "$lib/auth";
 	import ProfileThemeList from "$lib/components/ProfileThemeList.svelte";
 	import ProfileHeader from "$lib/components/ProfileHeader.svelte";
 
@@ -28,7 +27,7 @@
 		loading = true;
 		try {
 			const response = await fetch(
-				`${PUBLIC_API_URL}/profile?userId=${userId}`,
+				`${PUBLIC_API_URL}/users/profile?userId=${userId}`,
 			);
 			const data = await response.json();
 			myThemes = data.themes || [];
@@ -41,7 +40,9 @@
 	}
 
 	onMount(() => {
-		fetchMyThemes();
+		if (requireAuth()) {
+			fetchMyThemes();
+		}
 	});
 
 	async function deleteTheme(themeId: string) {
@@ -58,47 +59,12 @@
 </script>
 
 <div class="profile-container">
-	{#if !userId}
-		<div class="login-prompt glass-panel" in:fade>
-			<h2>Login Required</h2>
-			<p>Please sign in to view and manage your themes.</p>
-			<a href="/login" class="login-btn">Sign In with Google</a>
-		</div>
-	{:else}
-		<ProfileHeader {userData} />
-		<ProfileThemeList {loading} {myThemes} {deleteTheme} />
-	{/if}
+	<ProfileHeader {userData} />
+	<ProfileThemeList {loading} {myThemes} {deleteTheme} />
 </div>
 
 <style lang="scss">
 	.profile-container {
 		padding: 2rem 0;
-	}
-
-	.login-prompt {
-		max-width: 500px;
-		margin: 10vh auto;
-		padding: 4rem;
-		text-align: center;
-
-		h2 {
-			font-size: 2rem;
-			margin-bottom: 1rem;
-		}
-
-		p {
-			color: var(--text-secondary);
-			margin-bottom: 2.5rem;
-		}
-
-		.login-btn {
-			background: var(--text-primary);
-			color: var(--bg-dark);
-			text-decoration: none;
-			display: inline-block;
-			padding: 10px 20px;
-			border-radius: var(--radius-sm);
-			font-weight: bold;
-		}
 	}
 </style>

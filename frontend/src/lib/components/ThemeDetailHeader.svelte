@@ -2,6 +2,11 @@
 	import type { Theme } from "$lib/types";
 	import EditIcon from "$lib/icons/EditIcon.svelte";
 	import TrashIcon from "$lib/icons/TrashIcon.svelte";
+	import DownloadIcon from "$lib/icons/DownloadIcon.svelte";
+	import EyeIcon from "$lib/icons/EyeIcon.svelte";
+	import SettingsIcon from "$lib/icons/SettingsIcon.svelte";
+	import CheckIcon from "$lib/icons/CheckIcon.svelte";
+	import PlusIcon from "$lib/icons/PlusIcon.svelte";
 
 	interface ThemeDetail extends Theme {
 		creator_name?: string;
@@ -17,6 +22,24 @@
 		currentUser: string;
 		deleteTheme: () => void;
 	} = $props();
+
+	let isInstalled = $state(false);
+
+	$effect(() => {
+		const checkInstalled = () => {
+			const activeId = localStorage.getItem("activeThemeId");
+			isInstalled = activeId === theme.id;
+		};
+		checkInstalled();
+		window.addEventListener("storage", checkInstalled);
+		return () => window.removeEventListener("storage", checkInstalled);
+	});
+
+	function handleInstall() {
+		localStorage.setItem("activeThemeId", theme.id);
+		isInstalled = true;
+		window.dispatchEvent(new Event("storage"));
+	}
 </script>
 
 <div class="title-row">
@@ -38,25 +61,42 @@
 				<TrashIcon size={18} />
 			</button>
 		{/if}
-		<button class="install-btn premium-button">Install Theme</button>
+		{#if isInstalled}
+			<div class="installed-status">
+				<CheckIcon size={18} />
+				<span>Installed</span>
+			</div>
+		{:else}
+			<button class="install-btn premium-button" onclick={handleInstall}>
+				<PlusIcon size={18} />
+				Install Theme
+			</button>
+		{/if}
 	</div>
 </div>
 
 <div class="stats glass-panel">
 	<div class="stat-item">
-		<span class="stat-value">📥 {theme.downloads.toLocaleString()}</span>
+		<span class="stat-value">
+			<DownloadIcon size={20} />
+			{theme.downloads.toLocaleString()}
+		</span>
 		<span class="stat-label">Downloads</span>
 	</div>
 	<div class="stat-divider"></div>
 	<div class="stat-item">
-		<span class="stat-value">🖼️ {theme.images?.length ?? 0}</span>
+		<span class="stat-value">
+			<EyeIcon size={20} />
+			{theme.images?.length ?? 0}
+		</span>
 		<span class="stat-label">Screenshots</span>
 	</div>
 	<div class="stat-divider"></div>
 	<div class="stat-item">
-		<span class="stat-value"
-			>⚙️ {Object.keys(theme.settings || {}).length}</span
-		>
+		<span class="stat-value">
+			<SettingsIcon size={20} />
+			{Object.keys(theme.settings || {}).length}
+		</span>
 		<span class="stat-label">Settings</span>
 	</div>
 </div>
@@ -124,6 +164,22 @@
 			font-weight: 600;
 			font-family: inherit;
 			cursor: pointer;
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		.installed-status {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			color: #00ff96;
+			font-size: 1rem;
+			font-weight: 700;
+			background: rgba(0, 255, 150, 0.1);
+			padding: 0.75rem 1.5rem;
+			border-radius: var(--radius-sm);
+			border: 1px solid rgba(0, 255, 150, 0.2);
 		}
 	}
 
@@ -142,9 +198,12 @@
 			gap: 0.25rem;
 
 			.stat-value {
-				font-size: 1.1rem;
+				font-size: 1.15rem;
 				font-weight: 700;
 				color: var(--text-primary);
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
 			}
 
 			.stat-label {

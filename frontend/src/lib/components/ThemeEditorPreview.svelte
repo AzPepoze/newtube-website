@@ -8,16 +8,21 @@
 		description,
 		images,
 		coverImage,
+		coverImagePending,
 		settingsCode,
 	}: {
 		name: string;
 		description: string;
 		images: string[];
 		coverImage: string;
+		coverImagePending: File | null;
 		settingsCode: string;
 	} = $props();
 
 	let currentUser = $state<any>(null);
+	const displayCoverImage = $derived(
+		coverImagePending ? URL.createObjectURL(coverImagePending) : coverImage,
+	);
 
 	$effect(() => {
 		getCurrentUser().then((user) => {
@@ -33,7 +38,7 @@
 				name: name || "Theme Name",
 				description: description || "No description provided.",
 				images,
-				coverImage,
+				coverImage: displayCoverImage,
 				settings: settingsCode ? JSON.parse(settingsCode) : {},
 				downloads: 0,
 			}) as Theme,
@@ -81,10 +86,11 @@
 
 		h3 {
 			margin: 0 0 1.5rem;
-			font-size: 0.9rem;
-			color: var(--text-muted);
+			font-size: 0.85rem;
+			color: var(--text-secondary);
 			text-transform: uppercase;
-			letter-spacing: 0.05em;
+			letter-spacing: 0.1em;
+			font-weight: 800;
 		}
 	}
 
@@ -102,16 +108,17 @@
 
 	.data-preview {
 		pre {
-			background: rgba(0, 0, 0, 0.2);
-			padding: 1rem;
+			background: rgba(var(--text-primary-rgb), 0.05);
+			padding: 1.5rem;
 			border-radius: var(--radius-sm);
 			overflow-x: auto;
 			margin: 0;
+			border: 1px solid var(--border-glass);
 
 			code {
 				font-family: monospace;
 				font-size: 0.85rem;
-				color: var(--text-secondary);
+				color: var(--text-primary);
 			}
 		}
 	}

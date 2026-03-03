@@ -2,12 +2,14 @@
 	import "../app.scss";
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
-	import { getUserId, clearUserId } from "$lib/auth";
+	import { getUserId, clearUserId, handleAuthError } from "$lib/auth";
 	import UserIcon from "$lib/icons/UserIcon.svelte";
 	import LogoutIcon from "$lib/icons/LogoutIcon.svelte";
 	import SunIcon from "$lib/icons/SunIcon.svelte";
 	import MoonIcon from "$lib/icons/MoonIcon.svelte";
+	import GithubIcon from "$lib/icons/GithubIcon.svelte";
 	import CustomDropdown from "$lib/components/CustomDropdown.svelte";
+	import { updateTheme } from "$lib/theme.svelte";
 
 	let { children } = $props();
 
@@ -27,6 +29,7 @@
 		// Initialize theme
 		const savedTheme = localStorage.getItem("theme");
 		isLightMode = savedTheme === "light";
+		updateTheme(isLightMode);
 		updateThemeClass();
 
 		const userId = getUserId();
@@ -37,6 +40,8 @@
 			});
 			if (response.ok) {
 				currentUser = await response.json();
+			} else if (response.status === 404 || response.status === 401) {
+				handleAuthError();
 			}
 		} catch {
 			// unauthenticated
@@ -46,6 +51,7 @@
 	function toggleTheme() {
 		isLightMode = !isLightMode;
 		localStorage.setItem("theme", isLightMode ? "light" : "dark");
+		updateTheme(isLightMode);
 		updateThemeClass();
 	}
 
@@ -83,11 +89,24 @@
 				<img src="/logo.png" alt="NewTube" class="logo-img" />
 			</a>
 			<div class="nav-links">
+				<a href="/">Home</a>
 				<a href="/store">Store</a>
+				<a href="/terms">Terms</a>
+				<a href="/privacy">Privacy</a>
 			</div>
 		</div>
 
 		<div class="nav-right">
+			<a
+				href="https://github.com/AzPepoze/NewTube"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="github-link"
+				aria-label="GitHub Repository"
+			>
+				<GithubIcon size={24} />
+			</a>
+
 			<button
 				class="theme-toggle"
 				onclick={toggleTheme}
@@ -202,6 +221,19 @@
 			}
 		}
 
+		.logo-link:hover .logo-img {
+			animation: logo-rotate 3s linear infinite;
+		}
+
+		@keyframes logo-rotate {
+			from {
+				transform: rotate(0deg);
+			}
+			to {
+				transform: rotate(360deg);
+			}
+		}
+
 		.nav-links {
 			display: flex;
 			gap: 1.5rem;
@@ -220,31 +252,51 @@
 
 		.nav-right {
 			gap: 1.25rem;
-		}
 
-		.theme-toggle {
-			background: transparent;
-			border: none;
-			color: var(--text-primary);
-			cursor: pointer;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 0.5rem;
-			border-radius: 50%;
-			transition: all 0.2s;
-
-			&:hover {
-				background: rgba(var(--text-primary-rgb, 128, 128, 128), 0.05);
+			.github-link {
 				color: var(--text-primary);
-			}
-		}
-	}
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 0.5rem;
+				border-radius: 50%;
+				transition: all 0.2s;
+				opacity: 0.8;
 
-	.auth-section {
-		.login-btn {
-			padding: 10px 22px;
-			font-size: 1rem;
+				&:hover {
+					opacity: 1;
+					background: rgba(var(--text-primary-rgb), 0.05);
+					transform: scale(1.1);
+				}
+			}
+
+			.theme-toggle {
+				background: transparent;
+				border: none;
+				color: var(--text-primary);
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 0.5rem;
+				border-radius: 50%;
+				transition: all 0.2s;
+
+				&:hover {
+					background: rgba(
+						var(--text-primary-rgb, 128, 128, 128),
+						0.05
+					);
+					color: var(--text-primary);
+				}
+			}
+
+			.auth-section {
+				.login-btn {
+					padding: 10px 22px;
+					font-size: 1rem;
+				}
+			}
 		}
 	}
 

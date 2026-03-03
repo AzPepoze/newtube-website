@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS Themes (
     name TEXT NOT NULL,
     description TEXT,
     images JSON, -- Array of image URLs
+    cover_image TEXT,
     settings JSON NOT NULL, -- Theme settings data
     custom_styleshift JSON, -- Custom styleshift items
     is_public BOOLEAN DEFAULT TRUE,

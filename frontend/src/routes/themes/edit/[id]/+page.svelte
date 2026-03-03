@@ -2,6 +2,7 @@
 	import { onMount } from "svelte";
 	import { page } from "$app/state";
 	import ThemeEditor from "$lib/components/ThemeEditor.svelte";
+	import { requireAuth } from "$lib/auth";
 	import type { Theme } from "$lib/types";
 
 	import { PUBLIC_API_URL } from "$lib/constants";
@@ -12,6 +13,9 @@
 	let error = $state("");
 
 	onMount(async () => {
+		const userId = requireAuth();
+		if (!userId) return;
+
 		try {
 			const response = await fetch(`${PUBLIC_API_URL}/themes/${id}`);
 			if (!response.ok) throw new Error("Theme not found");
@@ -19,6 +23,11 @@
 
 			// Normalize JSON fields
 			if (theme) {
+				if (theme.ownerId !== userId) {
+					window.location.href = "/profile";
+					return;
+				}
+
 				if (typeof theme.settings === "string")
 					theme.settings = JSON.parse(theme.settings);
 				if (typeof theme.images === "string")
@@ -32,7 +41,7 @@
 	});
 </script>
 
-<div class="page">
+<div class="page-container">
 	{#if loading}
 		<div class="loading-state glass-panel">
 			<div class="spinner"></div>
@@ -51,7 +60,7 @@
 </div>
 
 <style lang="scss">
-	.page {
+	.page-container {
 		padding-top: 2rem;
 	}
 
