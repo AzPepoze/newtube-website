@@ -6,7 +6,7 @@
 	import "prism-code-editor/scrollbar.css";
 	import "prism-code-editor/search.css";
 	import "prism-code-editor/cursor.css";
-	import "prism-code-editor/themes/atom-one-dark.css";
+	import "prism-code-editor/themes/dracula.css";
 	import "prism-code-editor/themes/github-light.css";
 	import "prism-code-editor/prism/languages/markup";
 	import "prism-code-editor/prism/languages/markdown";
@@ -27,7 +27,7 @@
 	}: Props = $props();
 
 	const theme = $derived(
-		themeState.isLightMode ? "github-light" : "atom-one-dark",
+		themeState.isLightMode ? "github-light" : "dracula",
 	);
 
 	let editorInstance: any;

@@ -26,8 +26,8 @@
 				</h1>
 
 				<div class="cta-group">
-					<a href="/store" class="primary-cta premium-button"
-						>Explore Store</a
+					<a href="/discover" class="primary-cta premium-button"
+						>Explore Discover</a
 					>
 					<a
 						href="/themes/create"
@@ -87,8 +87,7 @@
 		.hero-logo {
 			height: 220px;
 			width: auto;
-			transition: transform 0.3s
-				cubic-bezier(0.175, 0.885, 0.32, 1.275);
+			transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
 			&:hover {
 				transform: scale(1.05) rotate(2deg);

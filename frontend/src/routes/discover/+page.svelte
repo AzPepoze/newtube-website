@@ -63,8 +63,8 @@
 	});
 </script>
 
-<div class="store-container">
-	<div class="store-controls">
+<div class="discover-container">
+	<div class="discover-controls">
 		<div class="controls-left">
 			<div class="search-wrapper glass-panel">
 				<SearchIcon size={22} />
@@ -124,11 +124,11 @@
 </div>
 
 <style lang="scss">
-	.store-container {
+	.discover-container {
 		padding: 2rem 0;
 	}
 
-	.store-controls {
+	.discover-controls {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
@@ -237,8 +237,7 @@
 		.spinner {
 			width: 50px;
 			height: 50px;
-			border: 3px solid
-				rgba(var(--text-primary-rgb, 255, 255, 255), 0.1);
+			border: 3px solid rgba(var(--text-primary-rgb, 255, 255, 255), 0.1);
 			border-top-color: var(--primary-glow);
 			border-radius: 50%;
 			margin: 0 auto 1.5rem;

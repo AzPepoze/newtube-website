@@ -3,7 +3,7 @@
 </script>
 
 <div class="policy-page">
-    <div class="content glass-panel" in:fade={{ duration: 600 }}>
+    <div class="content" in:fade={{ duration: 600 }}>
         <h1 class="premium-font">Terms of Service</h1>
         <p class="last-updated">Last Updated: March 2026</p>
 
@@ -49,14 +49,13 @@
     .policy-page {
         display: flex;
         justify-content: center;
-        padding: 4rem 1rem;
         min-height: 80vh;
     }
 
     .content {
-        max-width: 800px;
+        max-width: 900px;
         width: 100%;
-        padding: 4rem;
+        padding: 2rem 0;
 
         h1 {
             font-size: 3rem;

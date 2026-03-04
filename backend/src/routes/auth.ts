@@ -33,7 +33,7 @@ export const authRoute = new Elysia({ prefix: '/auth' })
 
 			const frontendUrlStr = (env.FRONTEND_URL || 'http://localhost:5173').trim();
 			const urlObj = new URL(frontendUrlStr);
-			urlObj.pathname = '/store';
+			urlObj.pathname = '/discover';
 			urlObj.searchParams.set('userId', googleUser.id);
 			const redirectDest = urlObj.toString();
 

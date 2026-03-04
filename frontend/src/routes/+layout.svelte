@@ -8,6 +8,10 @@
 	import SunIcon from "$lib/icons/SunIcon.svelte";
 	import MoonIcon from "$lib/icons/MoonIcon.svelte";
 	import GithubIcon from "$lib/icons/GithubIcon.svelte";
+	import HomeIcon from "$lib/icons/HomeIcon.svelte";
+	import CompassIcon from "$lib/icons/CompassIcon.svelte";
+	import ScaleIcon from "$lib/icons/ScaleIcon.svelte";
+	import ShieldIcon from "$lib/icons/ShieldIcon.svelte";
 	import CustomDropdown from "$lib/components/CustomDropdown.svelte";
 	import { updateTheme } from "$lib/theme.svelte";
 
@@ -73,7 +77,7 @@
 </script>
 
 <svelte:head>
-	<title>NewTube Theme Store</title>
+	<title>NewTube Discover</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
 	<link
@@ -89,10 +93,18 @@
 				<img src="/logo.png" alt="NewTube" class="logo-img" />
 			</a>
 			<div class="nav-links">
-				<a href="/">Home</a>
-				<a href="/store">Store</a>
-				<a href="/terms">Terms</a>
-				<a href="/privacy">Privacy</a>
+				<a href="/" aria-label="Home" title="Home">
+					<HomeIcon size={24} />
+				</a>
+				<a href="/discover" aria-label="Discover" title="Discover">
+					<CompassIcon size={24} />
+				</a>
+				<a href="/terms" aria-label="Terms" title="Terms">
+					<ScaleIcon size={24} />
+				</a>
+				<a href="/privacy" aria-label="Privacy" title="Privacy">
+					<ShieldIcon size={24} />
+				</a>
 			</div>
 		</div>
 
