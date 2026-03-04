@@ -5,14 +5,14 @@ import { authGuard } from '../plugins/auth-guard';
 
 export const userRoute = new Elysia({ prefix: '/users' })
 	.use(contextPlugin)
-	.get('/profile', async ({ query, set, db }) => {
-		const userId = query.userId;
-		if (!userId) {
+	.get('/profile', async ({ query, userId, set, db }) => {
+		const targetUserId = query.userId || userId;
+		if (!targetUserId) {
 			set.status = 401;
 			return 'Unauthorized';
 		}
 
-		const [user, userThemes] = await getUserProfile(db, userId);
+		const [user, userThemes] = await getUserProfile(db, targetUserId);
 		return { user, themes: userThemes };
 	})
 	.use(authGuard)

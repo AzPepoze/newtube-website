@@ -12,7 +12,6 @@
 		createdAt: string;
 	} | null>(null);
 	let loading = $state(true);
-	let userId = $state("");
 
 	import { PUBLIC_API_URL } from "$lib/constants";
 	import { ui } from "$lib/ui.svelte";
@@ -27,10 +26,9 @@
 
 		loading = true;
 		try {
-			const response = await fetch(
-				`${PUBLIC_API_URL}/users/profile?userId=${userId}`,
-				{ credentials: "include" },
-			);
+			const response = await fetch(`${PUBLIC_API_URL}/users/profile`, {
+				credentials: "include",
+			});
 			const data = await response.json();
 			myThemes = data.themes || [];
 			userData = data.user;
