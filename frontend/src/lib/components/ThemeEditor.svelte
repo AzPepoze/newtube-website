@@ -3,7 +3,7 @@
 	import type { Theme } from "$lib/types";
 	import EditIcon from "$lib/icons/EditIcon.svelte";
 	import EyeIcon from "$lib/icons/EyeIcon.svelte";
-	import { getUserId } from "$lib/auth";
+	import { getSessionId } from "$lib/auth";
 	import { PUBLIC_API_URL } from "$lib/constants";
 	import { ui } from "$lib/ui.svelte";
 	import { compressImage } from "$lib/imageCompression";
@@ -15,7 +15,7 @@
 	let isEdit = $derived(props.isEdit ?? false);
 	let initialData = $derived(props.initialData);
 
-	let userId = getUserId();
+	let userId = getSessionId();
 	let name = $state("");
 	let description = $state(defaultDescription);
 	let images = $state<string[]>([]);

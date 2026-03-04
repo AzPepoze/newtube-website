@@ -2,9 +2,12 @@ import { Elysia } from 'elysia';
 import { env } from 'cloudflare:workers';
 import { createDb } from '../db';
 import { updateOrInsertUser } from '../db/users';
+import { createSession, deleteSession } from '../db/sessions';
 import { getGoogleAuthUrl, getGoogleUser } from '../lib/auth';
+import { contextPlugin } from '../plugins/context';
 
 export const authRoute = new Elysia({ prefix: '/auth' })
+	.use(contextPlugin)
 	.get('/google', async ({ request, redirect }) => {
 		const url = new URL(request.url);
 		let protocol = url.protocol;
@@ -47,29 +50,25 @@ export const authRoute = new Elysia({ prefix: '/auth' })
 				avatarUrl: googleUser.picture,
 			});
 
+			const sessionId = await createSession(db, googleUser.id);
+
 			const frontendUrlStr = (env.FRONTEND_URL || 'http://localhost:5173').trim();
 			const urlObj = new URL(frontendUrlStr);
 			urlObj.pathname = '/discover';
-			urlObj.searchParams.set('userId', googleUser.id);
+			urlObj.searchParams.set('sessionId', sessionId);
 			const redirectDest = urlObj.toString();
 
 			const sameSite = frontendUrlStr.includes('localhost') ? 'lax' : 'none';
+			cookie.sessionId.set({
+				value: sessionId,
+				path: '/',
+				maxAge: 2592000,
+				sameSite,
+				secure: !frontendUrlStr.includes('localhost'),
+				httpOnly: true, // More secure, since frontend only needs it from URL once to move it over
+			});
 			cookie.userId.set({
 				value: googleUser.id,
-				path: '/',
-				maxAge: 2592000,
-				sameSite,
-				secure: !frontendUrlStr.includes('localhost'),
-			});
-			cookie.userEmail.set({
-				value: googleUser.email,
-				path: '/',
-				maxAge: 2592000,
-				sameSite,
-				secure: !frontendUrlStr.includes('localhost'),
-			});
-			cookie.userName.set({
-				value: googleUser.name,
 				path: '/',
 				maxAge: 2592000,
 				sameSite,
@@ -83,4 +82,15 @@ export const authRoute = new Elysia({ prefix: '/auth' })
 			set.status = 500;
 			return error.message;
 		}
+	})
+	.post('/logout', async ({ cookie, db }) => {
+		const sessionId = cookie.sessionId?.value;
+		if (typeof sessionId === 'string') {
+			await deleteSession(db, sessionId);
+		}
+
+		cookie.sessionId.remove();
+		cookie.userId.remove();
+
+		return { success: true };
 	});

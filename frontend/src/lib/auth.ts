@@ -1,9 +1,9 @@
 import type { User } from './types';
 import { PUBLIC_API_URL } from './constants';
 
-export function getUserId(): string {
+export function getSessionId(): string {
 	if (typeof document === 'undefined') return '';
-	const match = document.cookie.match(/(?:^|;\s*)userId=([^;]*)/);
+	const match = document.cookie.match(/(?:^|;\s*)sessionId=([^;]*)/);
 	return match ? decodeURIComponent(match[1]) : '';
 }
 
@@ -19,17 +19,17 @@ export async function getCurrentUser(): Promise<User | null> {
 	}
 }
 
-export function clearUserId() {
-	document.cookie = 'userId=; Path=/; Max-Age=0';
+export function clearSessionId() {
+	document.cookie = 'sessionId=; Path=/; Max-Age=0';
 }
 
 export function requireAuth(customPath?: string): string {
-	const userId = getUserId();
-	if (!userId && typeof window !== 'undefined') {
+	const sessionId = getSessionId();
+	if (!sessionId && typeof window !== 'undefined') {
 		const redirect = customPath || window.location.pathname + window.location.search;
 		window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
 	}
-	return userId;
+	return sessionId;
 }
 
 export const PROTECTED_ROUTES = ['/profile', '/themes/create', '/themes/edit'];
@@ -39,7 +39,7 @@ export function isProtectedRoute(path: string): boolean {
 }
 
 export function handleAuthError() {
-	clearUserId();
+	clearSessionId();
 	if (typeof window !== 'undefined') {
 		if (isProtectedRoute(window.location.pathname)) {
 			const redirect = window.location.pathname + window.location.search;

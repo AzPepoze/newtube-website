@@ -9,6 +9,13 @@ export const users = sqliteTable('Users', {
 	createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const sessions = sqliteTable('Sessions', {
+	id: text('id').primaryKey(),
+	userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+	expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+	createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const themes = sqliteTable('Themes', {
 	id: text('id').primaryKey(),
 	ownerId: text('owner_id').references(() => users.id),
@@ -25,6 +32,14 @@ export const themes = sqliteTable('Themes', {
 
 export const usersRelations = relations(users, ({ many }) => ({
 	themes: many(themes),
+	sessions: many(sessions),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+	user: one(users, {
+		fields: [sessions.userId],
+		references: [users.id],
+	}),
 }));
 
 export const themesRelations = relations(themes, ({ one }) => ({
@@ -36,3 +51,4 @@ export const themesRelations = relations(themes, ({ one }) => ({
 
 export type User = typeof users.$inferSelect;
 export type Theme = typeof themes.$inferSelect;
+export type Session = typeof sessions.$inferSelect;

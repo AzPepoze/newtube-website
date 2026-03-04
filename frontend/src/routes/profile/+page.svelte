@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import type { Theme } from "$lib/types";
-	import { getUserId, requireAuth } from "$lib/auth";
+	import { getSessionId, requireAuth } from "$lib/auth";
 	import ProfileThemeList from "$lib/components/ProfileThemeList.svelte";
 	import ProfileHeader from "$lib/components/ProfileHeader.svelte";
 
@@ -18,9 +18,9 @@
 	import { ui } from "$lib/ui.svelte";
 
 	async function fetchMyThemes() {
-		userId = getUserId();
+		const sessionId = getSessionId();
 
-		if (!userId) {
+		if (!sessionId) {
 			loading = false;
 			return;
 		}

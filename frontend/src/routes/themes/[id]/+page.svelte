@@ -5,7 +5,7 @@
     import type { Theme } from "$lib/types";
     import { PUBLIC_API_URL } from "$lib/constants";
     import { ui } from "$lib/ui.svelte";
-    import { getUserId } from "$lib/auth";
+    import { getSessionId } from "$lib/auth";
     import { renderMarkdown } from "$lib/markdown";
 
     import ThemeDetailHeader from "$lib/components/ThemeDetailHeader.svelte";
@@ -24,7 +24,7 @@
     let currentUser = $state("");
 
     async function fetchTheme() {
-        currentUser = getUserId() || "";
+        currentUser = getSessionId() || "";
         const id = page.params.id;
         loading = true;
         try {

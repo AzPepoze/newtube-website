@@ -2,7 +2,7 @@
 	import "../app.scss";
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
-	import { getUserId, clearUserId, handleAuthError } from "$lib/auth";
+	import { getSessionId, clearSessionId, handleAuthError } from "$lib/auth";
 	import UserIcon from "$lib/icons/UserIcon.svelte";
 	import LogoutIcon from "$lib/icons/LogoutIcon.svelte";
 	import SunIcon from "$lib/icons/SunIcon.svelte";
@@ -37,8 +37,19 @@
 		updateTheme(isLightMode);
 		updateThemeClass();
 
-		const userId = getUserId();
-		if (!userId) return;
+		const urlParams = new URL(window.location.href).searchParams;
+		const urlSessionId = urlParams.get("sessionId");
+		if (urlSessionId) {
+			document.cookie = `sessionId=${encodeURIComponent(urlSessionId)}; path=/; max-age=2592000`;
+			urlParams.delete("sessionId");
+			const newUrl =
+				window.location.pathname +
+				(urlParams.toString() ? "?" + urlParams.toString() : "");
+			window.history.replaceState({}, "", newUrl);
+		}
+
+		const sessionId = getSessionId();
+		if (!sessionId) return;
 		try {
 			const response = await fetch(`${PUBLIC_API_URL}/users/me`, {
 				credentials: "include",
@@ -71,7 +82,7 @@
 	}
 
 	function handleLogout() {
-		clearUserId();
+		clearSessionId();
 		currentUser = null;
 		window.location.href = "/";
 	}

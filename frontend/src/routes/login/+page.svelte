@@ -2,13 +2,13 @@
 	import { fly } from "svelte/transition";
 	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
-	import { getUserId } from "$lib/auth";
+	import { getSessionId } from "$lib/auth";
 
 	import { PUBLIC_API_URL } from "$lib/constants";
 
 	onMount(async () => {
-		const userId = getUserId();
-		if (userId) {
+		const sessionId = getSessionId();
+		if (sessionId) {
 			try {
 				const response = await fetch(`${PUBLIC_API_URL}/users/me`, {
 					credentials: "include",
