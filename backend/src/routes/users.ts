@@ -9,7 +9,7 @@ export const userRoute = new Elysia({ prefix: '/users' })
 		const targetUserId = query.userId || userId;
 		if (!targetUserId) {
 			set.status = 401;
-			return 'Unauthorized';
+			return { error: 'Unauthorized', message: 'No user ID provided' };
 		}
 
 		const [user, userThemes] = await getUserProfile(db, targetUserId);
@@ -20,7 +20,7 @@ export const userRoute = new Elysia({ prefix: '/users' })
 		const user = await getUserById(db, userId!);
 		if (!user) {
 			set.status = 404;
-			return 'Not Found';
+			return { error: 'User not found' };
 		}
 		return user;
 	});

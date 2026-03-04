@@ -24,11 +24,17 @@ export function clearSessionId() {
 	document.cookie = 'userId=; Path=/; Max-Age=0';
 }
 
+export function isAuthenticated(): boolean {
+	const sessionId = getSessionId();
+	return !!sessionId;
+}
+
 export function requireAuth(customPath?: string): string {
 	const sessionId = getSessionId();
 	if (!sessionId && typeof window !== 'undefined') {
 		const redirect = customPath || window.location.pathname + window.location.search;
 		window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
+		return '';
 	}
 	return sessionId;
 }
@@ -46,7 +52,6 @@ export function handleAuthError() {
 			const redirect = window.location.pathname + window.location.search;
 			window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
 		} else {
-			// On public pages, just refresh to update the UI (show login button)
 			window.location.reload();
 		}
 	}

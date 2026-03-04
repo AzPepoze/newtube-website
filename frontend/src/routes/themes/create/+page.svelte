@@ -1,5 +1,11 @@
 <script lang="ts">
+	import { onMount } from "svelte";
+	import { requireAuth } from "$lib/auth";
 	import ThemeEditor from "$lib/components/ThemeEditor.svelte";
+
+	onMount(() => {
+		requireAuth();
+	});
 </script>
 
 <div class="page-container">

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import type { Theme } from "$lib/types";
-	import { getSessionId, requireAuth } from "$lib/auth";
+	import { requireAuth, getSessionId } from "$lib/auth";
 	import ProfileThemeList from "$lib/components/ProfileThemeList.svelte";
 	import ProfileHeader from "$lib/components/ProfileHeader.svelte";
 

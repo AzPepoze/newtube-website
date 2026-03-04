@@ -1,5 +1,4 @@
 import { Elysia } from 'elysia';
-import { env } from 'cloudflare:workers';
 import { createDb } from '../db';
 import { updateOrInsertUser } from '../db/users';
 import { createSession, deleteSession } from '../db/sessions';
@@ -25,7 +24,7 @@ export const authRoute = new Elysia({ prefix: '/auth' })
 		if (!code) {
 			console.error('[Auth Callback] Missing code in query params');
 			set.status = 400;
-			return 'Missing code';
+			return { error: 'Missing authorization code' };
 		}
 
 		console.log('[Auth Callback] Received code, exchanging for tokens...');
@@ -84,7 +83,7 @@ export const authRoute = new Elysia({ prefix: '/auth' })
 		} catch (error: any) {
 			console.error('[Auth Callback] Error during authentication:', error);
 			set.status = 500;
-			return error.message;
+			return { error: 'Authentication failed', message: error.message };
 		}
 	})
 	.post('/logout', async ({ cookie, db }) => {
