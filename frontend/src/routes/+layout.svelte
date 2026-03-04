@@ -2,44 +2,51 @@
 	import "../app.scss";
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
-	import { env } from "$env/dynamic/public";
-	import { getUserId, clearUserId } from "$lib/auth";
+	import { getUserId, clearUserId, handleAuthError } from "$lib/auth";
 	import UserIcon from "$lib/icons/UserIcon.svelte";
-	import SparkleIcon from "$lib/icons/SparkleIcon.svelte";
 	import LogoutIcon from "$lib/icons/LogoutIcon.svelte";
 	import SunIcon from "$lib/icons/SunIcon.svelte";
 	import MoonIcon from "$lib/icons/MoonIcon.svelte";
+	import GithubIcon from "$lib/icons/GithubIcon.svelte";
+	import HomeIcon from "$lib/icons/HomeIcon.svelte";
+	import CompassIcon from "$lib/icons/CompassIcon.svelte";
+	import ScaleIcon from "$lib/icons/ScaleIcon.svelte";
+	import ShieldIcon from "$lib/icons/ShieldIcon.svelte";
 	import CustomDropdown from "$lib/components/CustomDropdown.svelte";
+	import Modal from "$lib/components/Modal.svelte";
+	import { updateTheme } from "$lib/theme.svelte";
 
 	let { children } = $props();
 
 	interface User {
 		id: string;
 		name: string;
-		avatar_url: string;
-		created_at: string;
+		avatarUrl: string;
+		createdAt: string;
 	}
 
-	const PUBLIC_API_URL = env.PUBLIC_API_URL || "http://localhost:8787";
+	import { PUBLIC_API_URL } from "$lib/constants";
 
 	let currentUser = $state<User | null>(null);
-	let dropdownOpen = $state(false);
 	let isLightMode = $state(false);
 
 	onMount(async () => {
 		// Initialize theme
 		const savedTheme = localStorage.getItem("theme");
 		isLightMode = savedTheme === "light";
+		updateTheme(isLightMode);
 		updateThemeClass();
 
 		const userId = getUserId();
 		if (!userId) return;
 		try {
-			const response = await fetch(`${PUBLIC_API_URL}/me`, {
+			const response = await fetch(`${PUBLIC_API_URL}/users/me`, {
 				credentials: "include",
 			});
 			if (response.ok) {
 				currentUser = await response.json();
+			} else if (response.status === 404 || response.status === 401) {
+				handleAuthError();
 			}
 		} catch {
 			// unauthenticated
@@ -49,6 +56,7 @@
 	function toggleTheme() {
 		isLightMode = !isLightMode;
 		localStorage.setItem("theme", isLightMode ? "light" : "dark");
+		updateTheme(isLightMode);
 		updateThemeClass();
 	}
 
@@ -65,13 +73,12 @@
 	function handleLogout() {
 		clearUserId();
 		currentUser = null;
-		dropdownOpen = false;
 		window.location.href = "/";
 	}
 </script>
 
 <svelte:head>
-	<title>NewTube Theme Store</title>
+	<title>NewTube Discover</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
 	<link
@@ -83,24 +90,45 @@
 <div class="app-container">
 	<nav class="glass-panel">
 		<div class="nav-left">
-			<a href="/" class="logo-link">
+			<a href="/" class="logo-link" in:fade={{ duration: 200 }}>
 				<img src="/logo.png" alt="NewTube" class="logo-img" />
 			</a>
 			<div class="nav-links">
-				<a href="/store">Store</a>
+				<a href="/" aria-label="Home" title="Home">
+					<HomeIcon size={24} />
+				</a>
+				<a href="/discover" aria-label="Discover" title="Discover">
+					<CompassIcon size={24} />
+				</a>
+				<a href="/terms" aria-label="Terms" title="Terms">
+					<ScaleIcon size={24} />
+				</a>
+				<a href="/privacy" aria-label="Privacy" title="Privacy">
+					<ShieldIcon size={24} />
+				</a>
 			</div>
 		</div>
 
 		<div class="nav-right">
+			<a
+				href="https://github.com/AzPepoze/NewTube"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="github-link"
+				aria-label="GitHub Repository"
+			>
+				<GithubIcon size={24} />
+			</a>
+
 			<button
 				class="theme-toggle"
 				onclick={toggleTheme}
 				aria-label="Toggle theme"
 			>
 				{#if isLightMode}
-					<MoonIcon size={18} />
+					<MoonIcon size={22} />
 				{:else}
-					<SunIcon size={18} />
+					<SunIcon size={22} />
 				{/if}
 			</button>
 
@@ -113,9 +141,9 @@
 								aria-label="User menu"
 								onclick={toggle}
 							>
-								{#if currentUser?.avatar_url}
+								{#if currentUser?.avatarUrl}
 									<img
-										src={currentUser.avatar_url}
+										src={currentUser.avatarUrl}
 										alt={currentUser.name}
 										class="avatar"
 									/>
@@ -138,11 +166,6 @@
 									href: "/profile",
 								},
 								{
-									label: "Your Theme",
-									icon: SparkleIcon,
-									href: "/themes/create",
-								},
-								{
 									label: "Logout",
 									icon: LogoutIcon,
 									class: "logout-item",
@@ -153,7 +176,10 @@
 						/>
 					</div>
 				{:else}
-					<a href="/login" class="login-btn">Login</a>
+					<a
+						href="/login"
+						class="login-btn premium-button glass-panel">Login</a
+					>
 				{/if}
 			</div>
 		</div>
@@ -162,6 +188,8 @@
 	<main>
 		{@render children()}
 	</main>
+
+	<Modal />
 </div>
 
 <style lang="scss">
@@ -176,7 +204,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 1rem 2rem;
+		padding: 0.4rem 1.5rem;
 		margin-bottom: 3rem;
 		border-radius: var(--radius-md);
 		z-index: 1000;
@@ -194,17 +222,30 @@
 		.nav-right {
 			display: flex;
 			align-items: center;
-			gap: 2rem;
+			gap: 2.5rem;
 		}
 
 		.logo-img {
-			height: 32px;
+			height: 60px;
 			width: auto;
 			display: block;
-			filter: brightness(0) invert(1);
+			transition: filter 0.3s ease;
 
 			:global(.light) & {
 				filter: none;
+			}
+		}
+
+		.logo-link:hover .logo-img {
+			animation: logo-rotate 3s linear infinite;
+		}
+
+		@keyframes logo-rotate {
+			from {
+				transform: rotate(0deg);
+			}
+			to {
+				transform: rotate(360deg);
 			}
 		}
 
@@ -213,7 +254,7 @@
 			gap: 1.5rem;
 
 			a {
-				font-size: 0.9rem;
+				font-size: 1.1rem;
 				font-weight: 600;
 				color: var(--text-secondary);
 				transition: color 0.2s;
@@ -226,33 +267,51 @@
 
 		.nav-right {
 			gap: 1.25rem;
-		}
 
-		.theme-toggle {
-			background: transparent;
-			border: none;
-			color: var(--text-primary);
-			cursor: pointer;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 0.5rem;
-			border-radius: 50%;
-			transition: all 0.2s;
-
-			&:hover {
-				background: rgba(var(--text-primary-rgb, 128, 128, 128), 0.05);
+			.github-link {
 				color: var(--text-primary);
-			}
-		}
-	}
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 0.5rem;
+				border-radius: 50%;
+				transition: all 0.2s;
+				opacity: 0.8;
 
-	.auth-section {
-		.login-btn {
-			@include premium-button;
-			@include glassmorphism;
-			padding: 8px 18px;
-			font-size: 0.85rem;
+				&:hover {
+					opacity: 1;
+					background: rgba(var(--text-primary-rgb), 0.05);
+					transform: scale(1.1);
+				}
+			}
+
+			.theme-toggle {
+				background: transparent;
+				border: none;
+				color: var(--text-primary);
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 0.5rem;
+				border-radius: 50%;
+				transition: all 0.2s;
+
+				&:hover {
+					background: rgba(
+						var(--text-primary-rgb, 128, 128, 128),
+						0.05
+					);
+					color: var(--text-primary);
+				}
+			}
+
+			.auth-section {
+				.login-btn {
+					padding: 10px 22px;
+					font-size: 1rem;
+				}
+			}
 		}
 	}
 
@@ -264,9 +323,9 @@
 			border: none;
 			display: flex;
 			align-items: center;
-			gap: 0.75rem;
+			gap: 1rem;
 			cursor: pointer;
-			padding: 4px;
+			padding: 6px;
 			border-radius: var(--radius-lg);
 			transition: background 0.2s;
 
@@ -279,16 +338,16 @@
 			}
 
 			.avatar {
-				width: 32px;
-				height: 32px;
+				width: 40px;
+				height: 40px;
 				border-radius: 50%;
 				object-fit: cover;
 				border: 1px solid var(--border-glass);
 			}
 
 			.avatar-fallback {
-				width: 32px;
-				height: 32px;
+				width: 40px;
+				height: 40px;
 				border-radius: 50%;
 				background: var(--text-primary);
 				display: flex;
@@ -296,32 +355,14 @@
 				justify-content: center;
 				color: var(--bg-dark);
 				font-weight: 700;
-				font-size: 0.9rem;
+				font-size: 1.1rem;
 			}
 
 			.chevron {
 				font-size: 0.7rem;
 				color: var(--text-primary);
 				transition: transform 0.2s;
-
-				&.open {
-					transform: rotate(180deg);
-				}
 			}
-		}
-
-		.dropdown-header-item {
-			pointer-events: none;
-			border-bottom: 1px solid var(--border-glass);
-			margin-bottom: 0.5rem;
-			color: var(--text-primary) !important;
-			opacity: 1 !important;
-		}
-
-		.logout-item {
-			border-top: 1px solid var(--border-glass);
-			margin-top: 0.5rem;
-			padding-top: 1rem !important;
 		}
 	}
 
@@ -342,8 +383,7 @@
 	}
 
 	@media (max-width: 768px) {
-		.nav-links,
-		.nav-search {
+		.nav-links {
 			display: none;
 		}
 	}

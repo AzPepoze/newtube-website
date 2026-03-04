@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS Themes (
     name TEXT NOT NULL,
     description TEXT,
     images JSON, -- Array of image URLs
+    cover_image TEXT,
     settings JSON NOT NULL, -- Theme settings data
     custom_styleshift JSON, -- Custom styleshift items
     is_public BOOLEAN DEFAULT TRUE,
@@ -23,3 +24,12 @@ CREATE TABLE IF NOT EXISTS Themes (
 
 CREATE INDEX IF NOT EXISTS idx_themes_owner ON Themes(owner_id);
 CREATE INDEX IF NOT EXISTS idx_themes_public ON Themes(is_public);
+
+CREATE TABLE IF NOT EXISTS Uploads (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    url TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_uploads_user ON Uploads(user_id);

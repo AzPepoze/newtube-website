@@ -1,22 +1,24 @@
 {
-  "name": "newtube-store",
-  "version": "1.0.0",
-  "private": true,
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
-  "scripts": {
-    "dev:frontend": "bun run --filter frontend dev",
-    "dev:backend": "bun run --filter backend dev",
-    "build:frontend": "bun run --filter frontend build",
-    "build:backend": "bun run --filter backend build",
-    "check:frontend": "bun run --filter frontend check",
-    "check:backend": "bun run --filter backend check",
-    "test:frontend": "bun run --filter frontend test",
-    "test:backend": "bun run --filter backend test",
-    "deploy": "bun run deploy:backend",
-    "deploy:frontend": "bun run --filter frontend deploy",
-    "deploy:backend": "bun run --filter backend deploy"
-  }
+	"name": "newtube-store",
+	"version": "1.0.0",
+	"private": true,
+	"workspaces": [
+		"frontend",
+		"backend"
+	],
+	"scripts": {
+		"dev": "bun run --parallel dev:frontend dev:backend",
+		"dev:frontend": "bun run --filter frontend dev",
+		"dev:backend": "bun run --filter backend dev",
+		"build:frontend": "bun run --filter frontend build",
+		"build:backend": "bun run --filter backend build",
+		"check": "bun run --parallel check:frontend check:backend",
+		"check:frontend": "bun run --filter frontend check",
+		"check:backend": "bun run --filter backend check",
+		"test:frontend": "bun run --filter frontend test",
+		"test:backend": "bun run --filter backend test",
+		"deploy": "bun run deploy:backend",
+		"deploy:frontend": "bun run --filter frontend deploy",
+		"deploy:backend": "bun run --filter backend deploy"
+	}
 }

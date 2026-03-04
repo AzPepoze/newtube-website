@@ -1,13 +1,20 @@
 <script lang="ts">
-    import ThemeEditor from "$lib/components/ThemeEditor.svelte";
+	import { onMount } from "svelte";
+	import { requireAuth } from "$lib/auth";
+	import ThemeEditor from "$lib/components/ThemeEditor.svelte";
+
+	onMount(() => {
+		requireAuth();
+	});
 </script>
 
-<div class="page">
-    <ThemeEditor />
+<div class="page-container">
+	<ThemeEditor />
 </div>
 
-<style>
-    .page {
-        padding-top: 2rem;
-    }
+<style lang="scss">
+	.page-container {
+		padding-top: 2rem;
+		min-height: 80vh;
+	}
 </style>

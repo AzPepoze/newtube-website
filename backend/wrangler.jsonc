@@ -6,7 +6,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "newtube-backend",
 	"main": "src/index.ts",
-	"compatibility_date": "2025-04-30",
+	"compatibility_date": "2025-06-01",
 	"observability": {
 		"enabled": true
 	},
@@ -17,6 +17,34 @@
 			"database_id": "c8cd869e-d76c-4709-b396-25436821038e"
 		}
 	],
+	"r2_buckets": [
+		{
+			"binding": "IMAGES",
+			"bucket_name": "newtube-images"
+		}
+	],
+	"unsafe": {
+		"bindings": [
+			{
+				"name": "THEME_RATE_LIMITER",
+				"type": "ratelimit",
+				"namespace_id": "1001",
+				"simple": {
+					"limit": 1,
+					"period": 60
+				}
+			},
+			{
+				"name": "UPLOAD_RATE_LIMITER",
+				"type": "ratelimit",
+				"namespace_id": "1002",
+				"simple": {
+					"limit": 3,
+					"period": 60
+				}
+			}
+		]
+	},
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

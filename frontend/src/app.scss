@@ -1,103 +1,59 @@
-// Premium Design System for NewTube Store
 :root {
-    --primary-glow: #ffffff;
-    --secondary-glow: #a0a0a0;
-    --accent-glow: #ffffff;
-    --radius-lg: 20px;
-    --radius-md: 12px;
-    --radius-sm: 6px;
-    --glass-blur: blur(16px);
-    --shadow-glow: 0 0 20px rgba(255, 255, 255, 0.1);
+	--primary-glow: #ffffff;
+	--secondary-glow: #a0a0a0;
+	--accent-glow: #ffffff;
+	--radius-lg: 20px;
+	--radius-md: 12px;
+	--radius-sm: 6px;
+	--shadow-glow: 0 0 20px rgba(255, 255, 255, 0.1);
 
-    // Dark Mode (Default)
-    --bg-dark: #000000;
-    --bg-glass: rgba(10, 10, 10, 0.6);
-    --border-glass: rgba(255, 255, 255, 0.08);
-    --text-primary: #ffffff;
-    --text-primary-rgb: 255, 255, 255;
-    --text-secondary: rgba(255, 255, 255, 0.6);
-    --text-muted: rgba(255, 255, 255, 0.3);
+	// Dark Mode (Default)
+	--bg-dark: #101010;
+	--bg-glass: rgb(30, 30, 30);
+	--border-glass: rgba(255, 255, 255, 0.1);
+	--text-primary: #ffffff;
+	--text-primary-rgb: 255, 255, 255;
+	--text-secondary: rgba(255, 255, 255, 0.6);
+	--text-muted: rgba(255, 255, 255, 0.3);
 
-    --grid-color: rgba(255, 255, 255, 0.03);
-    --grid-size: 40px;
+	--grid-color: rgba(255, 255, 255, 0.03);
+	--grid-size: 40px;
 }
 
 :root.light {
-    --primary-glow: #000000;
-    --secondary-glow: #666666;
-    --accent-glow: #000000;
-    --bg-dark: #ffffff;
-    --bg-glass: rgba(255, 255, 255, 0.7);
-    --border-glass: rgba(0, 0, 0, 0.08);
-    --text-primary: #000000;
-    --text-primary-rgb: 0, 0, 0;
-    --text-secondary: rgba(0, 0, 0, 0.6);
-    --text-muted: rgba(0, 0, 0, 0.3);
-    --shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    --grid-color: rgba(0, 0, 0, 0.03);
-}
-
-// SCSS Helper Variables (Used in mixins)
-$primary-glow: var(--primary-glow);
-$accent-glow: var(--accent-glow);
-$bg-dark: var(--bg-dark);
-$bg-glass: var(--bg-glass);
-$border-glass: var(--border-glass);
-$text-primary: var(--text-primary);
-$text-secondary: var(--text-secondary);
-$text-muted: var(--text-muted);
-$radius-lg: var(--radius-lg);
-$radius-md: var(--radius-md);
-$radius-sm: var(--radius-sm);
-$shadow-glow: var(--shadow-glow);
-$glass-blur: var(--glass-blur);
-
-@mixin glassmorphism {
-    background: $bg-glass;
-    backdrop-filter: $glass-blur;
-    -webkit-backdrop-filter: $glass-blur;
-    border: 1px solid $border-glass;
-}
-
-@mixin glow-text($color: #ffffff) {
-    color: $color;
-    text-shadow: 0 0 15px rgba($color, 0.2);
-    background: linear-gradient(135deg, $primary-glow, $secondary-glow);
-}
-
-@mixin premium-button {
-    padding: 10px 20px;
-    border-radius: $radius-md;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    border: 1px solid $border-glass;
-    font-family: inherit;
-
-    &:hover {
-        background: $text-primary;
-        color: $bg-dark;
-        transform: translateY(-1px);
-    }
-
-    &:active {
-        transform: translateY(0);
-    }
+	--primary-glow: #000000;
+	--secondary-glow: #666666;
+	--accent-glow: #000000;
+	--bg-dark: #ffffff;
+	--bg-glass: rgba(255, 255, 255, 0.7);
+	--border-glass: rgba(0, 0, 0, 0.08);
+	--text-primary: #000000;
+	--text-primary-rgb: 0, 0, 0;
+	--text-secondary: rgba(0, 0, 0, 0.6);
+	--text-muted: rgba(0, 0, 0, 0.3);
+	--shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.05);
+	--grid-color: rgba(0, 0, 0, 0.03);
 }
 
 body {
-    margin: 0;
-    padding: 0;
-    background-color: $bg-dark;
-    background-image:
-        linear-gradient(var(--grid-color) 1px, transparent 1px),
-        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-    background-size: var(--grid-size) var(--grid-size);
-    color: $text-primary;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-    transition: background 0.3s, color 0.3s;
+	margin: 0;
+	padding: 0;
+	background-color: var(--bg-dark);
+	background-image:
+		linear-gradient(var(--grid-color) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+	background-size: var(--grid-size) var(--grid-size);
+	color: var(--text-primary);
+	font-family:
+		"Inter",
+		system-ui,
+		-apple-system,
+		sans-serif;
+	min-height: 100vh;
+	overflow-x: hidden;
+	transition:
+		background 0.3s,
+		color 0.3s;
 }
 
 h1,
@@ -105,24 +61,100 @@ h2,
 h3,
 h4,
 .premium-font {
-    font-family: 'Outfit', sans-serif;
+	font-family: "Outfit", sans-serif;
 }
 
 * {
-    box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 a {
-    color: $primary-glow;
-    text-decoration: none;
-    transition: opacity 0.2s;
+	color: var(--primary-glow);
+	text-decoration: none;
+	transition: opacity 0.2s;
 
-    &:hover {
-        opacity: 0.8;
-    }
+	&:hover {
+		opacity: 0.8;
+	}
 }
 
 .glass-panel {
-    @include glassmorphism;
-    border-radius: $radius-lg;
+	background: var(--bg-glass);
+	border: 1px solid var(--border-glass);
+	border-radius: var(--radius-lg);
+}
+
+.premium-button {
+	padding: 10px 20px;
+	border-radius: var(--radius-md);
+	font-weight: 600;
+	transition: all 0.2s ease;
+	cursor: pointer;
+	border: 1px solid var(--border-glass);
+	font-family: inherit;
+
+	&:hover {
+		background: rgba(var(--text-primary-rgb), 0.2);
+		color: var(--text-primary);
+		transform: translateY(-1px);
+	}
+
+	&:active {
+		transform: translateY(0);
+	}
+}
+
+// Markdown Styles
+.markdown-content {
+	h1,
+	h2,
+	h3 {
+		margin-top: 1.5rem;
+		margin-bottom: 1rem;
+		color: var(--text-primary);
+	}
+
+	p {
+		margin-bottom: 1rem;
+		word-break: break-all;
+	}
+
+	ul,
+	ol {
+		margin-bottom: 1rem;
+		padding-left: 1.5rem;
+
+		li {
+			margin-bottom: 0.5rem;
+		}
+	}
+
+	strong {
+		color: var(--text-primary);
+		font-weight: 700;
+	}
+
+	em {
+		color: var(--text-secondary);
+		font-style: italic;
+	}
+
+	code {
+		background: rgba(255, 255, 255, 0.05);
+		padding: 0.2rem 0.4rem;
+		border-radius: 4px;
+		font-family: monospace;
+		font-size: 0.9em;
+		color: var(--primary-glow);
+	}
+
+	a {
+		color: var(--primary-glow);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+
+		&:hover {
+			opacity: 0.8;
+		}
+	}
 }

@@ -1,755 +1,492 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { fade, fly } from "svelte/transition";
-    import { env } from "$env/dynamic/public";
-    import { getUserId } from "$lib/auth";
-    import type { Theme } from "$lib/types";
-    import EditIcon from "$lib/icons/EditIcon.svelte";
-    import EyeIcon from "$lib/icons/EyeIcon.svelte";
-    import PlusIcon from "$lib/icons/PlusIcon.svelte";
-    import TrashIcon from "$lib/icons/TrashIcon.svelte";
-    import UploadIcon from "$lib/icons/UploadIcon.svelte";
-    import LinkIcon from "$lib/icons/LinkIcon.svelte";
+	import { fade, fly } from "svelte/transition";
+	import type { Theme } from "$lib/types";
+	import EditIcon from "$lib/icons/EditIcon.svelte";
+	import EyeIcon from "$lib/icons/EyeIcon.svelte";
+	import { getUserId } from "$lib/auth";
+	import { PUBLIC_API_URL } from "$lib/constants";
+	import { ui } from "$lib/ui.svelte";
+	import { compressImage } from "$lib/imageCompression";
+	import ThemeEditorBasicInfo from "$lib/components/ThemeEditorBasicInfo.svelte";
+	import ThemeEditorSettings from "$lib/components/ThemeEditorSettings.svelte";
+	import ThemeEditorPreview from "$lib/components/ThemeEditorPreview.svelte";
+	import { defaultDescription } from "$lib/theme.svelte";
+	let props: { initialData?: Partial<Theme>; isEdit?: boolean } = $props();
+	let isEdit = $derived(props.isEdit ?? false);
+	let initialData = $derived(props.initialData);
 
-    let {
-        initialData,
-        isEdit = false,
-    }: { initialData?: Partial<Theme>; isEdit?: boolean } = $props();
+	let userId = getUserId();
+	let name = $state("");
+	let description = $state(defaultDescription);
+	let images = $state<string[]>([]);
+	let coverImage = $state("");
+	let coverImagePending = $state<File | null>(null);
+	let pendingImages = $state<File[]>([]);
+	let settingsCode = $state("");
 
-    const PUBLIC_API_URL = env.PUBLIC_API_URL || "http://localhost:8787";
+	let submitting = $state(false);
+	let success = $state(false);
+	let errorMessage = $state("");
+	let infoMessage = $state("");
+	let activeTab = $state<"info" | "settings" | "preview">("info");
+	let jsonError = $state("");
 
-    let userId = getUserId();
-    let name = $state(initialData?.name || "");
-    let description = $state(initialData?.description || "");
-    let images = $state<string[]>(initialData?.images || []);
-    let newImageUrl = $state("");
-    let settingsCode = $state(
-        JSON.stringify(
-            initialData?.settings || {
-                MainThemeColor: "#ffffff",
-                EnableBackground: true,
-                EnableAnimationsTransitions: true,
-            },
-            null,
-            2,
-        ),
-    );
+	const DRAFT_KEY = "newtube_theme_draft";
+	let hasRestored = false;
 
-    let submitting = $state(false);
-    let success = $state(false);
-    let errorMessage = $state("");
-    let activeTab = $state<"info" | "preview">("info");
-    let jsonError = $state("");
-    let isDragging = $state(false);
+	// Initialize form with provided data or draft
+	$effect(() => {
+		if (hasRestored) return;
+		if (initialData) {
+			name = initialData.name || "";
+			description = initialData.description || "";
+			images = initialData.images || [];
+			coverImage = initialData.coverImage || "";
+			settingsCode = JSON.stringify(
+				initialData.settings || {
+					MainThemeColor: "#ffffff",
+					EnableBackground: true,
+					EnableAnimationsTransitions: true,
+				},
+				null,
+				2,
+			);
+		} else {
+			// Try to load draft from localStorage
+			const savedDraft = localStorage.getItem(DRAFT_KEY);
+			if (savedDraft) {
+				try {
+					const draft = JSON.parse(savedDraft);
+					name = draft.name || "";
+					description = draft.description || "";
+					images = draft.images || [];
+					coverImage = draft.coverImage || "";
+					settingsCode = draft.settingsCode || "";
+					if (name || description || settingsCode) {
+						success = false;
+						infoMessage = "Draft restored from last session.";
+						setTimeout(() => {
+							if (
+								infoMessage ===
+								"Draft restored from last session."
+							)
+								infoMessage = "";
+						}, 15000);
+					}
+				} catch (e) {
+					ui.showModal(
+						"Draft Error",
+						"Failed to load your draft. It may be corrupted.",
+						"warning",
+					);
+				}
+			}
+		}
+		hasRestored = true;
+	});
 
-    function handleFile(file: File) {
-        if (!file.type.startsWith("image/")) return;
+	// Auto-save draft
+	$effect(() => {
+		if (!isEdit) {
+			const draft = {
+				name,
+				description,
+				images,
+				coverImage,
+				settingsCode,
+			};
+			localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+		}
+	});
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const result = e.target?.result as string;
-            if (result && !images.includes(result)) {
-                images = [...images, result];
-            }
-        };
-        reader.readAsDataURL(file);
-    }
+	function clearDraft() {
+		localStorage.removeItem(DRAFT_KEY);
+		if (!isEdit) {
+			name = "";
+			description = defaultDescription;
+			images = [];
+			coverImage = "";
+			settingsCode = JSON.stringify(
+				{
+					MainThemeColor: "#ffffff",
+					EnableBackground: true,
+					EnableAnimationsTransitions: true,
+				},
+				null,
+				2,
+			);
+			infoMessage = "Draft cleared.";
+			setTimeout(() => {
+				if (infoMessage === "Draft cleared.") infoMessage = "";
+			}, 3000);
+		}
+	}
 
-    function handleDrop(e: DragEvent) {
-        e.preventDefault();
-        isDragging = false;
+	async function handleSubmit(e: Event) {
+		e.preventDefault();
+		if (!userId) {
+			errorMessage = "You must be logged in to save a theme.";
+			return;
+		}
 
-        if (e.dataTransfer?.files) {
-            Array.from(e.dataTransfer.files).forEach(handleFile);
-        }
-    }
+		if (jsonError) {
+			errorMessage = "Please fix the JSON settings before saving.";
+			return;
+		}
 
-    function handleFileSelect(e: Event) {
-        const input = e.target as HTMLInputElement;
-        if (input.files) {
-            Array.from(input.files).forEach(handleFile);
-        }
-    }
+		submitting = true;
+		errorMessage = "";
 
-    function addImage() {
-        const url = newImageUrl.trim();
-        if (!url || images.includes(url)) return;
-        images = [...images, url];
-        newImageUrl = "";
-    }
+		try {
+			// Compress pending images
+			const pendingImagesData = [];
+			for (const file of pendingImages) {
+				const compressed = await compressImage(file);
+				pendingImagesData.push(compressed);
+			}
 
-    function removeImage(index: number) {
-        images = images.filter((_, i) => i !== index);
-    }
+			// Compress pending cover image
+			let pendingCoverImageData = null;
+			if (coverImagePending) {
+				pendingCoverImageData = await compressImage(coverImagePending);
+			}
 
-    $effect(() => {
-        try {
-            JSON.parse(settingsCode);
-            jsonError = "";
-        } catch (e: any) {
-            jsonError = e.message;
-        }
-    });
+			const payload: any = {
+				name,
+				description,
+				imgs: images,
+				coverImage,
+				pendingImages: pendingImagesData,
+				pendingCoverImage: pendingCoverImageData,
+				settings: JSON.parse(settingsCode),
+				customStyleshift: props.initialData?.customStyleshift || [],
+			};
 
-    async function handleSubmit(e: Event) {
-        e.preventDefault();
-        if (!userId) {
-            errorMessage = "You must be logged in to save a theme.";
-            return;
-        }
+			const method = isEdit ? "PUT" : "POST";
+			const url = isEdit
+				? `${PUBLIC_API_URL}/themes/${props.initialData?.id}`
+				: `${PUBLIC_API_URL}/themes`;
 
-        if (jsonError) {
-            errorMessage = "Please fix the JSON settings before saving.";
-            return;
-        }
+			const response = await fetch(url, {
+				method,
+				headers: { "Content-Type": "application/json" },
+				credentials: "include",
+				body: JSON.stringify(payload),
+			});
 
-        submitting = true;
-        errorMessage = "";
+			if (!response.ok)
+				throw new Error(
+					`Failed to ${isEdit ? "update" : "create"} theme`,
+				);
 
-        const payload = {
-            owner_id: userId,
-            name,
-            description,
-            imgs: images, // Backend expects 'imgs' for POST/PUT
-            settings: JSON.parse(settingsCode),
-            customStyleshiftItems: initialData?.custom_styleshift || [],
-        };
+			const data = await response
+				.json()
+				.catch(() => ({ id: props.initialData?.id }));
 
-        try {
-            const method = isEdit ? "PUT" : "POST";
-            const url = isEdit
-                ? `${PUBLIC_API_URL}/themes/${initialData?.id}`
-                : `${PUBLIC_API_URL}/themes`;
+			// Clear draft on success
+			if (!isEdit) {
+				localStorage.removeItem(DRAFT_KEY);
+			}
 
-            const response = await fetch(url, {
-                method,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok)
-                throw new Error(
-                    `Failed to ${isEdit ? "update" : "create"} theme`,
-                );
-
-            const data = await response
-                .json()
-                .catch(() => ({ id: initialData?.id }));
-            success = true;
-            setTimeout(() => {
-                window.location.href = `/themes/${data.id || initialData?.id}`;
-            }, 1000);
-        } catch (error) {
-            console.error(error);
-            errorMessage = `Failed to ${isEdit ? "update" : "create"} theme. Please try again.`;
-        } finally {
-            submitting = false;
-        }
-    }
+			success = true;
+			setTimeout(() => {
+				window.location.href = `/themes/${data.id || props.initialData?.id}`;
+			}, 1000);
+		} catch (error) {
+			ui.showModal(
+				"Operation Failed",
+				`Failed to ${isEdit ? "update" : "create"} theme. Please try again.`,
+				"error",
+			);
+			errorMessage = `Failed to ${isEdit ? "update" : "create"} theme. Please try again.`;
+		} finally {
+			submitting = false;
+		}
+	}
 </script>
 
 <div class="editor-container">
-    <div class="header">
-        <h1 class="premium-font">
-            {isEdit ? "Edit" : "Create"} <span class="glow">Theme</span>
-        </h1>
-        <div class="tabs">
-            <button
-                class:active={activeTab === "info"}
-                onclick={() => (activeTab = "info")}
-            >
-                <EditIcon size={16} /> Editor
-            </button>
-            <button
-                class:active={activeTab === "preview"}
-                onclick={() => (activeTab = "preview")}
-            >
-                <EyeIcon size={16} /> Preview
-            </button>
-        </div>
-    </div>
+	<div class="header">
+		<h1 class="premium-font">
+			{isEdit ? "Edit" : "Create"} <span class="glow">Theme</span>
+		</h1>
+		<div class="tabs">
+			<button
+				class:active={activeTab === "info"}
+				onclick={() => (activeTab = "info")}
+				type="button"
+			>
+				<EditIcon size={16} /> Basic Info
+			</button>
+			<button
+				class:active={activeTab === "settings"}
+				onclick={() => (activeTab = "settings")}
+				type="button"
+			>
+				<EditIcon size={16} /> Theme Settings
+			</button>
+			<button
+				class:active={activeTab === "preview"}
+				onclick={() => (activeTab = "preview")}
+				type="button"
+			>
+				<EyeIcon size={16} /> Preview
+			</button>
+		</div>
+	</div>
 
-    {#if success}
-        <div class="status-banner success" in:fade>
-            {isEdit ? "Theme updated!" : "Theme published!"} Redirecting...
-        </div>
-    {/if}
+	{#if success}
+		<div class="status-banner success" in:fade>
+			{isEdit ? "Theme updated!" : "Theme published!"} Redirecting...
+		</div>
+	{/if}
 
-    {#if errorMessage}
-        <div class="status-banner error" in:fade>
-            ⚠️ {errorMessage}
-        </div>
-    {/if}
+	{#if infoMessage}
+		<div class="status-banner info" in:fade>
+			<div class="message-content">
+				<span>✨ {infoMessage}</span>
+				{#if infoMessage === "Draft restored from last session."}
+					<button
+						type="button"
+						class="action-btn"
+						onclick={clearDraft}
+					>
+						Discard Draft
+					</button>
+				{/if}
+			</div>
+		</div>
+	{/if}
 
-    <form onsubmit={handleSubmit} class="editor-grid">
-        {#if activeTab === "info"}
-            <div class="editor-main" in:fly={{ y: 20, duration: 400 }}>
-                <div class="card glass-panel">
-                    <h3>Basic Information</h3>
-                    <div class="field">
-                        <label for="name">Name</label>
-                        <input
-                            id="name"
-                            type="text"
-                            bind:value={name}
-                            placeholder="Cyberpunk Neon"
-                            required
-                        />
-                    </div>
-                    <div class="field">
-                        <label for="description">Description</label>
-                        <textarea
-                            id="description"
-                            bind:value={description}
-                            rows="3"
-                            placeholder="A futuristic theme with glowing colors."
-                            required
-                        ></textarea>
-                    </div>
-                </div>
+	{#if errorMessage}
+		<div class="status-banner error" in:fade>
+			⚠️ {errorMessage}
+		</div>
+	{/if}
 
-                <div class="card glass-panel">
-                    <div class="card-header">
-                        <h3>Screenshots</h3>
-                        <p class="hint">
-                            Upload up to 5 screenshots of your theme
-                        </p>
-                    </div>
+	<form onsubmit={handleSubmit} class="editor-grid">
+		<div class="sections-wrapper">
+			{#if activeTab === "info"}
+				<div
+					class="editor-main"
+					in:fly={{ y: 20, duration: 400, delay: 150 }}
+					out:fly={{ y: -20, duration: 250 }}
+				>
+					<ThemeEditorBasicInfo
+						bind:name
+						bind:description
+						bind:images
+						bind:coverImage
+						bind:coverImagePending
+						bind:pendingImages
+						bind:errorMessage
+					/>
+				</div>
+			{:else if activeTab === "settings"}
+				<div
+					class="editor-main"
+					in:fly={{ y: 20, duration: 400, delay: 150 }}
+					out:fly={{ y: -20, duration: 250 }}
+				>
+					<ThemeEditorSettings bind:settingsCode bind:jsonError />
+				</div>
+			{:else}
+				<div
+					class="preview-main"
+					in:fly={{ y: 20, duration: 400, delay: 150 }}
+					out:fly={{ y: -20, duration: 250 }}
+				>
+					<ThemeEditorPreview
+						{name}
+						{description}
+						{images}
+						{coverImage}
+						{coverImagePending}
+						{settingsCode}
+					/>
+				</div>
+			{/if}
+		</div>
 
-                    <div
-                        class="drop-zone"
-                        class:dragging={isDragging}
-                        role="button"
-                        tabindex="0"
-                        ondragover={(e) => {
-                            e.preventDefault();
-                            isDragging = true;
-                        }}
-                        ondragleave={() => (isDragging = false)}
-                        ondrop={handleDrop}
-                    >
-                        <UploadIcon size={32} />
-                        <div class="drop-text">
-                            <p>Drag & Drop images here or</p>
-                            <label class="browse-btn">
-                                Browse Files
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    onchange={handleFileSelect}
-                                    hidden
-                                />
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="url-input-wrapper">
-                        <div class="icon-input">
-                            <LinkIcon size={16} />
-                            <input
-                                type="url"
-                                bind:value={newImageUrl}
-                                placeholder="Or paste an image URL..."
-                                onkeydown={(e) =>
-                                    e.key === "Enter" &&
-                                    (e.preventDefault(), addImage())}
-                            />
-                        </div>
-                        <button
-                            type="button"
-                            class="add-url-btn"
-                            onclick={addImage}
-                        >
-                            Add URL
-                        </button>
-                    </div>
-
-                    <div class="images-grid">
-                        {#each images as url, i}
-                            <div class="image-item glass-panel" in:fade>
-                                <img src={url} alt="Screenshot {i + 1}" />
-                                <button
-                                    type="button"
-                                    class="remove-btn"
-                                    onclick={() => removeImage(i)}
-                                    title="Remove Screenshot"
-                                >
-                                    <TrashIcon size={14} />
-                                </button>
-                            </div>
-                        {/each}
-                    </div>
-                </div>
-
-                <div class="card glass-panel">
-                    <div class="card-header">
-                        <h3>Theme Settings (JSON)</h3>
-                        {#if jsonError}
-                            <span class="json-error">{jsonError}</span>
-                        {:else}
-                            <span class="json-valid">✓ Valid JSON</span>
-                        {/if}
-                    </div>
-                    <textarea
-                        class="json-editor"
-                        bind:value={settingsCode}
-                        rows="10"
-                        spellcheck="false"
-                    ></textarea>
-                </div>
-
-                <button
-                    type="submit"
-                    class="submit-btn"
-                    disabled={submitting || !!jsonError}
-                >
-                    {submitting
-                        ? "Saving..."
-                        : isEdit
-                          ? "Update Theme"
-                          : "Publish Theme"}
-                </button>
-            </div>
-        {:else}
-            <div class="preview-main" in:fly={{ y: 20, duration: 400 }}>
-                <div class="preview-card glass-panel">
-                    <h3>Card Preview</h3>
-                    <div class="mock-card glass-panel">
-                        <div class="mock-image">
-                            {#if images[0]}
-                                <img src={images[0]} alt="Preview" />
-                            {:else}
-                                <div class="placeholder">
-                                    {name.charAt(0) || "T"}
-                                </div>
-                            {/if}
-                        </div>
-                        <div class="mock-content">
-                            <h4>{name || "Theme Name"}</h4>
-                            <p>
-                                {description ||
-                                    "Description will appear here..."}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="preview-card glass-panel">
-                    <h3>Raw Data</h3>
-                    <pre><code
-                            >{JSON.stringify(
-                                {
-                                    name,
-                                    description,
-                                    images,
-                                    settings: JSON.parse(settingsCode || "{}"),
-                                },
-                                null,
-                                2,
-                            )}</code
-                        ></pre>
-                </div>
-            </div>
-        {/if}
-    </form>
+		<div class="actions">
+			{#if !isEdit && (name || description !== defaultDescription || images.length > 0 || coverImage)}
+				<button
+					type="button"
+					class="clear-btn"
+					onclick={clearDraft}
+					disabled={submitting}
+				>
+					Clear Draft
+				</button>
+			{/if}
+			<button
+				type="submit"
+				class="submit-btn premium-button"
+				disabled={submitting || !!jsonError}
+			>
+				{submitting
+					? "Saving..."
+					: isEdit
+						? "Update Theme"
+						: "Publish Theme"}
+			</button>
+		</div>
+	</form>
 </div>
 
 <style lang="scss">
-    .editor-container {
-        max-width: 1000px;
-        margin: 0 auto;
-        padding-bottom: 5rem;
-    }
+	.editor-container {
+		margin: 0 auto;
+		padding-bottom: 5rem;
+	}
 
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 2rem;
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		margin-bottom: 2rem;
 
-        h1 {
-            margin: 0;
-            font-size: 2.5rem;
-            .glow {
-                @include glow-text;
-            }
-        }
-    }
+		h1 {
+			margin: 0;
+			font-size: 3rem;
+		}
+	}
 
-    .tabs {
-        display: flex;
-        gap: 0.5rem;
-        background: rgba(255, 255, 255, 0.03);
-        padding: 0.3rem;
-        border-radius: $radius-md;
-        border: 1px solid $border-glass;
+	.tabs {
+		display: flex;
+		gap: 0.5rem;
+		background: rgba(var(--text-primary-rgb), 0.05);
+		padding: 0.3rem;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-glass);
 
-        button {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border: none;
-            background: transparent;
-            color: $text-muted;
-            font-family: inherit;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: $radius-sm;
-            transition: all 0.2s;
+		button {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 0.5rem 1rem;
+			border: none;
+			background: transparent;
+			color: var(--text-muted);
+			font-family: inherit;
+			font-weight: 600;
+			cursor: pointer;
+			border-radius: var(--radius-sm);
+			transition: all 0.2s;
 
-            &.active {
-                background: var(--text-primary);
-                color: var(--bg-dark);
-            }
-        }
-    }
+			&.active {
+				background: var(--text-primary);
+				color: var(--bg-dark);
+			}
+		}
+	}
 
-    .status-banner {
-        padding: 1rem;
-        border-radius: $radius-md;
-        margin-bottom: 1.5rem;
-        font-weight: 600;
+	.status-banner {
+		padding: 1rem;
+		border-radius: var(--radius-md);
+		margin-bottom: 1.5rem;
+		font-weight: 600;
 
-        &.success {
-            background: rgba(0, 255, 150, 0.1);
-            color: #00ff96;
-            border: 1px solid rgba(0, 255, 150, 0.2);
-        }
-        &.error {
-            background: rgba(255, 50, 50, 0.1);
-            color: #ff3232;
-            border: 1px solid rgba(255, 50, 50, 0.2);
-        }
-    }
+		&.success {
+			background: rgba(0, 255, 150, 0.1);
+			color: #00ff96;
+			border: 1px solid rgba(0, 255, 150, 0.2);
+		}
+		&.error {
+			background: rgba(255, 50, 50, 0.1);
+			color: #ff3232;
+			border: 1px solid rgba(255, 50, 50, 0.2);
+		}
+		&.info {
+			background: rgba(var(--text-primary-rgb), 0.05);
+			color: var(--text-primary);
+			border: 1px solid var(--border-glass);
+			backdrop-filter: blur(10px);
+		}
 
-    .editor-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-    }
+		.message-content {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			width: 100%;
 
-    .card {
-        padding: 2rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
+			.action-btn {
+				background: var(--text-primary);
+				color: var(--bg-dark);
+				border: none;
+				padding: 0.4rem 0.8rem;
+				border-radius: var(--radius-sm);
+				font-size: 0.85rem;
+				font-weight: 700;
+				cursor: pointer;
+				transition: all 0.2s;
 
-        h3 {
-            margin: 0;
-            font-size: 1.1rem;
-            color: $text-secondary;
-        }
+				&:hover {
+					transform: translateY(-2px);
+					filter: brightness(1.1);
+				}
+			}
+		}
+	}
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+	.editor-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
 
-            .json-error {
-                font-size: 0.8rem;
-                color: #ff3232;
-            }
-            .json-valid {
-                font-size: 0.8rem;
-                color: #ffffff;
-                opacity: 0.6;
-            }
-        }
-    }
+	.sections-wrapper {
+		display: grid;
+		grid-template-areas: "content";
+		min-width: 0;
+		width: 100%;
+		overflow: hidden;
 
-    .field {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
+		& > div {
+			grid-area: content;
+			min-width: 0;
+			width: 100%;
+		}
+	}
 
-        label {
-            font-size: 0.85rem;
-            color: $text-muted;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 700;
-        }
+	.editor-main,
+	.preview-main {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
 
-        input,
-        textarea {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-glass);
-            padding: 0.8rem 1rem;
-            border-radius: var(--radius-sm);
-            color: var(--text-primary);
-            font-family: inherit;
-            font-size: 1rem;
-            transition: all 0.2s;
+	.actions {
+		display: flex;
+		gap: 1rem;
+		margin-top: 2rem;
 
-            &:focus {
-                outline: none;
-                border-color: rgba(255, 255, 255, 0.3);
-                background: rgba(255, 255, 255, 0.05);
-            }
-        }
-    }
+		.submit-btn {
+			flex: 1;
+			padding: 1.5rem 2rem;
+			font-size: 1.1rem;
+			margin: 0;
+		}
 
-    .image-input {
-        display: flex;
-        gap: 0.5rem;
+		.clear-btn {
+			padding: 0 2rem;
+			background: transparent;
+			border: 1px solid var(--border-glass);
+			color: var(--text-muted);
+			border-radius: var(--radius-md);
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.2s;
 
-        input {
-            flex: 1;
-            border-radius: $radius-sm;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid $border-glass;
-            padding: 0.8rem 1rem;
-            color: $text-primary;
-            font-family: inherit;
-        }
+			&:hover {
+				background: rgba(var(--text-primary-rgb), 0.05);
+				color: var(--text-primary);
+			}
 
-        .add-btn {
-            @include premium-button;
-            padding: 0 1rem;
-        }
-    }
-
-    .drop-zone {
-        border: 2px dashed var(--border-glass);
-        border-radius: var(--radius-md);
-        padding: 3rem 2rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1.5rem;
-        transition: all 0.2s ease;
-        background: rgba(var(--text-primary-rgb), 0.02);
-        cursor: pointer;
-        text-align: center;
-        margin-bottom: 1.5rem;
-
-        &:hover,
-        &.dragging {
-            border-color: var(--text-primary);
-            background: rgba(var(--text-primary-rgb), 0.05);
-            color: var(--text-primary);
-        }
-
-        .drop-text {
-            p {
-                margin: 0 0 0.5rem;
-                font-size: 1rem;
-                color: var(--text-secondary);
-            }
-
-            .browse-btn {
-                color: var(--text-primary);
-                font-weight: 700;
-                text-decoration: underline;
-                cursor: pointer;
-                font-size: 1.1rem;
-
-                &:hover {
-                    opacity: 0.8;
-                }
-            }
-        }
-    }
-
-    .url-input-wrapper {
-        display: flex;
-        gap: 0.75rem;
-        margin-bottom: 2.5rem;
-
-        .icon-input {
-            flex: 1;
-            position: relative;
-            display: flex;
-            align-items: center;
-
-            svg {
-                position: absolute;
-                left: 1rem;
-                opacity: 0.5;
-            }
-
-            input {
-                width: 100%;
-                background: rgba(255, 255, 255, 0.02);
-                border: 1px solid var(--border-glass);
-                padding: 0.8rem 1rem 0.8rem 2.8rem;
-                border-radius: var(--radius-sm);
-                color: var(--text-primary);
-                font-family: inherit;
-                font-size: 1rem;
-                transition: all 0.2s;
-
-                &:focus {
-                    outline: none;
-                    border-color: rgba(255, 255, 255, 0.3);
-                    background: rgba(255, 255, 255, 0.05);
-                }
-            }
-        }
-
-        .add-url-btn {
-            @include premium-button;
-            white-space: nowrap;
-            padding: 0 1.5rem;
-            background: transparent;
-            color: var(--text-primary);
-            border-color: var(--border-glass);
-
-            &:hover {
-                background: var(--text-primary);
-                color: var(--bg-dark);
-            }
-        }
-    }
-
-    .images-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1.5rem;
-
-        .image-item {
-            position: relative;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: $radius-sm;
-            overflow: hidden;
-            aspect-ratio: 16/9;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border-glass);
-
-            img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-
-            .remove-btn {
-                position: absolute;
-                top: 0.75rem;
-                right: 0.75rem;
-                background: rgba(255, 50, 50, 0.9);
-                border: none;
-                color: white;
-                width: 28px;
-                height: 28px;
-                border-radius: 50%;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                opacity: 0;
-                transform: translateY(-5px);
-                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                box-shadow: 0 4px 10px rgba(255, 50, 50, 0.3);
-            }
-
-            &:hover .remove-btn {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    }
-
-    .json-editor {
-        font-family: "Fira Code", "Courier New", monospace;
-        background: #050505;
-        border: 1px solid var(--border-glass);
-        border-radius: var(--radius-sm);
-        color: #ffffff;
-        padding: 1rem;
-        font-size: 0.9rem;
-        line-height: 1.5;
-        resize: vertical;
-
-        &:focus {
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-    }
-
-    .submit-btn {
-        @include premium-button;
-        width: 100%;
-        font-size: 1.1rem;
-        padding: 1.2rem;
-        margin-top: 2rem;
-        background: var(--text-primary);
-        color: var(--bg-dark);
-
-        &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-    }
-
-    .preview-main {
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-    }
-
-    .preview-card {
-        padding: 2rem;
-        h3 {
-            margin: 0 0 1.5rem;
-            font-size: 0.9rem;
-            color: $text-muted;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        pre {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 1rem;
-            border-radius: $radius-sm;
-            overflow-x: auto;
-            code {
-                font-family: monospace;
-                font-size: 0.85rem;
-                color: $text-secondary;
-            }
-        }
-    }
-
-    .mock-card {
-        max-width: 320px;
-        overflow: hidden;
-
-        .mock-image {
-            aspect-ratio: 16/9;
-            background: rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-            .placeholder {
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 3rem;
-                background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
-                opacity: 0.3;
-            }
-        }
-
-        .mock-content {
-            padding: 1.5rem;
-            h4 {
-                margin: 0 0 0.5rem;
-                font-size: 1.1rem;
-            }
-            p {
-                margin: 0;
-                font-size: 0.9rem;
-                color: $text-secondary;
-                line-height: 1.5;
-            }
-        }
-    }
+			&:disabled {
+				opacity: 0.5;
+				cursor: not-allowed;
+			}
+		}
+	}
 </style>

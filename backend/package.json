@@ -1,21 +1,28 @@
 {
-  "name": "backend",
-  "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "check": "tsc --noEmit",
-    "start": "wrangler dev",
-    "test": "vitest",
-    "cf-typegen": "wrangler types",
-    "postdeploy": "wrangler d1 execute DB --file=schema.sql --remote"
-  },
-  "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.8.71",
-    "@cloudflare/workers-types": "^4.20260301.1",
-    "typescript": "^5.9.3",
-    "vitest": "~3.0.9",
-    "wrangler": "^4.69.0"
-  }
+	"name": "backend",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"check": "tsc --noEmit",
+		"start": "wrangler dev",
+		"test": "vitest",
+		"cf-typegen": "wrangler types",
+		"postdeploy": "wrangler d1 execute DB --file=schema.sql --remote",
+		"db:reset": "wrangler d1 execute DB --local --command \"DROP TABLE IF EXISTS Uploads; DROP TABLE IF EXISTS Themes; DROP TABLE IF EXISTS Users;\" && wrangler d1 execute DB --local --file=schema.sql"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.8.71",
+		"@types/node": "^25.3.3",
+		"drizzle-kit": "^0.31.9",
+		"typescript": "^5.9.3",
+		"vitest": "~3.0.9",
+		"wrangler": "^4.69.0"
+	},
+	"dependencies": {
+		"@elysiajs/cors": "^1.4.1",
+		"drizzle-orm": "^0.45.1",
+		"elysia": "^1.4.27"
+	}
 }

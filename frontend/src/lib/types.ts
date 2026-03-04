@@ -1,20 +1,21 @@
 export interface Theme {
-    id: string;
-    owner_id: string;
-    name: string;
-    description: string;
-    images: string[];
-    settings: any;
-    custom_styleshift?: any[];
-    downloads: number;
-    created_at?: string;
-    updated_at?: string;
+	id: string;
+	ownerId: string;
+	name: string;
+	description: string;
+	images: string[];
+	coverImage?: string;
+	settings: any;
+	customStyleshift?: any[];
+	downloads: number;
+	createdAt?: string;
+	updatedAt?: string;
 }
 
 export interface User {
-    id: string;
-    email: string;
-    name: string;
-    avatar_url: string;
-    created_at?: string;
+	id: string;
+	email: string;
+	name: string;
+	avatarUrl: string;
+	createdAt?: string;
 }
