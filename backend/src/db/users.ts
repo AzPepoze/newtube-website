@@ -12,7 +12,7 @@ export function getUserById(db: Database, id: string) {
 
 export function getUserProfile(db: Database, userId: string) {
 	return Promise.all([
-		db.select({ name: users.name, avatarUrl: users.avatarUrl, createdAt: users.createdAt })
+		db.select({ id: users.id, name: users.name, avatarUrl: users.avatarUrl, createdAt: users.createdAt })
 			.from(users).where(eq(users.id, userId)).get(),
 		db.select().from(themes).where(eq(themes.ownerId, userId)).all(),
 	]);

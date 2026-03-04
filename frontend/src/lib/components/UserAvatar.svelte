@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { PUBLIC_API_URL } from "$lib/constants";
+    import { userService } from "$lib/services/userService";
 
     interface Props {
         userId: string;
@@ -22,67 +21,68 @@
         horizontal = true,
     }: Props = $props();
 
-    let currentName = $state("");
-    let currentAvatar = $state("");
-
-    $effect(() => {
-        if (name) currentName = name;
-    });
-
-    $effect(() => {
-        if (avatarUrl) currentAvatar = avatarUrl;
-    });
-
-    async function fetchProfile() {
-        if (!userId || (currentName && currentAvatar)) return;
-        try {
-            const res = await fetch(
-                `${PUBLIC_API_URL}/users/profile?userId=${userId}`,
-                {
-                    credentials: "include",
-                },
-            );
-            if (res.ok) {
-                const data = await res.json();
-                if (data.user) {
-                    currentName = data.user.name || userId;
-                    currentAvatar = data.user.avatarUrl || "";
-                }
-            }
-        } catch (e) {
-            console.error("Failed to fetch user profile", e);
-        }
+    function getDisplayName(resolvedName?: string | null): string {
+        return name || resolvedName || userId || "Unknown";
     }
 
-    onMount(() => {
-        fetchProfile();
-    });
+    function getInitial(resolvedName?: string | null): string {
+        const dName = getDisplayName(resolvedName);
+        return dName !== "Unknown" ? dName.charAt(0).toUpperCase() : "?";
+    }
 
-    const displayName = $derived(currentName || userId);
-    const initial = $derived(displayName.charAt(0).toUpperCase());
+    function getAvatarFallback(resolvedAvatar?: string | null): string {
+        return avatarUrl || resolvedAvatar || "";
+    }
+
+    const userProfilePromise = $derived(
+        (!name || !avatarUrl) && userId
+            ? userService.getProfile(userId)
+            : Promise.resolve(null),
+    );
 </script>
 
 <div class="user-avatar-container {size}" class:horizontal>
-    <div class="avatar-wrapper">
-        {#if currentAvatar}
-            <img src={currentAvatar} alt={displayName} class="avatar-img" />
-        {:else}
-            <div class="avatar-fallback">
-                {initial}
+    {#await userProfilePromise}
+        <div class="avatar-wrapper">
+            <div class="avatar-fallback" style="opacity: 0.5;">
+                {getInitial()}
+            </div>
+        </div>
+        {#if showName}
+            <div class="user-info">
+                {#if showLabel}
+                    <span class="label">Created by</span>
+                {/if}
+                <span class="name">Loading...</span>
             </div>
         {/if}
-    </div>
+    {:then profile}
+        {@const finalAvatar = getAvatarFallback(profile?.avatarUrl)}
+        {@const finalName = getDisplayName(profile?.name)}
 
-    {#if showName}
-        <div class="user-info">
-            {#if showLabel}
-                <span class="label">Created by</span>
+        <div class="avatar-wrapper">
+            {#if finalAvatar}
+                <img src={finalAvatar} alt={finalName} class="avatar-img" />
+            {:else}
+                <div class="avatar-fallback">
+                    {getInitial(profile?.name)}
+                </div>
             {/if}
-            <span class="name">
-                {currentName ? currentName : `@${userId.slice(0, 8)}`}
-            </span>
         </div>
-    {/if}
+
+        {#if showName}
+            <div class="user-info">
+                {#if showLabel}
+                    <span class="label">Created by</span>
+                {/if}
+                <span class="name">
+                    {finalName !== "Unknown"
+                        ? finalName
+                        : `@${userId.slice(0, 8)}`}
+                </span>
+            </div>
+        {/if}
+    {/await}
 </div>
 
 <style lang="scss">
