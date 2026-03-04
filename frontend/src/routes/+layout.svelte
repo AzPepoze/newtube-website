@@ -1,7 +1,7 @@
 <script lang="ts">
 	import "../app.scss";
 	import { onMount } from "svelte";
-	import { fade } from "svelte/transition";
+	import { fade, fly } from "svelte/transition";
 	import { getSessionId, clearSessionId, handleAuthError } from "$lib/auth";
 	import UserIcon from "$lib/icons/UserIcon.svelte";
 	import LogoutIcon from "$lib/icons/LogoutIcon.svelte";
@@ -29,8 +29,10 @@
 
 	let currentUser = $state<User | null>(null);
 	let isLightMode = $state(false);
+	let isClient = $state(false);
 
 	onMount(async () => {
+		isClient = true;
 		// Initialize theme
 		const savedTheme = localStorage.getItem("theme");
 		isLightMode = savedTheme === "light";
@@ -99,102 +101,124 @@
 </svelte:head>
 
 <div class="app-container">
-	<nav class="glass-panel">
-		<div class="nav-left">
-			<a href="/" class="logo-link" in:fade={{ duration: 200 }}>
-				<img src="/logo.png" alt="NewTube" class="logo-img" />
-			</a>
-			<div class="nav-links">
-				<a href="/" aria-label="Home" title="Home">
-					<HomeIcon size={24} />
-				</a>
-				<a href="/discover" aria-label="Discover" title="Discover">
-					<CompassIcon size={24} />
-				</a>
-				<a href="/terms" aria-label="Terms" title="Terms">
-					<ScaleIcon size={24} />
-				</a>
-				<a href="/privacy" aria-label="Privacy" title="Privacy">
-					<ShieldIcon size={24} />
-				</a>
-			</div>
+	{#if !isClient}
+		<div class="loading-screen">
+			<div class="spinner"></div>
 		</div>
-
-		<div class="nav-right">
-			<a
-				href="https://github.com/AzPepoze/NewTube"
-				target="_blank"
-				rel="noopener noreferrer"
-				class="github-link"
-				aria-label="GitHub Repository"
-			>
-				<GithubIcon size={24} />
-			</a>
-
-			<button
-				class="theme-toggle"
-				onclick={toggleTheme}
-				aria-label="Toggle theme"
-			>
-				{#if isLightMode}
-					<MoonIcon size={22} />
-				{:else}
-					<SunIcon size={22} />
-				{/if}
-			</button>
-
-			<div class="auth-section">
-				{#if currentUser}
-					<div class="profile-menu">
-						{#snippet trigger(toggle: () => void)}
-							<button
-								class="user-profile glass-panel"
-								aria-label="User menu"
-								onclick={toggle}
-							>
-								{#if currentUser?.avatarUrl}
-									<img
-										src={currentUser.avatarUrl}
-										alt={currentUser.name}
-										class="avatar"
-									/>
-								{:else}
-									<div class="avatar avatar-fallback">
-										{currentUser?.name.charAt(0)}
-									</div>
-								{/if}
-								<span class="chevron">▾</span>
-							</button>
-						{/snippet}
-
-						<CustomDropdown
-							{trigger}
-							mode="menu"
-							options={[
-								{
-									label: "Your Profile",
-									icon: UserIcon,
-									href: "/profile",
-								},
-								{
-									label: "Logout",
-									icon: LogoutIcon,
-									class: "logout-item",
-									color: "#ff4d4d",
-									onClick: handleLogout,
-								},
-							]}
-						/>
-					</div>
-				{:else}
+	{:else}
+		<nav
+			class="glass-panel"
+			in:fly={{ y: -100, delay: 200, duration: 1000 }}
+		>
+			<div class="nav-left">
+				<a href="/" class="logo-link" in:fade={{ duration: 200 }}>
+					<img src="/logo.png" alt="NewTube" class="logo-img" />
+				</a>
+				<div class="nav-links">
+					<a href="/" aria-label="Home" title="Home">
+						<HomeIcon size={24} />
+					</a>
 					<a
-						href="/login"
-						class="login-btn premium-button glass-panel">Login</a
+						href="/discover"
+						aria-label="Discover"
+						title="Discover"
 					>
-				{/if}
+						<CompassIcon size={24} />
+					</a>
+					<a href="/terms" aria-label="Terms" title="Terms">
+						<ScaleIcon size={24} />
+					</a>
+					<a
+						href="/privacy"
+						aria-label="Privacy"
+						title="Privacy"
+					>
+						<ShieldIcon size={24} />
+					</a>
+				</div>
 			</div>
-		</div>
-	</nav>
+
+			<div class="nav-right">
+				<a
+					href="https://github.com/AzPepoze/NewTube"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="github-link"
+					aria-label="GitHub Repository"
+				>
+					<GithubIcon size={24} />
+				</a>
+
+				<button
+					class="theme-toggle"
+					onclick={toggleTheme}
+					aria-label="Toggle theme"
+				>
+					{#if isLightMode}
+						<MoonIcon size={22} />
+					{:else}
+						<SunIcon size={22} />
+					{/if}
+				</button>
+
+				<div class="auth-section">
+					{#if currentUser}
+						<div class="profile-menu">
+							{#snippet trigger(toggle: () => void)}
+								<button
+									class="user-profile glass-panel"
+									aria-label="User menu"
+									onclick={toggle}
+								>
+									{#if currentUser?.avatarUrl}
+										<img
+											src={currentUser.avatarUrl}
+											alt={currentUser.name}
+											class="avatar"
+										/>
+									{:else}
+										<div
+											class="avatar avatar-fallback"
+										>
+											{currentUser?.name.charAt(
+												0,
+											)}
+										</div>
+									{/if}
+									<span class="chevron">▾</span>
+								</button>
+							{/snippet}
+
+							<CustomDropdown
+								{trigger}
+								mode="menu"
+								options={[
+									{
+										label: "Your Profile",
+										icon: UserIcon,
+										href: "/profile",
+									},
+									{
+										label: "Logout",
+										icon: LogoutIcon,
+										class: "logout-item",
+										color: "#ff4d4d",
+										onClick: handleLogout,
+									},
+								]}
+							/>
+						</div>
+					{:else}
+						<a
+							href="/login"
+							class="login-btn premium-button glass-panel"
+							>Login</a
+						>
+					{/if}
+				</div>
+			</div>
+		</nav>
+	{/if}
 
 	<main>
 		{@render children()}
@@ -268,10 +292,11 @@
 				font-size: 1.1rem;
 				font-weight: 600;
 				color: var(--text-secondary);
-				transition: color 0.2s;
+				transition: all 0.2s;
 
 				&:hover {
 					color: var(--primary-glow);
+					transform: translateY(-5px);
 				}
 			}
 		}
