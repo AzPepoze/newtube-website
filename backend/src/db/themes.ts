@@ -78,10 +78,10 @@ export async function createTheme(db: Database, ownerId: string, data: {
 		ownerId,
 		name: data.name,
 		description: data.description,
-		images: JSON.stringify(allImages),
+		images: allImages,
 		coverImage: finalCoverImage,
-		settings: JSON.stringify(data.settings ?? {}),
-		customStyleshift: JSON.stringify(data.customStyleshift ?? []),
+		settings: data.settings ?? {},
+		customStyleshift: data.customStyleshift ?? [],
 	}).returning({ id: themes.id }).then(res => res[0]);
 }
 
@@ -104,9 +104,7 @@ export async function updateTheme(db: Database, id: string, ownerId: string, dat
 		return false;
 	}
 
-	const existingImages = typeof existingTheme.images === 'string'
-		? JSON.parse(existingTheme.images)
-		: [];
+	const existingImages = existingTheme.images || [];
 	const newImages = data.imgs ?? [];
 
 	// Upload pending images first
@@ -160,10 +158,10 @@ export async function updateTheme(db: Database, id: string, ownerId: string, dat
 		.set({
 			name: data.name,
 			description: data.description,
-			images: JSON.stringify(allImages),
+			images: allImages,
 			coverImage: finalCoverImage,
-			settings: JSON.stringify(data.settings ?? {}),
-			customStyleshift: JSON.stringify(data.customStyleshift ?? []),
+			settings: data.settings ?? {},
+			customStyleshift: data.customStyleshift ?? [],
 		})
 		.where(and(eq(themes.id, id), eq(themes.ownerId, ownerId)))
 		.run();
@@ -178,9 +176,7 @@ export async function deleteTheme(db: Database, id: string, ownerId: string) {
 	});
 
 	if (theme) {
-		const images = typeof theme.images === 'string'
-			? JSON.parse(theme.images)
-			: [];
+		const images = theme.images || [];
 
 		// Delete all images from R2
 		for (const imageUrl of images) {

@@ -13,6 +13,7 @@
 	import ScaleIcon from "$lib/icons/ScaleIcon.svelte";
 	import ShieldIcon from "$lib/icons/ShieldIcon.svelte";
 	import CustomDropdown from "$lib/components/CustomDropdown.svelte";
+	import Modal from "$lib/components/Modal.svelte";
 	import { updateTheme } from "$lib/theme.svelte";
 
 	let { children } = $props();
@@ -187,6 +188,8 @@
 	<main>
 		{@render children()}
 	</main>
+
+	<Modal />
 </div>
 
 <style lang="scss">

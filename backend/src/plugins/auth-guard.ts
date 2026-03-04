@@ -6,6 +6,9 @@ export const authGuard = new Elysia({ name: 'auth-guard' })
     .onBeforeHandle(({ userId, set }) => {
         if (!userId || userId === '') {
             set.status = 401;
-            return 'Unauthorized';
+            return {
+                error: 'Unauthorized',
+                message: 'You must be logged in to perform this action'
+            };
         }
     });

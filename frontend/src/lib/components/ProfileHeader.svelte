@@ -1,6 +1,7 @@
 <script lang="ts">
     import { fly } from "svelte/transition";
     import PlusIcon from "$lib/icons/PlusIcon.svelte";
+    import UserAvatar from "$lib/components/UserAvatar.svelte";
 
     let { userData }: { userData: any } = $props();
 
@@ -17,15 +18,13 @@
 {#if userData}
     <header in:fly={{ y: -20, duration: 800 }}>
         <div class="user-header">
-            <div class="avatar-large">
-                {#if userData.avatarUrl}
-                    <img src={userData.avatarUrl} alt={userData.name} />
-                {:else}
-                    <div class="avatar-fallback">
-                        {userData.name.charAt(0)}
-                    </div>
-                {/if}
-            </div>
+            <UserAvatar
+                userId={userData.id}
+                name={userData.name}
+                avatarUrl={userData.avatarUrl}
+                size="lg"
+                showName={false}
+            />
             <div class="header-info">
                 <h1 class="premium-font">{userData.name}</h1>
                 <p class="join-date">
@@ -62,33 +61,6 @@
 
             @media (max-width: 768px) {
                 flex-direction: column;
-            }
-
-            .avatar-large {
-                width: 100px;
-                height: 100px;
-                border-radius: 50%;
-                overflow: hidden;
-                border: 3px solid var(--border-glass);
-                box-shadow: var(--shadow-glow);
-
-                img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
-
-                .avatar-fallback {
-                    width: 100%;
-                    height: 100%;
-                    background: var(--text-primary);
-                    color: var(--bg-dark);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 3rem;
-                    font-weight: 800;
-                }
             }
 
             .header-info {

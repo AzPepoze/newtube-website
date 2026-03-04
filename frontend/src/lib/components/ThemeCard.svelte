@@ -1,32 +1,16 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
 	import type { Theme } from "$lib/types";
-	import { PUBLIC_API_URL } from "$lib/constants";
 	import DownloadIcon from "$lib/icons/DownloadIcon.svelte";
 	import CheckIcon from "$lib/icons/CheckIcon.svelte";
 	import PlusIcon from "$lib/icons/PlusIcon.svelte";
+	import UserAvatar from "$lib/components/UserAvatar.svelte";
 
 	let { theme }: { theme: Theme } = $props();
 
 	let currentImageIndex = $state(0);
 	let hoverTimer: ReturnType<typeof setInterval> | null = $state(null);
-	let ownerName = $state("");
-	let ownerAvatar = $state("");
 	const displayImages = $derived(theme.images || []);
-
-	$effect(() => {
-		if (theme.ownerId) {
-			fetch(`${PUBLIC_API_URL}/users/profile?userId=${theme.ownerId}`)
-				.then((res) => res.json())
-				.then((data) => {
-					ownerName = data.user?.name || theme.ownerId;
-					ownerAvatar = data.user?.avatarUrl || "";
-				})
-				.catch(() => {
-					ownerName = theme.ownerId;
-				});
-		}
-	});
 
 	function startImageCarousel() {
 		if (displayImages.length <= 1) return;
@@ -111,12 +95,7 @@
 			</div>
 			<p>{theme.description || "No description provided."}</p>
 			<div class="footer">
-				<div class="owner-info">
-					{#if ownerAvatar}
-						<img src={ownerAvatar} alt={ownerName} class="avatar" />
-					{/if}
-					<span class="owner">{ownerName || theme.ownerId}</span>
-				</div>
+				<UserAvatar userId={theme.ownerId} size="sm" />
 				{#if isInstalled}
 					<div class="installed-badge">
 						<CheckIcon size={14} />
@@ -258,29 +237,6 @@
 				align-items: center;
 				margin-top: 0.5rem;
 				gap: 0.75rem;
-
-				.owner-info {
-					display: flex;
-					align-items: center;
-					gap: 0.5rem;
-					flex: 1;
-
-					.avatar {
-						width: 24px;
-						height: 24px;
-						border-radius: 50%;
-						object-fit: cover;
-					}
-				}
-
-				.owner {
-					font-size: 0.8rem;
-					color: var(--text-muted);
-					min-width: 0;
-					overflow: hidden;
-					text-overflow: ellipsis;
-					white-space: nowrap;
-				}
 
 				.installed-badge {
 					display: flex;

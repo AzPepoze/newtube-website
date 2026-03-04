@@ -15,6 +15,7 @@
 	let userId = $state("");
 
 	import { PUBLIC_API_URL } from "$lib/constants";
+	import { ui } from "$lib/ui.svelte";
 
 	async function fetchMyThemes() {
 		userId = getUserId();
@@ -28,12 +29,17 @@
 		try {
 			const response = await fetch(
 				`${PUBLIC_API_URL}/users/profile?userId=${userId}`,
+				{ credentials: "include" },
 			);
 			const data = await response.json();
 			myThemes = data.themes || [];
 			userData = data.user;
 		} catch (error) {
-			console.error("Failed to fetch profile themes:", error);
+			ui.showModal(
+				"Profile Error",
+				"Failed to fetch your themes. Please check your connection.",
+				"error",
+			);
 		} finally {
 			loading = false;
 		}
@@ -50,10 +56,15 @@
 		try {
 			await fetch(`${PUBLIC_API_URL}/themes/${themeId}`, {
 				method: "DELETE",
+				credentials: "include",
 			});
 			myThemes = myThemes.filter((t) => t.id !== themeId);
 		} catch (error) {
-			console.error("Failed to delete theme:", error);
+			ui.showModal(
+				"Delete Failed",
+				"Could not delete the theme. You may not have permission.",
+				"error",
+			);
 		}
 	}
 </script>

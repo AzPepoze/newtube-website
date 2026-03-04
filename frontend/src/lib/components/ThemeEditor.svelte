@@ -5,17 +5,19 @@
 	import EyeIcon from "$lib/icons/EyeIcon.svelte";
 	import { getUserId } from "$lib/auth";
 	import { PUBLIC_API_URL } from "$lib/constants";
+	import { ui } from "$lib/ui.svelte";
 	import { compressImage } from "$lib/imageCompression";
 	import ThemeEditorBasicInfo from "$lib/components/ThemeEditorBasicInfo.svelte";
 	import ThemeEditorSettings from "$lib/components/ThemeEditorSettings.svelte";
 	import ThemeEditorPreview from "$lib/components/ThemeEditorPreview.svelte";
+	import { defaultDescription } from "$lib/theme.svelte";
 	let props: { initialData?: Partial<Theme>; isEdit?: boolean } = $props();
 	let isEdit = $derived(props.isEdit ?? false);
 	let initialData = $derived(props.initialData);
 
 	let userId = getUserId();
 	let name = $state("");
-	let description = $state("");
+	let description = $state(defaultDescription);
 	let images = $state<string[]>([]);
 	let coverImage = $state("");
 	let coverImagePending = $state<File | null>(null);
@@ -25,11 +27,16 @@
 	let submitting = $state(false);
 	let success = $state(false);
 	let errorMessage = $state("");
+	let infoMessage = $state("");
 	let activeTab = $state<"info" | "settings" | "preview">("info");
 	let jsonError = $state("");
 
-	// Initialize form with provided data
+	const DRAFT_KEY = "newtube_theme_draft";
+	let hasRestored = false;
+
+	// Initialize form with provided data or draft
 	$effect(() => {
+		if (hasRestored) return;
 		if (initialData) {
 			name = initialData.name || "";
 			description = initialData.description || "";
@@ -44,8 +51,76 @@
 				null,
 				2,
 			);
+		} else {
+			// Try to load draft from localStorage
+			const savedDraft = localStorage.getItem(DRAFT_KEY);
+			if (savedDraft) {
+				try {
+					const draft = JSON.parse(savedDraft);
+					name = draft.name || "";
+					description = draft.description || "";
+					images = draft.images || [];
+					coverImage = draft.coverImage || "";
+					settingsCode = draft.settingsCode || "";
+					if (name || description || settingsCode) {
+						success = false;
+						infoMessage = "Draft restored from last session.";
+						setTimeout(() => {
+							if (
+								infoMessage ===
+								"Draft restored from last session."
+							)
+								infoMessage = "";
+						}, 15000);
+					}
+				} catch (e) {
+					ui.showModal(
+						"Draft Error",
+						"Failed to load your draft. It may be corrupted.",
+						"warning",
+					);
+				}
+			}
+		}
+		hasRestored = true;
+	});
+
+	// Auto-save draft
+	$effect(() => {
+		if (!isEdit) {
+			const draft = {
+				name,
+				description,
+				images,
+				coverImage,
+				settingsCode,
+			};
+			localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 		}
 	});
+
+	function clearDraft() {
+		localStorage.removeItem(DRAFT_KEY);
+		if (!isEdit) {
+			name = "";
+			description = defaultDescription;
+			images = [];
+			coverImage = "";
+			settingsCode = JSON.stringify(
+				{
+					MainThemeColor: "#ffffff",
+					EnableBackground: true,
+					EnableAnimationsTransitions: true,
+				},
+				null,
+				2,
+			);
+			infoMessage = "Draft cleared.";
+			setTimeout(() => {
+				if (infoMessage === "Draft cleared.") infoMessage = "";
+			}, 3000);
+		}
+	}
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
@@ -95,6 +170,7 @@
 			const response = await fetch(url, {
 				method,
 				headers: { "Content-Type": "application/json" },
+				credentials: "include",
 				body: JSON.stringify(payload),
 			});
 
@@ -106,12 +182,22 @@
 			const data = await response
 				.json()
 				.catch(() => ({ id: props.initialData?.id }));
+
+			// Clear draft on success
+			if (!isEdit) {
+				localStorage.removeItem(DRAFT_KEY);
+			}
+
 			success = true;
 			setTimeout(() => {
 				window.location.href = `/themes/${data.id || props.initialData?.id}`;
 			}, 1000);
 		} catch (error) {
-			console.error(error);
+			ui.showModal(
+				"Operation Failed",
+				`Failed to ${isEdit ? "update" : "create"} theme. Please try again.`,
+				"error",
+			);
 			errorMessage = `Failed to ${isEdit ? "update" : "create"} theme. Please try again.`;
 		} finally {
 			submitting = false;
@@ -152,6 +238,23 @@
 	{#if success}
 		<div class="status-banner success" in:fade>
 			{isEdit ? "Theme updated!" : "Theme published!"} Redirecting...
+		</div>
+	{/if}
+
+	{#if infoMessage}
+		<div class="status-banner info" in:fade>
+			<div class="message-content">
+				<span>✨ {infoMessage}</span>
+				{#if infoMessage === "Draft restored from last session."}
+					<button
+						type="button"
+						class="action-btn"
+						onclick={clearDraft}
+					>
+						Discard Draft
+					</button>
+				{/if}
+			</div>
 		</div>
 	{/if}
 
@@ -205,23 +308,34 @@
 			{/if}
 		</div>
 
-		<button
-			type="submit"
-			class="submit-btn premium-button"
-			disabled={submitting || !!jsonError}
-		>
-			{submitting
-				? "Saving..."
-				: isEdit
-					? "Update Theme"
-					: "Publish Theme"}
-		</button>
+		<div class="actions">
+			{#if !isEdit && (name || description !== defaultDescription || images.length > 0 || coverImage)}
+				<button
+					type="button"
+					class="clear-btn"
+					onclick={clearDraft}
+					disabled={submitting}
+				>
+					Clear Draft
+				</button>
+			{/if}
+			<button
+				type="submit"
+				class="submit-btn premium-button"
+				disabled={submitting || !!jsonError}
+			>
+				{submitting
+					? "Saving..."
+					: isEdit
+						? "Update Theme"
+						: "Publish Theme"}
+			</button>
+		</div>
 	</form>
 </div>
 
 <style lang="scss">
 	.editor-container {
-		max-width: 1000px;
 		margin: 0 auto;
 		padding-bottom: 5rem;
 	}
@@ -283,6 +397,36 @@
 			color: #ff3232;
 			border: 1px solid rgba(255, 50, 50, 0.2);
 		}
+		&.info {
+			background: rgba(var(--text-primary-rgb), 0.05);
+			color: var(--text-primary);
+			border: 1px solid var(--border-glass);
+			backdrop-filter: blur(10px);
+		}
+
+		.message-content {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			width: 100%;
+
+			.action-btn {
+				background: var(--text-primary);
+				color: var(--bg-dark);
+				border: none;
+				padding: 0.4rem 0.8rem;
+				border-radius: var(--radius-sm);
+				font-size: 0.85rem;
+				font-weight: 700;
+				cursor: pointer;
+				transition: all 0.2s;
+
+				&:hover {
+					transform: translateY(-2px);
+					filter: brightness(1.1);
+				}
+			}
+		}
 	}
 
 	.editor-grid {
@@ -312,10 +456,37 @@
 		gap: 2rem;
 	}
 
-	.submit-btn {
-		width: 100%;
-		padding: 1.5rem 2rem;
-		font-size: 1.1rem;
+	.actions {
+		display: flex;
+		gap: 1rem;
 		margin-top: 2rem;
+
+		.submit-btn {
+			flex: 1;
+			padding: 1.5rem 2rem;
+			font-size: 1.1rem;
+			margin: 0;
+		}
+
+		.clear-btn {
+			padding: 0 2rem;
+			background: transparent;
+			border: 1px solid var(--border-glass);
+			color: var(--text-muted);
+			border-radius: var(--radius-md);
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.2s;
+
+			&:hover {
+				background: rgba(var(--text-primary-rgb), 0.05);
+				color: var(--text-primary);
+			}
+
+			&:disabled {
+				opacity: 0.5;
+				cursor: not-allowed;
+			}
+		}
 	}
 </style>

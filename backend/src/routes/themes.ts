@@ -19,12 +19,28 @@ export const themeRoute = new Elysia({ prefix: '/themes' })
     })
     .use(authGuard)
     .post('/', async ({ userId, body, db, set }) => {
-        const { success } = await env.THEME_RATE_LIMITER.limit({ key: userId! });
-        if (!success) {
-            set.status = 429;
-            return 'Too many themes created. Try again later.';
+        console.log('Creating theme for user:', userId);
+        try {
+            if (env.THEME_RATE_LIMITER) {
+                const { success } = await env.THEME_RATE_LIMITER.limit({ key: userId! });
+                if (!success) {
+                    console.warn('Rate limit exceeded for user:', userId);
+                    set.status = 429;
+                    return 'Too many themes created. Try again later.';
+                }
+            }
+        } catch (error) {
+            console.error('Rate limiter error:', error);
         }
-        return createTheme(db, userId!, body as any);
+
+        try {
+            const result = await createTheme(db, userId!, body as any);
+            console.log('Theme created successfully:', result.id);
+            return result;
+        } catch (error) {
+            console.error('Database error in createTheme:', error);
+            throw error;
+        }
     })
     .put('/:id', async ({ userId, params, body, set, db }) => {
         const updated = await updateTheme(db, params.id, userId!, body as any);

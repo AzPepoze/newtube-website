@@ -16,11 +16,25 @@ const app = new Elysia({ adapter: CloudflareAdapter })
 	.use(themeRoute)
 	.use(userRoute)
 	.use(imageRoute)
-	.onError(({ code, set }) => {
+	.onError(({ code, error, set }) => {
+		console.error(`Error (${code}):`, error);
+
 		if (code === 'NOT_FOUND') {
 			set.status = 404;
 			return 'Not Found';
 		}
+
+		if (code === 'VALIDATION') {
+			set.status = 400;
+			return error.all;
+		}
+
+		// Handle errors that have a status property (e.g. from create-error)
+		if (error && 'status' in error && typeof (error as any).status === 'number') {
+			set.status = (error as any).status;
+			return error.message;
+		}
+
 		set.status = 500;
 		return 'Internal Server Error';
 	})

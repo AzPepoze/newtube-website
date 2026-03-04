@@ -17,6 +17,7 @@
 		language?: "markdown" | "json";
 		height?: string;
 		class?: string;
+		readOnly?: boolean;
 	}
 
 	let {
@@ -24,11 +25,10 @@
 		language = "markdown",
 		height = "480px",
 		class: className = "",
+		readOnly = false,
 	}: Props = $props();
 
-	const theme = $derived(
-		themeState.isLightMode ? "github-light" : "dracula",
-	);
+	const theme = $derived(themeState.isLightMode ? "github-light" : "dracula");
 
 	let editorInstance: any;
 	let editorElement: HTMLElement | undefined = $state();
@@ -39,6 +39,7 @@
 				editorInstance = basicEditor(editorElement, {
 					language,
 					theme,
+					readOnly,
 					value: untrack(() => value),
 					onUpdate(val) {
 						value = val;
@@ -66,6 +67,33 @@
 			editorInstance.update();
 		}
 	});
+
+	export function insertAction(
+		defaultText: string,
+		prefix = "",
+		suffix = "",
+	) {
+		if (!editorInstance) return;
+		const { textarea } = editorInstance;
+		if (textarea) {
+			const start = textarea.selectionStart;
+			const end = textarea.selectionEnd;
+			const selectedText = textarea.value.substring(start, end);
+			const replacement = prefix + (selectedText || defaultText) + suffix;
+
+			textarea.setRangeText(replacement, start, end, "select");
+			textarea.dispatchEvent(new Event("input", { bubbles: true }));
+			textarea.focus();
+
+			if (!selectedText) {
+				textarea.selectionStart = start + prefix.length;
+				textarea.selectionEnd =
+					start + prefix.length + defaultText.length;
+			}
+
+			editorInstance.update();
+		}
+	}
 </script>
 
 <div

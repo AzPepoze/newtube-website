@@ -17,21 +17,17 @@
 		if (!userId) return;
 
 		try {
-			const response = await fetch(`${PUBLIC_API_URL}/themes/${id}`);
+			const response = await fetch(`${PUBLIC_API_URL}/themes/${id}`, {
+				credentials: "include",
+			});
 			if (!response.ok) throw new Error("Theme not found");
 			theme = await response.json();
 
-			// Normalize JSON fields
 			if (theme) {
 				if (theme.ownerId !== userId) {
 					window.location.href = "/profile";
 					return;
 				}
-
-				if (typeof theme.settings === "string")
-					theme.settings = JSON.parse(theme.settings);
-				if (typeof theme.images === "string")
-					theme.images = JSON.parse(theme.images);
 			}
 		} catch (e: any) {
 			error = e.message;

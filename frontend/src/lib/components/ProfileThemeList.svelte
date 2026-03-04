@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { ui } from "$lib/ui.svelte";
     import { fade, fly } from "svelte/transition";
     import ThemeCard from "$lib/components/ThemeCard.svelte";
     import EditIcon from "$lib/icons/EditIcon.svelte";
@@ -14,6 +15,15 @@
         myThemes: Theme[];
         deleteTheme: (id: string) => void;
     } = $props();
+
+    function confirmDelete(id: string, name: string) {
+        ui.showModal(
+            "Delete Theme",
+            `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+            "warning",
+            () => deleteTheme(id),
+        );
+    }
 </script>
 
 <section class="themes-section">
@@ -38,7 +48,7 @@
                         </a>
                         <button
                             class="delete-btn"
-                            onclick={() => deleteTheme(theme.id)}
+                            onclick={() => confirmDelete(theme.id, theme.name)}
                         >
                             <TrashIcon size={14} /> Delete
                         </button>

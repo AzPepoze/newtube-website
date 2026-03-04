@@ -10,31 +10,39 @@
 
 	let activeSlide = $state(0);
 
+	const allImages = $derived.by(() => {
+		if (!theme) return [];
+		const images = [...(theme.images || [])];
+		if (theme.coverImage && !images.includes(theme.coverImage)) {
+			images.unshift(theme.coverImage);
+		}
+		return images;
+	});
+
 	function prevSlide() {
-		if (theme && theme.images && theme.images.length > 0) {
+		if (allImages.length > 0) {
 			activeSlide =
-				(activeSlide - 1 + theme.images.length) %
-				theme.images.length;
+				(activeSlide - 1 + allImages.length) % allImages.length;
 		}
 	}
 
 	function nextSlide() {
-		if (theme && theme.images && theme.images.length > 0) {
-			activeSlide = (activeSlide + 1) % theme.images.length;
+		if (allImages.length > 0) {
+			activeSlide = (activeSlide + 1) % allImages.length;
 		}
 	}
 </script>
 
 <div class="slider glass-panel">
-	{#if theme && theme.images && theme.images.length > 0}
+	{#if allImages.length > 0}
 		<div class="slides">
 			<img
-				src={theme.images[activeSlide]}
-				alt={theme.name}
+				src={allImages[activeSlide]}
+				alt={theme?.name}
 				in:fade={{ duration: 200 }}
 			/>
 		</div>
-		{#if theme.images.length > 1}
+		{#if allImages.length > 1}
 			<button
 				class="slider-btn prev"
 				aria-label="Previous image"
@@ -46,7 +54,7 @@
 				onclick={nextSlide}>›</button
 			>
 			<div class="dots">
-				{#each theme.images as _, i}
+				{#each allImages as _, i}
 					<button
 						class="dot"
 						aria-label="Image {i + 1}"

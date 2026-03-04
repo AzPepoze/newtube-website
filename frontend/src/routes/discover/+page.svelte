@@ -21,12 +21,14 @@
 	];
 
 	import { PUBLIC_API_URL } from "$lib/constants";
+	import { ui } from "$lib/ui.svelte";
 
 	async function fetchThemes() {
 		loading = true;
 		try {
 			const response = await fetch(
 				`${PUBLIC_API_URL}/themes?q=${searchQuery}&sort=${sortBy}`,
+				{ credentials: "include" },
 			);
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -36,7 +38,11 @@
 			}
 			themes = await response.json();
 		} catch (error: any) {
-			console.error("Failed to fetch themes:", error.message || error);
+			ui.showModal(
+				"Discovery Error",
+				"Failed to load themes. Please check your internet connection.",
+				"error",
+			);
 		} finally {
 			loading = false;
 		}
