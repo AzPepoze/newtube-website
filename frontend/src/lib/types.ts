@@ -6,7 +6,6 @@ export interface Theme {
 	images: string[];
 	coverImage?: string;
 	settings: any;
-	customStyleshift?: any[];
 	downloads: number;
 	createdAt?: string;
 	updatedAt?: string;

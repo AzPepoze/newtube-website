@@ -5,8 +5,9 @@
 	import CheckIcon from "$lib/icons/CheckIcon.svelte";
 	import PlusIcon from "$lib/icons/PlusIcon.svelte";
 	import LockIcon from "$lib/icons/LockIcon.svelte";
+	import SaveIcon from "$lib/icons/SaveIcon.svelte";
 	import UserAvatar from "$lib/components/UserAvatar.svelte";
-	import { extensionState, dispatchThemeInstallation } from "$lib/extension.svelte";
+	import { extensionState, dispatchThemeInstallation, dispatchThemeSave } from "$lib/extension.svelte";
 
 	let { theme }: { theme: Theme } = $props();
 
@@ -46,7 +47,17 @@
 		e.stopPropagation();
 
 		if (extensionState.isExtensionReady) {
-			dispatchThemeInstallation(theme.id, theme.name, $state.snapshot(theme));
+			dispatchThemeInstallation(theme.id);
+		}
+	}
+
+	function handleSave(e: Event) {
+		e.preventDefault();
+		e.stopPropagation();
+
+		if (extensionState.isExtensionReady) {
+			dispatchThemeSave(theme.id);
+			// You could add a local "saved" toasted state if you had a toast system
 		}
 	}
 </script>
@@ -93,7 +104,16 @@
 						<CheckIcon size={14} />
 						<span>Installed</span>
 					</div>
-				{:else}
+					<button
+						class="install-btn icon-btn"
+						class:locked={!extensionState.isExtensionReady}
+						title={extensionState.isExtensionReady ? "Save Theme" : "Extension Required"}
+						disabled={!extensionState.isExtensionReady}
+						onclick={handleSave}
+					>
+						<SaveIcon size={18} />
+					</button>
+
 					<button
 						class="install-btn icon-btn"
 						class:locked={!extensionState.isExtensionReady}

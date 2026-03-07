@@ -43,7 +43,6 @@ export async function createTheme(db: Database, env: Env, ownerId: string, data:
 	pendingImages?: Array<{ data: string; mimeType: string }>;
 	pendingCoverImage?: { data: string; mimeType: string };
 	settings?: unknown;
-	customStyleshift?: unknown[];
 }) {
 	const id = crypto.randomUUID();
 
@@ -83,7 +82,6 @@ export async function createTheme(db: Database, env: Env, ownerId: string, data:
 			images: allImages,
 			coverImage: finalCoverImage,
 			settings: data.settings ?? {},
-			customStyleshift: data.customStyleshift ?? [],
 		}).returning({ id: themes.id }).then(res => {
 			console.log('[db/createTheme] Insert successful, result:', res);
 			return res[0];
@@ -103,7 +101,6 @@ export async function updateTheme(db: Database, env: Env, id: string, ownerId: s
 	pendingImages?: Array<{ data: string; mimeType: string }>;
 	pendingCoverImage?: { data: string; mimeType: string };
 	settings?: unknown;
-	customStyleshift?: unknown[];
 }) {
 	// Get existing theme to find removed images
 	const existingTheme = await db.query.themes.findFirst({
@@ -171,7 +168,6 @@ export async function updateTheme(db: Database, env: Env, id: string, ownerId: s
 			images: allImages,
 			coverImage: finalCoverImage,
 			settings: data.settings ?? {},
-			customStyleshift: data.customStyleshift ?? [],
 		})
 		.where(and(eq(themes.id, id), eq(themes.ownerId, ownerId)))
 		.run();

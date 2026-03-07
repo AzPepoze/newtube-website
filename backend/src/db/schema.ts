@@ -24,7 +24,6 @@ export const themes = sqliteTable('Themes', {
 	images: text('images', { mode: 'json' }).$type<string[]>().default(sql`'[]'`),
 	coverImage: text('cover_image'),
 	settings: text('settings', { mode: 'json' }).$type<any>().default(sql`'{}'`),
-	customStyleshift: text('custom_styleshift', { mode: 'json' }).$type<any[]>().default(sql`'[]'`),
 	isPublic: integer('is_public', { mode: 'boolean' }).default(true),
 	downloads: integer('downloads').default(0),
 	createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),

@@ -6,7 +6,8 @@
 	import CheckIcon from "$lib/icons/CheckIcon.svelte";
 	import PlusIcon from "$lib/icons/PlusIcon.svelte";
 	import LockIcon from "$lib/icons/LockIcon.svelte";
-	import { extensionState, dispatchThemeInstallation } from "$lib/extension.svelte";
+	import SaveIcon from "$lib/icons/SaveIcon.svelte";
+	import { extensionState, dispatchThemeInstallation, dispatchThemeSave } from "$lib/extension.svelte";
 
 	interface ThemeDetail extends Theme {
 		creator_name?: string;
@@ -36,7 +37,13 @@
 
 	function handleInstall() {
 		if (extensionState.isExtensionReady) {
-			dispatchThemeInstallation(theme.id, theme.name, $state.snapshot(theme));
+			dispatchThemeInstallation(theme.id);
+		}
+	}
+
+	function handleSave() {
+		if (extensionState.isExtensionReady) {
+			dispatchThemeSave(theme.id);
 		}
 	}
 </script>
@@ -65,7 +72,25 @@
 				<CheckIcon size={18} />
 				<span>Installed</span>
 			</div>
+			<button
+				class="icon-action-btn save"
+				class:locked={!extensionState.isExtensionReady}
+				title={extensionState.isExtensionReady ? "Save Theme" : "Extension Required"}
+				disabled={!extensionState.isExtensionReady}
+				onclick={handleSave}
+			>
+				<SaveIcon size={18} />
+			</button>
 		{:else}
+			<button
+				class="icon-action-btn save"
+				class:locked={!extensionState.isExtensionReady}
+				title={extensionState.isExtensionReady ? "Save Theme" : "Extension Required"}
+				disabled={!extensionState.isExtensionReady}
+				onclick={handleSave}
+			>
+				<SaveIcon size={18} />
+			</button>
 			<button
 				class="install-btn premium-button"
 				class:locked={!extensionState.isExtensionReady}
@@ -126,10 +151,20 @@
 					border-color: rgba(var(--text-primary-rgb), 0.3);
 				}
 
-				&.delete:hover {
-					color: #ff4d4d;
-					border-color: rgba(255, 77, 77, 0.3);
-					background: rgba(255, 77, 77, 0.1);
+				&.save:hover {
+					color: var(--secondary-glow);
+					border-color: rgba(var(--secondary-glow-rgb, 100, 150, 255), 0.3);
+				}
+
+				&.locked {
+					opacity: 0.5;
+					cursor: not-allowed;
+					
+					&:hover {
+						background: rgba(255, 255, 255, 0.05); /* maintain original state */
+						color: var(--text-secondary);
+						border-color: var(--border-glass);
+					}
 				}
 			}
 		}

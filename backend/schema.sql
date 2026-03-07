@@ -23,7 +23,6 @@ CREATE TABLE IF NOT EXISTS Themes (
     images JSON, -- Array of image URLs
     cover_image TEXT,
     settings JSON NOT NULL, -- Theme settings data
-    custom_styleshift JSON, -- Custom styleshift items
     is_public BOOLEAN DEFAULT TRUE,
     downloads INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

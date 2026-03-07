@@ -22,17 +22,26 @@ export function initializeExtensionListener() {
 	});
 }
 
-export function dispatchThemeInstallation(themeId: string, themeName: string, themeData: any) {
+export function dispatchThemeInstallation(themeId: string) {
 	if (typeof window === "undefined") return;
 	
 	const event = new CustomEvent("install_newtube_theme", {
 		detail: {
-			themeId,
-			themeName,
-			themeData
+			themeId
 		}
 	});
 	window.dispatchEvent(event);
 	
 	extensionState.installedThemeId = themeId;
+}
+
+export function dispatchThemeSave(themeId: string) {
+	if (typeof window === "undefined") return;
+	
+	const event = new CustomEvent("save_newtube_theme", {
+		detail: {
+			themeId
+		}
+	});
+	window.dispatchEvent(event);
 }

@@ -22,19 +22,6 @@
             />
         </div>
     </div>
-    {#if theme.customStyleshift && theme.customStyleshift.length > 0}
-        <div class="section glass-panel" style="margin-top: 1.5rem;">
-            <h3>Custom Styles</h3>
-            <div class="code-block" in:fade={{ duration: 200 }}>
-                <PrismEditor
-                    value={JSON.stringify(theme.customStyleshift, null, 2)}
-                    language="json"
-                    readOnly={true}
-                    height="auto"
-                />
-            </div>
-        </div>
-    {/if}
 {/if}
 
 <style lang="scss">

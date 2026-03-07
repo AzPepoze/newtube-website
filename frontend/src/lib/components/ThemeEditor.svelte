@@ -189,8 +189,7 @@
 				coverImage,
 				pendingImages: pendingImagesData,
 				pendingCoverImage: pendingCoverImageData,
-				settings: JSON.parse(settingsCode),
-				customStyleshift: props.initialData?.customStyleshift || [],
+				settings: JSON.parse(settingsCode)
 			};
 
 			const method = isEdit ? "PUT" : "POST";
