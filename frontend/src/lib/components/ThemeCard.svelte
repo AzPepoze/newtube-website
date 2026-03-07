@@ -4,6 +4,7 @@
 	import DownloadIcon from "$lib/icons/DownloadIcon.svelte";
 	import CheckIcon from "$lib/icons/CheckIcon.svelte";
 	import PlusIcon from "$lib/icons/PlusIcon.svelte";
+	import LockIcon from "$lib/icons/LockIcon.svelte";
 	import UserAvatar from "$lib/components/UserAvatar.svelte";
 	import { extensionState, dispatchThemeInstallation } from "$lib/extension.svelte";
 
@@ -38,17 +39,7 @@
 		return displayImages[0] || "";
 	}
 
-	let isInstalled = $state(false);
-
-	$effect(() => {
-		const checkInstalled = () => {
-			const activeId = localStorage.getItem("activeThemeId");
-			isInstalled = activeId === theme.id;
-		};
-		checkInstalled();
-		window.addEventListener("storage", checkInstalled);
-		return () => window.removeEventListener("storage", checkInstalled);
-	});
+	let isInstalled = $derived(extensionState.installedThemeId === theme.id);
 
 	function handleInstall(e: Event) {
 		e.preventDefault();
@@ -57,11 +48,6 @@
 		if (extensionState.isExtensionReady) {
 			dispatchThemeInstallation(theme.id, theme.name, $state.snapshot(theme));
 		}
-
-		localStorage.setItem("activeThemeId", theme.id);
-		isInstalled = true;
-		// Trigger custom event for other cards
-		window.dispatchEvent(new Event("storage"));
 	}
 </script>
 
@@ -110,10 +96,16 @@
 				{:else}
 					<button
 						class="install-btn icon-btn"
-						title="Install Theme"
+						class:locked={!extensionState.isExtensionReady}
+						title={extensionState.isExtensionReady ? "Install Theme" : "Extension Required"}
+						disabled={!extensionState.isExtensionReady}
 						onclick={handleInstall}
 					>
-						<PlusIcon size={18} />
+						{#if !extensionState.isExtensionReady}
+							<LockIcon size={18} />
+						{:else}
+							<PlusIcon size={18} />
+						{/if}
 					</button>
 				{/if}
 			</div>
@@ -285,6 +277,20 @@
 
 						&:active {
 							transform: scale(0.95);
+						}
+
+						&.locked {
+							opacity: 0.5;
+							cursor: not-allowed;
+							
+							&:hover {
+								transform: none;
+								box-shadow: none;
+							}
+							
+							&:active {
+								transform: none;
+							}
 						}
 					}
 				}

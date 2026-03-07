@@ -5,6 +5,7 @@
 	import TrashIcon from "$lib/icons/TrashIcon.svelte";
 	import CheckIcon from "$lib/icons/CheckIcon.svelte";
 	import PlusIcon from "$lib/icons/PlusIcon.svelte";
+	import LockIcon from "$lib/icons/LockIcon.svelte";
 	import { extensionState, dispatchThemeInstallation } from "$lib/extension.svelte";
 
 	interface ThemeDetail extends Theme {
@@ -31,26 +32,12 @@
 		);
 	}
 
-	let isInstalled = $state(false);
-
-	$effect(() => {
-		const checkInstalled = () => {
-			const activeId = localStorage.getItem("activeThemeId");
-			isInstalled = activeId === theme.id;
-		};
-		checkInstalled();
-		window.addEventListener("storage", checkInstalled);
-		return () => window.removeEventListener("storage", checkInstalled);
-	});
+	let isInstalled = $derived(extensionState.installedThemeId === theme.id);
 
 	function handleInstall() {
 		if (extensionState.isExtensionReady) {
 			dispatchThemeInstallation(theme.id, theme.name, $state.snapshot(theme));
 		}
-		
-		localStorage.setItem("activeThemeId", theme.id);
-		isInstalled = true;
-		window.dispatchEvent(new Event("storage"));
 	}
 </script>
 
@@ -79,9 +66,20 @@
 				<span>Installed</span>
 			</div>
 		{:else}
-			<button class="install-btn premium-button" onclick={handleInstall}>
-				<PlusIcon size={18} />
-				Install Theme
+			<button
+				class="install-btn premium-button"
+				class:locked={!extensionState.isExtensionReady}
+				title={extensionState.isExtensionReady ? "Install Theme" : "Extension Required"}
+				disabled={!extensionState.isExtensionReady}
+				onclick={handleInstall}
+			>
+				{#if !extensionState.isExtensionReady}
+					<LockIcon size={18} />
+					Need Extension
+				{:else}
+					<PlusIcon size={18} />
+					Install Theme
+				{/if}
 			</button>
 		{/if}
 	</div>
@@ -153,6 +151,20 @@
 			display: flex;
 			align-items: center;
 			gap: 0.5rem;
+			transition: all 0.2s;
+			
+			&.locked {
+				opacity: 0.5;
+				cursor: not-allowed;
+				background: rgba(255, 255, 255, 0.1);
+				color: var(--text-secondary);
+				border: 1px solid var(--border-glass);
+			}
+
+			&:not(.locked):hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 15px rgba(var(--primary-glow-rgb), 0.3);
+			}
 		}
 
 		.installed-status {

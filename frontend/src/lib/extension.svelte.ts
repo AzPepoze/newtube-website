@@ -1,5 +1,6 @@
 export const extensionState = $state({
-	isExtensionReady: false
+	isExtensionReady: false,
+	installedThemeId: null as string | null
 });
 
 export function initializeExtensionListener() {
@@ -8,6 +9,16 @@ export function initializeExtensionListener() {
 	window.addEventListener("newtube_is_here", () => {
 		console.log("NewTube extension detected!");
 		extensionState.isExtensionReady = true;
+		
+		// Ask the extension which theme is installed
+		window.dispatchEvent(new CustomEvent("is_theme_installed"));
+	});
+
+	window.addEventListener("installed_theme", (e: Event) => {
+		const customEvent = e as CustomEvent;
+		if (customEvent.detail && customEvent.detail.themeId) {
+			extensionState.installedThemeId = customEvent.detail.themeId;
+		}
 	});
 }
 
@@ -22,4 +33,6 @@ export function dispatchThemeInstallation(themeId: string, themeName: string, th
 		}
 	});
 	window.dispatchEvent(event);
+	
+	extensionState.installedThemeId = themeId;
 }
