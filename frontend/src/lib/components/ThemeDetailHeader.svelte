@@ -5,6 +5,7 @@
 	import TrashIcon from "$lib/icons/TrashIcon.svelte";
 	import CheckIcon from "$lib/icons/CheckIcon.svelte";
 	import PlusIcon from "$lib/icons/PlusIcon.svelte";
+	import { extensionState, dispatchThemeInstallation } from "$lib/extension.svelte";
 
 	interface ThemeDetail extends Theme {
 		creator_name?: string;
@@ -43,6 +44,10 @@
 	});
 
 	function handleInstall() {
+		if (extensionState.isExtensionReady) {
+			dispatchThemeInstallation(theme.id, theme.name, $state.snapshot(theme));
+		}
+		
 		localStorage.setItem("activeThemeId", theme.id);
 		isInstalled = true;
 		window.dispatchEvent(new Event("storage"));

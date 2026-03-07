@@ -22,7 +22,6 @@
 	let theme = $state<ThemeDetail | null>(null);
 	let loading = $state(true);
 	let currentUser = $state("");
-	let visible = $state(false);
 
 	async function fetchTheme() {
 		currentUser = getSessionId() || "";
@@ -34,11 +33,9 @@
 			});
 			if (!response.ok) throw new Error("Theme not found");
 			theme = await response.json();
-			visible = true;
 		} catch (error) {
 			ui.showModal("Error", "Failed to fetch theme details.", "error");
 			theme = null;
-			visible = true;
 		} finally {
 			loading = false;
 		}
@@ -57,7 +54,6 @@
 				credentials: "include",
 			});
 			if (res.ok) {
-				visible = false;
 				setTimeout(() => {
 					window.location.href = "/discover";
 				}, 200);
@@ -77,9 +73,6 @@
 		}
 	}
 
-	onMount(() => {
-		fetchTheme();
-	});
 </script>
 
 <div

@@ -5,6 +5,7 @@
 	import CheckIcon from "$lib/icons/CheckIcon.svelte";
 	import PlusIcon from "$lib/icons/PlusIcon.svelte";
 	import UserAvatar from "$lib/components/UserAvatar.svelte";
+	import { extensionState, dispatchThemeInstallation } from "$lib/extension.svelte";
 
 	let { theme }: { theme: Theme } = $props();
 
@@ -52,6 +53,11 @@
 	function handleInstall(e: Event) {
 		e.preventDefault();
 		e.stopPropagation();
+
+		if (extensionState.isExtensionReady) {
+			dispatchThemeInstallation(theme.id, theme.name, $state.snapshot(theme));
+		}
+
 		localStorage.setItem("activeThemeId", theme.id);
 		isInstalled = true;
 		// Trigger custom event for other cards

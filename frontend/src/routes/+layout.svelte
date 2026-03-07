@@ -16,6 +16,7 @@
 	import CustomDropdown from "$lib/components/CustomDropdown.svelte";
 	import Modal from "$lib/components/Modal.svelte";
 	import { updateTheme } from "$lib/theme.svelte";
+	import { initializeExtensionListener } from "$lib/extension.svelte";
 
 	let { children } = $props();
 
@@ -34,6 +35,7 @@
 
 	onMount(async () => {
 		isClient = true;
+		initializeExtensionListener();
 		// Initialize theme
 		const savedTheme = localStorage.getItem("theme");
 		isLightMode = savedTheme === "light";
