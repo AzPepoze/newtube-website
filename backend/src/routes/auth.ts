@@ -59,6 +59,7 @@ export const authRoute = new Elysia({ prefix: '/auth' })
 			urlObj.pathname = targetPath.startsWith('/') ? targetPath : `/${targetPath}`;
 
 			urlObj.searchParams.set('sessionId', sessionId);
+			urlObj.searchParams.set('userId', googleUser.id);
 			const redirectDest = urlObj.toString();
 
 			const sameSite = frontendUrlStr.includes('localhost') ? 'lax' : 'none';

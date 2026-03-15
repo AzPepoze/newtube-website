@@ -3,7 +3,7 @@
 	import { onMount } from "svelte";
 	import { fade, fly } from "svelte/transition";
 	import { page } from "$app/state";
-	import { getSessionId, clearSessionId, handleAuthError } from "$lib/auth";
+	import { getSessionId, clearSessionId, handleAuthError, setSessionId } from "$lib/auth";
 	import UserIcon from "$lib/icons/UserIcon.svelte";
 	import LogoutIcon from "$lib/icons/LogoutIcon.svelte";
 	import SunIcon from "$lib/icons/SunIcon.svelte";
@@ -44,9 +44,11 @@
 
 		const urlParams = new URL(window.location.href).searchParams;
 		const urlSessionId = urlParams.get("sessionId");
+		const urlUserId = urlParams.get("userId");
 		if (urlSessionId) {
-			document.cookie = `sessionId=${encodeURIComponent(urlSessionId)}; path=/; max-age=2592000`;
+			setSessionId(urlSessionId, urlUserId || undefined);
 			urlParams.delete("sessionId");
+			urlParams.delete("userId");
 			const newUrl =
 				window.location.pathname +
 				(urlParams.toString() ? "?" + urlParams.toString() : "");
