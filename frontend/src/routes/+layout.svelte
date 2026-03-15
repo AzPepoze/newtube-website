@@ -227,6 +227,7 @@
 		min-height: 100vh;
 		padding: 1.5rem 2rem;
 		width: 100%;
+		max-width: 1440px;
 		margin: 0 auto;
 	}
 
