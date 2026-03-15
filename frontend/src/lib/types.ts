@@ -1,7 +1,7 @@
 export interface Theme {
-	id: string;
+	themeId: string;
 	ownerId: string;
-	name: string;
+	themeName: string;
 	description: string;
 	images: string[];
 	coverImage?: string;

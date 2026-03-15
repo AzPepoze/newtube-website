@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS Sessions (
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON Sessions(user_id);
 
 CREATE TABLE IF NOT EXISTS Themes (
-    id TEXT PRIMARY KEY,
+    theme_id TEXT PRIMARY KEY,
     owner_id TEXT NOT NULL,
-    name TEXT NOT NULL,
+    theme_name TEXT NOT NULL,
     description TEXT,
     images JSON, -- Array of image URLs
     cover_image TEXT,

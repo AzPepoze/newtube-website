@@ -21,7 +21,7 @@
 	let initialData = $derived(props.initialData);
 
 	let userId = getSessionId();
-	let name = $state("");
+	let themeName = $state("");
 	let description = $state(defaultDescription);
 	let images = $state<string[]>([]);
 	let coverImage = $state("");
@@ -45,7 +45,7 @@
 	$effect(() => {
 		if (hasRestored) return;
 		if (initialData) {
-			name = initialData.name || "";
+			themeName = initialData.themeName || "";
 			description = initialData.description || "";
 			images = initialData.images || [];
 			coverImage = initialData.coverImage || "";
@@ -56,12 +56,12 @@
 			if (savedDraft) {
 				try {
 					const draft = JSON.parse(savedDraft);
-					name = draft.name || "";
+					themeName = draft.themeName || "";
 					description = draft.description || "";
 					images = draft.images || [];
 					coverImage = draft.coverImage || "";
 					settingsCode = draft.settingsCode || "";
-					if (name || description || settingsCode) {
+					if (themeName || description || settingsCode) {
 						success = false;
 						infoMessage = "Draft restored from last session.";
 						setTimeout(() => {
@@ -88,7 +88,7 @@
 	$effect(() => {
 		if (!isEdit) {
 			const draft = {
-				name,
+				themeName,
 				description,
 				images,
 				coverImage,
@@ -100,7 +100,7 @@
 
 	// Track validation state for submit button
 	$effect(() => {
-		const titleValidation = validateTitle(name);
+		const titleValidation = validateTitle(themeName);
 		titleError = titleValidation.message || "";
 
 		const descriptionValidation = validateDescription(description);
@@ -120,9 +120,9 @@
 		}
 
 		// Validate title
-		const titleValidation = validateTitle(name);
+		const titleValidation = validateTitle(themeName);
 		if (!titleValidation.valid) {
-			errorMessage = titleValidation.message || "Invalid title";
+			errorMessage = titleValidation.message || "Invalid themeName";
 			return;
 		}
 
@@ -183,7 +183,7 @@
 			}
 
 			const payload: any = {
-				name,
+				themeName,
 				description,
 				imgs: images,
 				coverImage,
@@ -194,7 +194,7 @@
 
 			const method = isEdit ? "PUT" : "POST";
 			const url = isEdit
-				? `${PUBLIC_API_URL}/themes/${props.initialData?.id}`
+				? `${PUBLIC_API_URL}/themes/${props.initialData?.themeId}`
 				: `${PUBLIC_API_URL}/themes`;
 
 			const response = await fetch(url, {
@@ -213,7 +213,7 @@
 
 			const data = await response
 				.json()
-				.catch(() => ({ id: props.initialData?.id }));
+				.catch(() => ({ themeId: props.initialData?.themeId }));
 
 			if (!isEdit) {
 				localStorage.removeItem(DRAFT_KEY);
@@ -221,7 +221,7 @@
 
 			success = true;
 			setTimeout(() => {
-				window.location.href = `/themes/${data.id || props.initialData?.id}`;
+				window.location.href = `/themes/${data.themeId || props.initialData?.themeId}`;
 			}, 1000);
 		} catch (error) {
 			const detail =
@@ -302,7 +302,7 @@
 					out:fly={{ y: -20, duration: 250 }}
 				>
 					<ThemeEditorBasicInfo
-						bind:name
+						bind:themeName
 						bind:description
 						bind:images
 						bind:coverImage
@@ -329,7 +329,7 @@
 					out:fly={{ y: -20, duration: 250 }}
 				>
 					<ThemeEditorPreview
-						{name}
+						themeName={themeName}
 						{description}
 						{images}
 						{coverImage}
@@ -341,7 +341,7 @@
 		</div>
 
 		<div class="actions">
-			{#if !isEdit && (name || description !== defaultDescription || images.length > 0 || coverImage)}
+			{#if !isEdit && (themeName || description !== defaultDescription || images.length > 0 || coverImage)}
 				<button
 					type="button"
 					class="clear-btn"

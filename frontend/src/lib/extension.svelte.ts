@@ -40,13 +40,13 @@ export function dispatchThemeInstallation(themeId: string, themeName: string, ta
 	extensionState.installedThemeId = themeId;
 }
 
-export function dispatchThemeSave(themeName: string, themeData: any, targetDomain: string) {
+export function dispatchThemeSave(themeId: string, themeName: string, targetDomain: string) {
 	if (typeof window === "undefined") return;
 	
 	const event = new CustomEvent(EXTENSION_EVENTS.SAVE, {
 		detail: {
+			themeId,
 			themeName,
-			themeData,
 			targetDomain
 		}
 	});

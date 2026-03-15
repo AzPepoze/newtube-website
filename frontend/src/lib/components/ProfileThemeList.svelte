@@ -36,19 +36,19 @@
         </div>
     {:else}
         <div class="theme-grid" in:fade={{ duration: 600 }}>
-            {#each myThemes as theme (theme.id)}
+            {#each myThemes as theme (theme.themeId)}
                 <div
                     in:fly={{ y: 20, duration: 500 }}
                     class="theme-card-wrapper"
                 >
                     <ThemeCard {theme} />
                     <div class="card-actions">
-                        <a href="/themes/edit/{theme.id}" class="edit-btn">
+                        <a href="/themes/edit/{theme.themeId}" class="edit-btn">
                             <EditIcon size={14} /> Edit
                         </a>
                         <button
                             class="delete-btn"
-                            onclick={() => confirmDelete(theme.id, theme.name)}
+                            onclick={() => confirmDelete(theme.themeId, theme.themeName)}
                         >
                             <TrashIcon size={14} /> Delete
                         </button>

@@ -10,7 +10,8 @@
 		"test": "vitest",
 		"cf-typegen": "wrangler types",
 		"postdeploy": "wrangler d1 execute DB --file=schema.sql --remote",
-		"db:reset": "wrangler d1 execute DB --local --command \"DROP TABLE IF EXISTS Uploads; DROP TABLE IF EXISTS Themes; DROP TABLE IF EXISTS Users;\" && wrangler d1 execute DB --local --file=schema.sql"
+		"db:reset": "wrangler d1 execute DB --local --command \"DROP TABLE IF EXISTS Uploads; DROP TABLE IF EXISTS Themes; DROP TABLE IF EXISTS Users;\" && wrangler d1 execute DB --local --file=schema.sql",
+		"db:reset:remote": "wrangler d1 execute DB --remote --command \"DROP TABLE IF EXISTS Uploads; DROP TABLE IF EXISTS Themes; DROP TABLE IF EXISTS Users;\" && wrangler d1 execute DB --remote --file=schema.sql"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.71",

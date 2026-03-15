@@ -8,7 +8,7 @@ type ThemeSort = 'popular' | 'newest' | 'alpha';
 const sortColumns: Record<ThemeSort, ReturnType<typeof sql>> = {
 	popular: sql`${themes.downloads} DESC`,
 	newest: sql`${themes.createdAt} DESC`,
-	alpha: sql`${themes.name} ASC`,
+	alpha: sql`${themes.themeName} ASC`,
 };
 
 export function searchThemes(db: Database, search: string, sort: ThemeSort = 'popular') {
@@ -18,15 +18,15 @@ export function searchThemes(db: Database, search: string, sort: ThemeSort = 'po
 		.from(themes)
 		.where(and(
 			eq(themes.isPublic, true),
-			or(like(themes.name, pattern), like(themes.description, pattern))
+			or(like(themes.themeName, pattern), like(themes.description, pattern))
 		))
 		.orderBy(sortColumns[sort] ?? sortColumns.popular)
 		.all();
 }
 
-export function getThemeById(db: Database, id: string) {
+export function getThemeById(db: Database, themeId: string) {
 	return db.query.themes.findFirst({
-		where: eq(themes.id, id),
+		where: eq(themes.themeId, themeId),
 		with: { owner: { columns: { name: true, avatarUrl: true } } },
 	});
 }
@@ -36,7 +36,7 @@ export function getThemesByOwner(db: Database, ownerId: string) {
 }
 
 export async function createTheme(db: Database, env: Env, ownerId: string, data: {
-	name: string;
+	themeName: string;
 	description?: string;
 	imgs?: string[];
 	coverImage?: string;
@@ -44,7 +44,7 @@ export async function createTheme(db: Database, env: Env, ownerId: string, data:
 	pendingCoverImage?: { data: string; mimeType: string };
 	settings?: unknown;
 }) {
-	const id = crypto.randomUUID();
+	const themeId = crypto.randomUUID();
 
 	// Upload pending images first
 	const uploadedUrls: string[] = [];
@@ -71,18 +71,18 @@ export async function createTheme(db: Database, env: Env, ownerId: string, data:
 
 	// Combine with provided image URLs
 	const allImages = [...(data.imgs ?? []), ...uploadedUrls];
-
-	console.log('[db/createTheme] Inserting into database...', { id, ownerId, name: data.name });
+ 
+	console.log('[db/createTheme] Inserting into database...', { themeId, ownerId, themeName: data.themeName });
 	try {
 		const result = await db.insert(themes).values({
-			id,
+			themeId,
 			ownerId,
-			name: data.name,
+			themeName: data.themeName,
 			description: data.description,
 			images: allImages,
 			coverImage: finalCoverImage,
 			settings: data.settings ?? {},
-		}).returning({ id: themes.id }).then(res => {
+		}).returning({ themeId: themes.themeId }).then(res => {
 			console.log('[db/createTheme] Insert successful, result:', res);
 			return res[0];
 		});
@@ -93,8 +93,8 @@ export async function createTheme(db: Database, env: Env, ownerId: string, data:
 	}
 }
 
-export async function updateTheme(db: Database, env: Env, id: string, ownerId: string, data: {
-	name: string;
+export async function updateTheme(db: Database, env: Env, themeId: string, ownerId: string, data: {
+	themeName: string;
 	description?: string;
 	imgs?: string[];
 	coverImage?: string;
@@ -104,7 +104,7 @@ export async function updateTheme(db: Database, env: Env, id: string, ownerId: s
 }) {
 	// Get existing theme to find removed images
 	const existingTheme = await db.query.themes.findFirst({
-		where: and(eq(themes.id, id), eq(themes.ownerId, ownerId)),
+		where: and(eq(themes.themeId, themeId), eq(themes.ownerId, ownerId)),
 	});
 
 	if (!existingTheme) {
@@ -163,22 +163,22 @@ export async function updateTheme(db: Database, env: Env, id: string, ownerId: s
 	const result = await db
 		.update(themes)
 		.set({
-			name: data.name,
+			themeName: data.themeName,
 			description: data.description,
 			images: allImages,
 			coverImage: finalCoverImage,
 			settings: data.settings ?? {},
 		})
-		.where(and(eq(themes.id, id), eq(themes.ownerId, ownerId)))
+		.where(and(eq(themes.themeId, themeId), eq(themes.ownerId, ownerId)))
 		.run();
 
 	return result.meta.changes > 0;
 }
 
-export async function deleteTheme(db: Database, env: Env, id: string, ownerId: string) {
+export async function deleteTheme(db: Database, env: Env, themeId: string, ownerId: string) {
 	// Get theme to delete its images
 	const theme = await db.query.themes.findFirst({
-		where: and(eq(themes.id, id), eq(themes.ownerId, ownerId)),
+		where: and(eq(themes.themeId, themeId), eq(themes.ownerId, ownerId)),
 	});
 
 	if (theme) {
@@ -192,7 +192,7 @@ export async function deleteTheme(db: Database, env: Env, id: string, ownerId: s
 
 	const result = await db
 		.delete(themes)
-		.where(and(eq(themes.id, id), eq(themes.ownerId, ownerId)))
+		.where(and(eq(themes.themeId, themeId), eq(themes.ownerId, ownerId)))
 		.run();
 
 	return result.meta.changes > 0;

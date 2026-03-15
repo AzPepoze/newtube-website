@@ -58,7 +58,7 @@
 				method: "DELETE",
 				credentials: "include",
 			});
-			myThemes = myThemes.filter((t) => t.id !== themeId);
+			myThemes = myThemes.filter((t) => t.themeId !== themeId);
 		} catch (error) {
 			ui.showModal(
 				"Delete Failed",

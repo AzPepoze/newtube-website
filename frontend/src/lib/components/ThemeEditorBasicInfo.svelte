@@ -7,7 +7,7 @@
 	import { validateTitle, LIMITS } from "$lib/validation";
 
 	let {
-		name = $bindable(""),
+		themeName = $bindable(""),
 		description = $bindable(""),
 		images = $bindable([]),
 		coverImage = $bindable(""),
@@ -15,7 +15,7 @@
 		errorMessage = $bindable(""),
 		coverImagePending = $bindable(null),
 	}: {
-		name: string;
+		themeName: string;
 		description: string;
 		images: string[];
 		coverImage: string;
@@ -31,9 +31,9 @@
 	let isNameDisabled = $state(false);
 
 	$effect(() => {
-		const validation = validateTitle(name);
+		const validation = validateTitle(themeName);
 		titleError = validation.message || "";
-		isNameDisabled = name.length >= LIMITS.title;
+		isNameDisabled = themeName.length >= LIMITS.title;
 	});
 
 	function handleFile(file: File) {
@@ -118,11 +118,11 @@
 <div class="card glass-panel">
 	<h3>Basic Information</h3>
 	<div class="field">
-		<label for="name">Name</label>
+		<label for="themeName">Name</label>
 		<input
-			id="name"
+			id="themeName"
 			type="text"
-			bind:value={name}
+			bind:value={themeName}
 			placeholder="Theme Name"
 			disabled={isNameDisabled}
 			required
@@ -130,9 +130,9 @@
 		<div class="field-meta">
 			<span
 				class="counter"
-				class:error={!titleError && name.length >= LIMITS.title}
+				class:error={!titleError && themeName.length >= LIMITS.title}
 			>
-				{name.length} / {LIMITS.title}
+				{themeName.length} / {LIMITS.title}
 			</span>
 			{#if titleError}
 				<span class="error-text">{titleError}</span>

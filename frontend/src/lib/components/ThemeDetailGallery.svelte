@@ -38,7 +38,7 @@
 		<div class="slides">
 			<img
 				src={allImages[activeSlide]}
-				alt={theme?.name}
+				alt={theme?.themeName}
 				in:fade={{ duration: 200 }}
 			/>
 		</div>
@@ -66,7 +66,7 @@
 		{/if}
 	{:else if theme}
 		<div class="no-image">
-			<span class="premium-font">{theme.name.charAt(0)}</span>
+			<span class="premium-font">{theme.themeName.charAt(0)}</span>
 		</div>
 	{/if}
 </div>

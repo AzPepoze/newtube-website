@@ -11,8 +11,8 @@
 	import { extensionState, dispatchThemeInstallation, dispatchThemeSave } from "$lib/extension.svelte";
 
 	interface ThemeDetail extends Theme {
-		creator_name?: string;
-		creator_avatar?: string;
+		creatorName?: string;
+		creatorAvatar?: string;
 	}
 
 	let {
@@ -28,33 +28,33 @@
 	function confirmDelete() {
 		ui.showModal(
 			"Delete Theme",
-			`Are you sure you want to delete "${theme.name}"? This action cannot be undone.`,
+			`Are you sure you want to delete "${theme.themeName}"? This action cannot be undone.`,
 			"warning",
 			deleteTheme,
 		);
 	}
 
-	let isInstalled = $derived(extensionState.installedThemeId === theme.id);
+	let isInstalled = $derived(extensionState.installedThemeId === theme.themeId);
 
 	function handleInstall() {
 		if (extensionState.isExtensionReady) {
-			dispatchThemeInstallation(theme.id, theme.name, [...SUPPORTED_DOMAINS]);
+			dispatchThemeInstallation(theme.themeId, theme.themeName, [...SUPPORTED_DOMAINS]);
 		}
 	}
 
 	function handleSave() {
 		if (extensionState.isExtensionReady) {
-			dispatchThemeSave(theme.name, theme.settings, SUPPORTED_DOMAINS[0]);
+			dispatchThemeSave(theme.themeId, theme.themeName, SUPPORTED_DOMAINS[0]);
 		}
 	}
 </script>
 
 <div class="title-row">
-	<h1 class="premium-font">{theme.name}</h1>
+	<h1 class="premium-font">{theme.themeName}</h1>
 	<div class="actions-group">
 		{#if currentUser === theme.ownerId}
 			<a
-				href="/themes/edit/{theme.id}"
+				href="/themes/edit/{theme.themeId}"
 				class="icon-action-btn edit"
 				title="Edit Theme"
 			>

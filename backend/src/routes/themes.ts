@@ -23,10 +23,11 @@ export const themeRoute = new Elysia({ prefix: '/themes' })
 
 		// Validate request data
 		const data = body as any;
-		const titleValidation = validateThemeTitle(data.name);
+		const themeName = data.themeName;
+		const titleValidation = validateThemeTitle(themeName);
 		if (!titleValidation.valid) {
 			set.status = 400;
-			return { error: 'Invalid title', message: titleValidation.message };
+			return { error: 'Invalid themeName', message: titleValidation.message };
 		}
 
 		const descriptionValidation = validateThemeDescription(data.description);
@@ -73,7 +74,7 @@ export const themeRoute = new Elysia({ prefix: '/themes' })
 				set.status = 500;
 				return { error: 'Failed to create theme', message: 'Database returned no result' };
 			}
-			console.log('[Theme Route] Theme created successfully:', result.id);
+			console.log('[Theme Route] Theme created successfully:', result.themeId);
 			return result;
 		} catch (error) {
 			console.error('[Theme Route] Database error in createTheme:', error);
@@ -83,10 +84,11 @@ export const themeRoute = new Elysia({ prefix: '/themes' })
 	.put('/:id', async ({ userId, params, body, set, db, env }) => {
 		// Validate request data
 		const data = body as any;
-		const titleValidation = validateThemeTitle(data.name);
+		const themeName = data.themeName;
+		const titleValidation = validateThemeTitle(themeName);
 		if (!titleValidation.valid) {
 			set.status = 400;
-			return { error: 'Invalid title', message: titleValidation.message };
+			return { error: 'Invalid themeName', message: titleValidation.message };
 		}
 
 		const descriptionValidation = validateThemeDescription(data.description);

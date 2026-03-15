@@ -4,14 +4,14 @@
 	import type { Theme } from "$lib/types";
 
 	let {
-		name,
+		themeName,
 		description,
 		images,
 		coverImage,
 		coverImagePending,
 		settingsCode,
 	}: {
-		name: string;
+		themeName: string;
 		description: string;
 		images: string[];
 		coverImage: string;
@@ -33,9 +33,9 @@
 	const mockTheme = $derived.by(
 		() =>
 			({
-				id: "preview-theme",
+				themeId: "preview-theme",
 				ownerId: currentUser?.id || "preview-user",
-				name: name || "Theme Name",
+				themeName: themeName || "Theme Name",
 				description: description || "No description provided.",
 				images,
 				coverImage: displayCoverImage,
@@ -58,7 +58,7 @@
 		<pre><code
 				>{JSON.stringify(
 					{
-						name,
+						themeName,
 						description,
 						images,
 						coverImage,

@@ -49,7 +49,7 @@
 		if (!theme || !confirm("Are you sure you want to delete this theme?"))
 			return;
 		try {
-			const res = await fetch(`${PUBLIC_API_URL}/themes/${theme.id}`, {
+			const res = await fetch(`${PUBLIC_API_URL}/themes/${theme.themeId}`, {
 				method: "DELETE",
 				credentials: "include",
 			});

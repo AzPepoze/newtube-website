@@ -17,9 +17,9 @@ export const sessions = sqliteTable('Sessions', {
 });
 
 export const themes = sqliteTable('Themes', {
-	id: text('id').primaryKey(),
+	themeId: text('theme_id').primaryKey(),
 	ownerId: text('owner_id').references(() => users.id),
-	name: text('name').notNull(),
+	themeName: text('theme_name').notNull(),
 	description: text('description'),
 	images: text('images', { mode: 'json' }).$type<string[]>().default(sql`'[]'`),
 	coverImage: text('cover_image'),

@@ -110,7 +110,7 @@
 		</div>
 	{:else}
 		<div class="theme-grid" in:fade={{ duration: 600 }}>
-			{#each themes as theme (theme.id)}
+			{#each themes as theme (theme.themeId)}
 				<div in:fly={{ y: 20, duration: 500 }}>
 					<ThemeCard {theme} />
 				</div>

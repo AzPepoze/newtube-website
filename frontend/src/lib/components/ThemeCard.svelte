@@ -41,14 +41,14 @@
 		return displayImages[0] || "";
 	}
 
-	let isInstalled = $derived(extensionState.installedThemeId === theme.id);
+	let isInstalled = $derived(extensionState.installedThemeId === theme.themeId);
 
 	function handleInstall(e: Event) {
 		e.preventDefault();
 		e.stopPropagation();
 
 		if (extensionState.isExtensionReady) {
-			dispatchThemeInstallation(theme.id, theme.name, [...SUPPORTED_DOMAINS]);
+			dispatchThemeInstallation(theme.themeId, theme.themeName, [...SUPPORTED_DOMAINS]);
 		}
 	}
 
@@ -57,14 +57,14 @@
 		e.stopPropagation();
 
 		if (extensionState.isExtensionReady) {
-			dispatchThemeSave(theme.name, theme.settings, SUPPORTED_DOMAINS[0]);
+			dispatchThemeSave(theme.themeId, theme.themeName, SUPPORTED_DOMAINS[0]);
 			// You could add a local "saved" toasted state if you had a toast system
 		}
 	}
 </script>
 
 <a
-	href="/themes/{theme.id}"
+	href="/themes/{theme.themeId}"
 	class="theme-card-wrapper"
 	onmouseenter={startImageCarousel}
 	onmouseleave={stopImageCarousel}
@@ -75,13 +75,13 @@
 				{#key currentImageIndex}
 					<img
 						src={getDisplayImage()}
-						alt={theme.name}
+						alt={theme.themeName}
 						in:fade={{ duration: 300 }}
 					/>
 				{/key}
 			{:else}
 				<div class="placeholder">
-					<span class="premium-font">{theme.name.charAt(0)}</span>
+					<span class="premium-font">{theme.themeName.charAt(0)}</span>
 				</div>
 			{/if}
 			<div class="overlay">
@@ -91,7 +91,7 @@
 
 		<div class="card-content">
 			<div class="header">
-				<h3>{theme.name}</h3>
+				<h3>{theme.themeName}</h3>
 				<span class="downloads">
 					<DownloadIcon size={14} />
 					{theme.downloads}
@@ -100,13 +100,9 @@
 			<p>{theme.description || "No description provided."}</p>
 			<div class="footer">
 				<UserAvatar userId={theme.ownerId} size="sm" />
-				{#if isInstalled}
-					<div class="installed-badge">
-						<CheckIcon size={14} />
-						<span>Installed</span>
-					</div>
+				<div class="actions">
 					<button
-						class="install-btn icon-btn"
+						class="action-btn icon-btn save-btn"
 						class:locked={!extensionState.isExtensionReady}
 						title={extensionState.isExtensionReady ? "Save Theme" : "Extension Required"}
 						disabled={!extensionState.isExtensionReady}
@@ -115,20 +111,27 @@
 						<SaveIcon size={18} />
 					</button>
 
-					<button
-						class="install-btn icon-btn"
-						class:locked={!extensionState.isExtensionReady}
-						title={extensionState.isExtensionReady ? "Install Theme" : "Extension Required"}
-						disabled={!extensionState.isExtensionReady}
-						onclick={handleInstall}
-					>
-						{#if !extensionState.isExtensionReady}
-							<LockIcon size={18} />
-						{:else}
-							<PlusIcon size={18} />
-						{/if}
-					</button>
-				{/if}
+					{#if isInstalled}
+						<div class="installed-badge">
+							<CheckIcon size={14} />
+							<span>Installed</span>
+						</div>
+					{:else}
+						<button
+							class="action-btn icon-btn install-btn"
+							class:locked={!extensionState.isExtensionReady}
+							title={extensionState.isExtensionReady ? "Install Theme" : "Extension Required"}
+							disabled={!extensionState.isExtensionReady}
+							onclick={handleInstall}
+						>
+							{#if !extensionState.isExtensionReady}
+								<LockIcon size={18} />
+							{:else}
+								<PlusIcon size={18} />
+							{/if}
+						</button>
+					{/if}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -270,30 +273,42 @@
 					border: 1px solid rgba(0, 255, 150, 0.2);
 				}
 
-				.install-btn {
+				.actions {
+					display: flex;
+					align-items: center;
+					gap: 0.5rem;
+				}
+
+				.action-btn {
 					&.icon-btn {
-						width: 40px;
-						height: 40px;
+						width: 36px;
+						height: 36px;
 						padding: 0;
 						display: flex;
 						align-items: center;
 						justify-content: center;
 						border-radius: 50%;
-						background: var(--text-primary);
-						color: var(--bg-dark);
+						background: rgba(255, 255, 255, 0.05);
+						color: var(--text-primary);
 						border: 1px solid var(--border-glass);
 						box-shadow: none;
 						transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-						:global(.light) & {
-							background: #1a1a1a;
-							color: #ffffff;
-						}
-
 						&:hover {
-							transform: scale(1.1) rotate(90deg);
+							background: var(--text-primary);
+							color: var(--bg-dark);
+							transform: scale(1.1);
 							box-shadow: 0 8px 25px
 								rgba(var(--text-primary-rgb), 0.25);
+						}
+
+						&.install-btn:hover {
+							transform: scale(1.1) rotate(90deg);
+						}
+
+						&.save-btn:hover {
+							background: var(--secondary-glow);
+							border-color: var(--secondary-glow);
 						}
 
 						&:active {
@@ -305,8 +320,11 @@
 							cursor: not-allowed;
 							
 							&:hover {
+								background: rgba(255, 255, 255, 0.05);
+								color: var(--text-primary);
 								transform: none;
 								box-shadow: none;
+								border-color: var(--border-glass);
 							}
 							
 							&:active {
