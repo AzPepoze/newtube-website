@@ -10,10 +10,16 @@ export function getSessionId(): string {
 
 	if (typeof document === 'undefined') return '';
 	const match = document.cookie.match(/(?:^|;\s*)sessionId=([^;]*)/);
-	if (match) return decodeURIComponent(match[1]);
+	return match ? decodeURIComponent(match[1]) : '';
+}
 
-	// If sessionId is httpOnly, we can't read it, but we can check for userId
-	// which is set alongside sessionId on the same login event.
+export function getUserId(): string {
+	if (typeof window !== 'undefined') {
+		const urlParams = new URL(window.location.href).searchParams;
+		const urlUserId = urlParams.get('userId');
+		if (urlUserId) return urlUserId;
+	}
+	if (typeof document === 'undefined') return '';
 	const userMatch = document.cookie.match(/(?:^|;\s*)userId=([^;]*)/);
 	return userMatch ? decodeURIComponent(userMatch[1]) : '';
 }
@@ -55,12 +61,13 @@ export function isAuthenticated(): boolean {
 
 export function requireAuth(customPath?: string): string {
 	const sessionId = getSessionId();
-	if (!sessionId && typeof window !== 'undefined') {
+	const userId = getUserId();
+	if (!sessionId && !userId && typeof window !== 'undefined') {
 		const redirect = customPath || window.location.pathname + window.location.search;
 		window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
 		return '';
 	}
-	return sessionId;
+	return userId || sessionId;
 }
 
 export const PROTECTED_ROUTES = ['/profile', '/themes/create', '/themes/edit'];
