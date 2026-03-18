@@ -91,7 +91,14 @@
 
 		<div class="card-content">
 			<div class="header">
-				<h3>{theme.themeName}</h3>
+				<div class="title-container">
+					<h3>{theme.themeName}</h3>
+					{#if theme.settings?.customStyleShift}
+						<div class="custom-badge" title="This theme contains custom style features">
+							<CheckIcon size={14} />
+						</div>
+					{/if}
+				</div>
 				<span class="downloads">
 					<DownloadIcon size={14} />
 					{theme.downloads}
@@ -221,13 +228,33 @@
 				justify-content: space-between;
 				align-items: center;
 
-				h3 {
-					margin: 0;
-					font-size: 1.25rem;
-					font-weight: 700;
-					white-space: nowrap;
+				.title-container {
+					display: flex;
+					align-items: center;
+					gap: 0.5rem;
 					overflow: hidden;
-					text-overflow: ellipsis;
+
+					h3 {
+						margin: 0;
+						font-size: 1.25rem;
+						font-weight: 700;
+						white-space: nowrap;
+						overflow: hidden;
+						text-overflow: ellipsis;
+					}
+
+					.custom-badge {
+						flex-shrink: 0;
+						color: #00e5ff;
+						background: rgba(0, 229, 255, 0.1);
+						padding: 4px;
+						border-radius: 50%;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						border: 1px solid rgba(0, 229, 255, 0.2);
+						box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+					}
 				}
 
 				.downloads {

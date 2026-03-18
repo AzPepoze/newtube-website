@@ -11,9 +11,9 @@ const sortColumns: Record<ThemeSort, ReturnType<typeof sql>> = {
 	alpha: sql`${themes.themeName} ASC`,
 };
 
-export function searchThemes(db: Database, search: string, sort: ThemeSort = 'popular') {
+export async function searchThemes(db: Database, search: string, sort: ThemeSort = 'popular') {
 	const pattern = `%${search}%`;
-	return db
+	const results = await db
 		.select()
 		.from(themes)
 		.where(and(
@@ -22,6 +22,17 @@ export function searchThemes(db: Database, search: string, sort: ThemeSort = 'po
 		))
 		.orderBy(sortColumns[sort] ?? sortColumns.popular)
 		.all();
+
+	return results.map(theme => {
+		if (theme.settings && typeof theme.settings === 'object') {
+			const settings = { ...theme.settings };
+			if (settings.customStyleShift) {
+				settings.customStyleShift = true;
+			}
+			return { ...theme, settings };
+		}
+		return theme;
+	});
 }
 
 export function getThemeById(db: Database, themeId: string) {

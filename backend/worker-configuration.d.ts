@@ -13,6 +13,7 @@ declare namespace Cloudflare {
 		FRONTEND_URL: string;
 		THEME_RATE_LIMITER: RateLimit;
 		UPLOAD_RATE_LIMITER: RateLimit;
+		GLOBAL_RATE_LIMITER: RateLimit;
 	}
 }
 interface Env extends Cloudflare.Env {}

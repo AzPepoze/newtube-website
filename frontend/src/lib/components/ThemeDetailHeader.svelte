@@ -50,7 +50,14 @@
 </script>
 
 <div class="title-row">
-	<h1 class="premium-font">{theme.themeName}</h1>
+	<div class="title-container">
+		<h1 class="premium-font">{theme.themeName}</h1>
+		{#if theme.settings?.customStyleShift}
+			<div class="custom-badge" title="This theme contains custom style features">
+				<CheckIcon size={24} />
+			</div>
+		{/if}
+	</div>
 	<div class="actions-group">
 		{#if currentUser === theme.ownerId}
 			<a
@@ -118,10 +125,29 @@
 		justify-content: space-between;
 		gap: 1rem;
 
-		h1 {
-			margin: 0;
-			font-size: 2.5rem;
-			line-height: 1.1;
+		.title-container {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+
+			h1 {
+				margin: 0;
+				font-size: 2.5rem;
+				line-height: 1.1;
+			}
+
+			.custom-badge {
+				flex-shrink: 0;
+				color: #00e5ff;
+				background: rgba(0, 229, 255, 0.1);
+				padding: 8px;
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border: 1px solid rgba(0, 229, 255, 0.2);
+				box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+			}
 		}
 
 		.actions-group {
