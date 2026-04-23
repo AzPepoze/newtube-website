@@ -2,17 +2,29 @@
 	import { onMount } from "svelte";
 	import { page } from "$app/state";
 	import { fade, fly, scale } from "svelte/transition";
-	import type { Theme } from "$lib/types";
-	import { PUBLIC_API_URL } from "$lib/constants";
-	import { ui } from "$lib/ui.svelte";
-	import { getSessionId } from "$lib/auth";
-	import { renderMarkdown } from "$lib/markdown";
+	import type { Theme } from "$lib/types/index";
+	import { PUBLIC_API_URL } from "$lib/constants/index";
+	import { ui } from "$lib/core/ui.svelte";
+	import { getUserId } from "$lib/utils/auth";
+	import { renderMarkdown } from "$lib/utils/markdown";
 
-	import ThemeDetailHeader from "$lib/components/ThemeDetailHeader.svelte";
-	import ThemeDetailGallery from "$lib/components/ThemeDetailGallery.svelte";
-	import ThemeDetailCodePreview from "$lib/components/ThemeDetailCodePreview.svelte";
-	import ThemeDetailStats from "$lib/components/ThemeDetailStats.svelte";
-	import UserAvatar from "$lib/components/UserAvatar.svelte";
+	import ThemeDetailHeader from "$lib/components/theme/ThemeDetailHeader.svelte";
+	import ThemeDetailGallery from "$lib/components/theme/ThemeDetailGallery.svelte";
+	import ThemeDetailCodePreview from "$lib/components/theme/ThemeDetailCodePreview.svelte";
+	import ThemeDetailStats from "$lib/components/theme/ThemeDetailStats.svelte";
+	import UserAvatar from "$lib/components/common/UserAvatar.svelte";
+	import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+	import MarkdownViewer from "$lib/components/common/MarkdownViewer.svelte";
+
+	function formatDate(dateStr: string | undefined) {
+		if (!dateStr) return "N/A";
+		const date = new Date(dateStr);
+		return date.toLocaleDateString("en-US", {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+		});
+	}
 
 	interface ThemeDetail extends Theme {
 		creatorName?: string;
@@ -24,7 +36,7 @@
 	let currentUser = $state("");
 
 	async function fetchTheme() {
-		currentUser = getSessionId() || "";
+		currentUser = getUserId() || "";
 		const id = page.params.id;
 		loading = true;
 		try {
@@ -46,13 +58,15 @@
 	});
 
 	async function deleteTheme() {
-		if (!theme || !confirm("Are you sure you want to delete this theme?"))
-			return;
+		if (!theme) return;
 		try {
-			const res = await fetch(`${PUBLIC_API_URL}/themes/${theme.themeId}`, {
-				method: "DELETE",
-				credentials: "include",
-			});
+			const res = await fetch(
+				`${PUBLIC_API_URL}/themes/${theme.themeId}`,
+				{
+					method: "DELETE",
+					credentials: "include",
+				},
+			);
 			if (res.ok) {
 				setTimeout(() => {
 					window.location.href = "/discover";
@@ -72,7 +86,6 @@
 			);
 		}
 	}
-
 </script>
 
 <div
@@ -105,6 +118,36 @@
 							size="md"
 							showLabel={true}
 						/>
+						<div class="theme-dates">
+							<div class="date-item" title="Created Date">
+								<MaterialIcon name="calendar_today" size={16} />
+								<span
+									>Created: {formatDate(
+										theme.createdAt,
+									)}</span
+								>
+							</div>
+							<div class="date-item" title="Last Updated">
+								<MaterialIcon name="update" size={16} />
+								<span
+									>Updated: {formatDate(
+										theme.updatedAt,
+									)}</span
+								>
+							</div>
+						</div>
+
+						{#if currentUser === theme.ownerId}
+							<div class="creator-actions">
+								<a
+									href="/themes/edit/{theme.themeId}"
+									class="edit-theme-btn premium-button"
+								>
+									<MaterialIcon name="edit" size={16} />
+									<span>Edit Theme</span>
+								</a>
+							</div>
+						{/if}
 					</div>
 
 					<ThemeDetailStats {theme} />
@@ -113,11 +156,8 @@
 				<!-- Description -->
 				<div class="section glass-panel description-panel">
 					<h3>Description</h3>
-					<div class="description-content markdown-content">
-						{@html renderMarkdown(
-							theme.description ||
-								"*No description provided.*",
-						)}
+					<div class="description-content">
+						<MarkdownViewer content={theme.description || "*No description provided.*"} />
 					</div>
 				</div>
 
@@ -170,7 +210,77 @@
 	}
 
 	.creator {
-		padding: 1.25rem 1.5rem;
+		padding: 1.25rem 2rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 2rem;
+		flex-wrap: wrap;
+
+		.theme-dates {
+			display: flex;
+			align-items: center;
+			gap: 1.5rem;
+			padding-left: 2rem;
+			border-left: 1px solid var(--border-glass);
+
+			@media (max-width: 600px) {
+				border-left: none;
+				padding-left: 0;
+				padding-top: 1rem;
+				border-top: 1px solid var(--border-glass);
+				width: 100%;
+				justify-content: space-between;
+			}
+
+			.date-item {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				font-size: 0.85rem;
+				color: var(--text-primary);
+				white-space: nowrap;
+
+				:global(span.material-icons) {
+					color: var(--text-primary);
+					opacity: 0.8;
+				}
+			}
+		}
+
+		.creator-actions {
+			margin-left: auto;
+
+			.edit-theme-btn {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				padding: 0.6rem 1.25rem;
+				font-size: 0.85rem;
+				font-weight: 700;
+				border-radius: var(--radius-sm);
+				background: rgba(var(--text-primary-rgb), 0.05);
+				border: 1px solid var(--border-glass);
+				color: var(--text-primary);
+				transition: all 0.3s ease;
+
+				&:hover {
+					background: var(--text-primary);
+					color: var(--bg-dark);
+					transform: translateY(-2px);
+					box-shadow: 0 5px 15px rgba(var(--text-primary-rgb), 0.2);
+				}
+			}
+
+			@media (max-width: 850px) {
+				margin-left: 0;
+				width: 100%;
+
+				.edit-theme-btn {
+					justify-content: center;
+				}
+			}
+		}
 	}
 
 	.description-panel {
@@ -194,6 +304,10 @@
 
 			:global(p) {
 				margin-top: 0;
+			}
+
+			:global(img) {
+				border-radius: var(--radius-sm);
 			}
 		}
 	}

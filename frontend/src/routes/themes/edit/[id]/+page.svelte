@@ -2,11 +2,11 @@
 	import { onMount } from "svelte";
 	import { page } from "$app/state";
 	import { scale } from "svelte/transition";
-	import ThemeEditor from "$lib/components/ThemeEditor.svelte";
-	import { requireAuth } from "$lib/auth";
-	import type { Theme } from "$lib/types";
+	import ThemeEditor from "$lib/components/editor/ThemeEditor.svelte";
+	import { requireAuth } from "$lib/utils/auth";
+	import type { Theme } from "$lib/types/index";
 
-	import { PUBLIC_API_URL } from "$lib/constants";
+	import { PUBLIC_API_URL } from "$lib/constants/index";
 	const { id } = page.params;
 
 	let theme = $state<Theme | null>(null);

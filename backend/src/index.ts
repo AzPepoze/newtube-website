@@ -2,11 +2,11 @@ import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import { env } from 'cloudflare:workers';
 import { cors } from '@elysiajs/cors';
-import { authRoute } from './routes/auth';
-import { themeRoute } from './routes/themes';
-import { userRoute } from './routes/users';
-import { imageRoute } from './routes/images';
-import { sponsorsRoute } from './routes/sponsors';
+import { authRoute } from './api/auth';
+import { themeRoute } from './api/themes';
+import { userRoute } from './api/users';
+import { imageRoute } from './api/images';
+import { sponsorsRoute } from './api/sponsors';
 
 const app = new Elysia({ adapter: CloudflareAdapter })
 	.use(cors({

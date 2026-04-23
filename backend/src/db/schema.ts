@@ -27,6 +27,7 @@ export const themes = sqliteTable('Themes', {
 	isPublic: integer('is_public', { mode: 'boolean' }).default(true),
 	downloads: integer('downloads').default(0),
 	createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+	updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({

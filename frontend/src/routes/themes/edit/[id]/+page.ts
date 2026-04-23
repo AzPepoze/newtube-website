@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { getSessionId } from '$lib/auth';
+import { getSessionId } from '$lib/utils/auth';
 
 export function load({ url, params }) {
 	const sessionId = getSessionId() || url.searchParams.get('sessionId');

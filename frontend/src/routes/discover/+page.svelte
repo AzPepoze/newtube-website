@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import ThemeCard from "$lib/components/ThemeCard.svelte";
-	import type { Theme } from "$lib/types";
+	import ThemeCard from "$lib/components/theme/ThemeCard.svelte";
+	import type { Theme } from "$lib/types/index";
 	import { fade, fly, scale } from "svelte/transition";
 	import { page } from "$app/state";
-	import SearchIcon from "$lib/icons/SearchIcon.svelte";
-	import CrossIcon from "$lib/icons/CrossIcon.svelte";
-	import { debounce } from "$lib/debounce";
-	import CustomDropdown from "$lib/components/CustomDropdown.svelte";
+	import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+	import { debounce } from "$lib/utils/debounce";
+	import CustomDropdown from "$lib/components/common/CustomDropdown.svelte";
 
 	let themes = $state<Theme[]>([]);
 	let searchQuery = $state("");
@@ -20,8 +19,8 @@
 		{ value: "alpha", label: "Alphabetical" },
 	];
 
-	import { PUBLIC_API_URL } from "$lib/constants";
-	import { ui } from "$lib/ui.svelte";
+	import { PUBLIC_API_URL } from "$lib/constants/index";
+	import { ui } from "$lib/core/ui.svelte";
 
 	async function fetchThemes() {
 		loading = true;
@@ -77,7 +76,7 @@
 	<div class="discover-controls">
 		<div class="controls-left">
 			<div class="search-wrapper glass-panel">
-				<SearchIcon size={22} />
+				<MaterialIcon name="search" size={22} />
 				<input
 					type="text"
 					placeholder="Search themes..."
@@ -91,7 +90,7 @@
 							searchQuery = "";
 						}}
 					>
-						<CrossIcon size={14} />
+						<MaterialIcon name="close" size={14} />
 					</button>
 				{/if}
 			</div>
@@ -126,7 +125,7 @@
 						searchQuery = "";
 					}}
 				>
-					<CrossIcon size={16} /> Clear Search
+					<MaterialIcon name="close" size={16} /> Clear Search
 				</button>
 			</div>
 		{/if}

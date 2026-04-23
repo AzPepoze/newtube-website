@@ -1,7 +1,7 @@
 import { and, eq, like, or, sql } from 'drizzle-orm';
 import { themes } from './schema';
 import type { Database } from './index';
-import { uploadImageToR2, deleteImageFromR2 } from '../routes/images';
+import { uploadImageToR2, deleteImageFromR2 } from '../api/images';
 
 type ThemeSort = 'popular' | 'newest' | 'alpha';
 
@@ -26,8 +26,8 @@ export async function searchThemes(db: Database, search: string, sort: ThemeSort
 	return results.map(theme => {
 		if (theme.settings && typeof theme.settings === 'object') {
 			const settings = { ...theme.settings };
-			if (settings.customStyleShift) {
-				settings.customStyleShift = true;
+			if (settings.addOnStyleShiftItems) {
+				settings.addOnStyleShiftItems = true;
 			}
 			return { ...theme, settings };
 		}
@@ -179,6 +179,7 @@ export async function updateTheme(db: Database, env: Env, themeId: string, owner
 			images: allImages,
 			coverImage: finalCoverImage,
 			settings: data.settings ?? {},
+			updatedAt: sql`CURRENT_TIMESTAMP`,
 		})
 		.where(and(eq(themes.themeId, themeId), eq(themes.ownerId, ownerId)))
 		.run();

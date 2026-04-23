@@ -2,9 +2,9 @@
 	import { fly } from "svelte/transition";
 	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
-	import { getSessionId } from "$lib/auth";
+	import { getSessionId } from "$lib/utils/auth";
 
-	import { PUBLIC_API_URL } from "$lib/constants";
+	import { PUBLIC_API_URL } from "$lib/constants/index";
 
 	onMount(async () => {
 		const sessionId = getSessionId();

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { scale } from "svelte/transition";
-	import { requireAuth } from "$lib/auth";
-	import ThemeEditor from "$lib/components/ThemeEditor.svelte";
+	import { requireAuth } from "$lib/utils/auth";
+	import ThemeEditor from "$lib/components/editor/ThemeEditor.svelte";
 
 	onMount(() => {
 		requireAuth();

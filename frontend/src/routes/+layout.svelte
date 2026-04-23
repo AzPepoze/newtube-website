@@ -3,20 +3,15 @@
 	import { onMount } from "svelte";
 	import { fade, fly } from "svelte/transition";
 	import { page } from "$app/state";
-	import { getSessionId, clearSessionId, handleAuthError, setSessionId } from "$lib/auth";
-	import UserIcon from "$lib/icons/UserIcon.svelte";
-	import LogoutIcon from "$lib/icons/LogoutIcon.svelte";
-	import SunIcon from "$lib/icons/SunIcon.svelte";
-	import MoonIcon from "$lib/icons/MoonIcon.svelte";
+	import { getSessionId, clearSessionId, handleAuthError, setSessionId } from "$lib/utils/auth";
+	import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
 	import GithubIcon from "$lib/icons/GithubIcon.svelte";
-	import HomeIcon from "$lib/icons/HomeIcon.svelte";
-	import CompassIcon from "$lib/icons/CompassIcon.svelte";
-	import ScaleIcon from "$lib/icons/ScaleIcon.svelte";
-	import ShieldIcon from "$lib/icons/ShieldIcon.svelte";
-	import CustomDropdown from "$lib/components/CustomDropdown.svelte";
-	import Modal from "$lib/components/Modal.svelte";
-	import { updateTheme } from "$lib/theme.svelte";
-	import { initializeExtensionListener } from "$lib/extension.svelte";
+	import CustomDropdown from "$lib/components/common/CustomDropdown.svelte";
+	import Modal from "$lib/components/common/Modal.svelte";
+	import { updateTheme } from "$lib/core/theme.svelte";
+	import { initializeExtensionListener } from "$lib/core/extension.svelte";
+	import "prism-code-editor/themes/dracula.css";
+	import "prism-code-editor/themes/github-light.css";
 
 	let { children } = $props();
 
@@ -27,7 +22,7 @@
 		createdAt: string;
 	}
 
-	import { PUBLIC_API_URL } from "$lib/constants";
+	import { PUBLIC_API_URL } from "$lib/constants/index";
 
 	let currentUser = $state<User | null>(null);
 	let isLightMode = $state(false);
@@ -121,16 +116,16 @@
 				</a>
 				<div class="nav-links">
 					<a href="/" aria-label="Home" title="Home">
-						<HomeIcon size={24} />
+						<MaterialIcon name="home" size={24} />
 					</a>
 					<a href="/discover" aria-label="Discover" title="Discover">
-						<CompassIcon size={24} />
+						<MaterialIcon name="explore" size={24} />
 					</a>
 					<a href="/terms" aria-label="Terms" title="Terms">
-						<ScaleIcon size={24} />
+						<MaterialIcon name="balance" size={24} />
 					</a>
 					<a href="/privacy" aria-label="Privacy" title="Privacy">
-						<ShieldIcon size={24} />
+						<MaterialIcon name="shield" size={24} />
 					</a>
 				</div>
 			</div>
@@ -152,9 +147,9 @@
 					aria-label="Toggle theme"
 				>
 					{#if isLightMode}
-						<MoonIcon size={22} />
+						<MaterialIcon name="dark_mode" size={22} />
 					{:else}
-						<SunIcon size={22} />
+						<MaterialIcon name="light_mode" size={22} />
 					{/if}
 				</button>
 
@@ -188,12 +183,12 @@
 								options={[
 									{
 										label: "Your Profile",
-										icon: UserIcon,
+										icon: "person",
 										href: "/profile",
 									},
 									{
 										label: "Logout",
-										icon: LogoutIcon,
+										icon: "logout",
 										class: "logout-item",
 										color: "#ff4d4d",
 										onClick: handleLogout,

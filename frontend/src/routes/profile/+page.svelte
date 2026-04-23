@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { scale } from "svelte/transition";
-	import type { Theme } from "$lib/types";
-	import { requireAuth, getSessionId, getUserId } from "$lib/auth";
-	import ProfileThemeList from "$lib/components/ProfileThemeList.svelte";
-	import ProfileHeader from "$lib/components/ProfileHeader.svelte";
+	import type { Theme } from "$lib/types/index";
+	import { requireAuth, getSessionId, getUserId } from "$lib/utils/auth";
+	import ProfileThemeList from "$lib/components/profile/ProfileThemeList.svelte";
+	import ProfileHeader from "$lib/components/profile/ProfileHeader.svelte";
 
 	let myThemes = $state<Theme[]>([]);
 	let userData = $state<{
@@ -14,8 +14,8 @@
 	} | null>(null);
 	let loading = $state(true);
 
-	import { PUBLIC_API_URL } from "$lib/constants";
-	import { ui } from "$lib/ui.svelte";
+	import { PUBLIC_API_URL } from "$lib/constants/index";
+	import { ui } from "$lib/core/ui.svelte";
 
 	async function fetchMyThemes() {
 		const sessionId = getSessionId();

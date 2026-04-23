@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { fly } from "svelte/transition";
-	import HeartIcon from "$lib/icons/HeartIcon.svelte";
-	import DownloadIcon from "$lib/icons/DownloadIcon.svelte";
+	import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
 
-	import { PUBLIC_API_URL } from "$lib/constants";
-	import { extensionState } from "$lib/extension.svelte";
+	import { PUBLIC_API_URL } from "$lib/constants/index";
+	import { extensionState } from "$lib/core/extension.svelte";
 
 	let visible = $state(false);
 
@@ -71,7 +70,7 @@
 										<p>Available on Chrome Web Store</p>
 									</div>
 									<div class="download-badge">
-										<DownloadIcon size={20} />
+										<MaterialIcon name="download" size={20} />
 									</div>
 								</div>
 							</a>
@@ -90,7 +89,7 @@
 										<p>Available on Firefox Add-ons</p>
 									</div>
 									<div class="download-badge">
-										<DownloadIcon size={20} />
+										<MaterialIcon name="download" size={20} />
 									</div>
 								</div>
 							</a>
@@ -105,7 +104,7 @@
 			in:fly={{ y: 30, duration: 800, delay: 400 }}
 		>
 			<div class="sponsor-header">
-				<HeartIcon size={32} color="#ff4d4d" />
+				<MaterialIcon name="favorite" size={32} color="#ff4d4d" />
 				<h2 class="premium-font">My Awesome Sponsors</h2>
 			</div>
 
