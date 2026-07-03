@@ -1,85 +1,85 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-	import { scale } from "svelte/transition";
-	import type { Theme } from "$lib/types/index";
-	import { requireAuth, getSessionId, getUserId } from "$lib/utils/auth";
-	import ProfileThemeList from "$lib/components/profile/ProfileThemeList.svelte";
-	import ProfileHeader from "$lib/components/profile/ProfileHeader.svelte";
+    import { onMount } from "svelte";
+    import { scale } from "svelte/transition";
+    import type { Theme } from "$lib/types/index";
+    import { requireAuth, getSessionId, getUserId } from "$lib/utils/auth";
+    import ProfileThemeList from "$lib/components/profile/ProfileThemeList.svelte";
+    import ProfileHeader from "$lib/components/profile/ProfileHeader.svelte";
 
-	let myThemes = $state<Theme[]>([]);
-	let userData = $state<{
-		name: string;
-		avatarUrl: string;
-		createdAt: string;
-	} | null>(null);
-	let loading = $state(true);
+    let myThemes = $state<Theme[]>([]);
+    let userData = $state<{
+        name: string;
+        avatarUrl: string;
+        createdAt: string;
+    } | null>(null);
+    let loading = $state(true);
 
-	import { PUBLIC_API_URL } from "$lib/constants/index";
-	import { ui } from "$lib/core/ui.svelte";
+    import { PUBLIC_API_URL } from "$lib/constants/index";
+    import { ui } from "$lib/core/ui.svelte";
 
-	async function fetchMyThemes() {
-		const sessionId = getSessionId();
-		const userId = getUserId();
+    async function fetchMyThemes() {
+        const sessionId = getSessionId();
+        const userId = getUserId();
 
-		if (!sessionId && !userId) {
-			loading = false;
-			return;
-		}
+        if (!sessionId && !userId) {
+            loading = false;
+            return;
+        }
 
-		loading = true;
-		try {
-			const response = await fetch(`${PUBLIC_API_URL}/users/profile`, {
-				credentials: "include",
-			});
-			const data = await response.json();
-			myThemes = data.themes || [];
-			userData = data.user;
-		} catch (error) {
-			ui.showModal(
-				"Profile Error",
-				"Failed to fetch your themes. Please check your connection.",
-				"error",
-			);
-		} finally {
-			loading = false;
-		}
-	}
+        loading = true;
+        try {
+            const response = await fetch(`${PUBLIC_API_URL}/users/profile`, {
+                credentials: "include",
+            });
+            const data = await response.json();
+            myThemes = data.themes || [];
+            userData = data.user;
+        } catch (error) {
+            ui.showModal(
+                "Profile Error",
+                "Failed to fetch your themes. Please check your connection.",
+                "error",
+            );
+        } finally {
+            loading = false;
+        }
+    }
 
-	onMount(() => {
-		if (requireAuth()) {
-			fetchMyThemes();
-		}
-	});
+    onMount(() => {
+        if (requireAuth()) {
+            fetchMyThemes();
+        }
+    });
 
-	async function deleteTheme(themeId: string) {
-		if (!confirm("Are you sure you want to delete this theme?")) return;
-		try {
-			await fetch(`${PUBLIC_API_URL}/themes/${themeId}`, {
-				method: "DELETE",
-				credentials: "include",
-			});
-			myThemes = myThemes.filter((t) => t.themeId !== themeId);
-		} catch (error) {
-			ui.showModal(
-				"Delete Failed",
-				"Could not delete the theme. You may not have permission.",
-				"error",
-			);
-		}
-	}
+    async function deleteTheme(themeId: string) {
+        if (!confirm("Are you sure you want to delete this theme?")) return;
+        try {
+            await fetch(`${PUBLIC_API_URL}/themes/${themeId}`, {
+                method: "DELETE",
+                credentials: "include",
+            });
+            myThemes = myThemes.filter((t) => t.themeId !== themeId);
+        } catch (error) {
+            ui.showModal(
+                "Delete Failed",
+                "Could not delete the theme. You may not have permission.",
+                "error",
+            );
+        }
+    }
 </script>
 
 <div
-	class="profile-container"
-	in:scale={{ delay: 200, start: 0.98, duration: 300 }}
-	out:scale={{ start: 0.98, duration: 200 }}
+    class="profile-container"
+    in:scale={{ delay: 200, start: 0.98, duration: 300 }}
+    out:scale={{ start: 0.98, duration: 200 }}
 >
-	<ProfileHeader {userData} />
-	<ProfileThemeList {loading} {myThemes} {deleteTheme} />
+    <ProfileHeader {userData} />
+    <ProfileThemeList {loading} {myThemes} {deleteTheme} />
 </div>
 
 <style lang="scss">
-	.profile-container {
-		padding: 2rem 0;
-	}
+    .profile-container {
+        padding: 2rem 0;
+    }
 </style>

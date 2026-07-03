@@ -74,4 +74,4 @@ print(greeting("User"))
 * [x] Finished task
 * [ ] Unfinished task
 * [ ] Task with *italics*
-`
+`;

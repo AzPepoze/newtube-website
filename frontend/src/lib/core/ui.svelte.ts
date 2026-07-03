@@ -1,4 +1,4 @@
-export type ModalType = 'error' | 'warning' | 'info' | 'success';
+export type ModalType = "error" | "warning" | "info" | "success";
 
 interface ModalState {
     show: boolean;
@@ -11,15 +11,22 @@ interface ModalState {
 const createUiState = () => {
     let modal = $state<ModalState>({
         show: false,
-        title: '',
-        message: '',
-        type: 'info',
-        onConfirm: undefined
+        title: "",
+        message: "",
+        type: "info",
+        onConfirm: undefined,
     });
 
     return {
-        get modal() { return modal; },
-        showModal(title: string, message: string, type: ModalType = 'error', onConfirm?: () => void) {
+        get modal() {
+            return modal;
+        },
+        showModal(
+            title: string,
+            message: string,
+            type: ModalType = "error",
+            onConfirm?: () => void,
+        ) {
             modal.show = true;
             modal.title = title;
             modal.message = message;
@@ -28,7 +35,7 @@ const createUiState = () => {
         },
         closeModal() {
             modal.show = false;
-        }
+        },
     };
 };
 

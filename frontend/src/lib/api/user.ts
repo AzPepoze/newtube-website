@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$lib/constants';
+import { PUBLIC_API_URL } from "$lib/constants";
 
 export interface UserProfile {
     id: string;
@@ -18,19 +18,27 @@ class UserService {
             return this.profileCache.get(userId)!;
         }
 
-        const fetchPromise = fetch(`${PUBLIC_API_URL}/users/profile?userId=${userId}`, {
-            credentials: 'include'
-        })
+        const fetchPromise = fetch(
+            `${PUBLIC_API_URL}/users/profile?userId=${userId}`,
+            {
+                credentials: "include",
+            },
+        )
             .then(async (res) => {
                 if (!res.ok) {
-                    console.error(`Failed to fetch profile for user ${userId}: ${res.statusText}`);
+                    console.error(
+                        `Failed to fetch profile for user ${userId}: ${res.statusText}`,
+                    );
                     return null;
                 }
                 const data = await res.json();
                 return data.user as UserProfile;
             })
             .catch((err) => {
-                console.error(`Network error fetching profile for user ${userId}:`, err);
+                console.error(
+                    `Network error fetching profile for user ${userId}:`,
+                    err,
+                );
                 // Remove failed request from cache so we can try again later
                 this.profileCache.delete(userId);
                 return null;

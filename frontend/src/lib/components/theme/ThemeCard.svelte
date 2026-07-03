@@ -1,362 +1,382 @@
 <script lang="ts">
-	import { fade } from "svelte/transition";
-	import type { Theme } from "$lib/types/index";
-	import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
-	import UserAvatar from "$lib/components/common/UserAvatar.svelte";
-	import { SUPPORTED_DOMAINS } from "$lib/constants/index";
-	import { extensionState, dispatchThemeInstallation, dispatchThemeSave } from "$lib/core/extension.svelte";
+    import { fade } from "svelte/transition";
+    import type { Theme } from "$lib/types/index";
+    import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+    import UserAvatar from "$lib/components/common/UserAvatar.svelte";
+    import { SUPPORTED_DOMAINS } from "$lib/constants/index";
+    import {
+        extensionState,
+        dispatchThemeInstallation,
+        dispatchThemeSave,
+    } from "$lib/core/extension.svelte";
 
-	let { theme }: { theme: Theme } = $props();
+    let { theme }: { theme: Theme } = $props();
 
-	let currentImageIndex = $state(0);
-	let hoverTimer: ReturnType<typeof setInterval> | null = $state(null);
-	const displayImages = $derived(theme.images || []);
+    let currentImageIndex = $state(0);
+    let hoverTimer: ReturnType<typeof setInterval> | null = $state(null);
+    const displayImages = $derived(theme.images || []);
 
-	function startImageCarousel() {
-		if (displayImages.length <= 1) return;
-		hoverTimer = setInterval(() => {
-			currentImageIndex = (currentImageIndex + 1) % displayImages.length;
-		}, 2000);
-	}
+    function startImageCarousel() {
+        if (displayImages.length <= 1) return;
+        hoverTimer = setInterval(() => {
+            currentImageIndex = (currentImageIndex + 1) % displayImages.length;
+        }, 2000);
+    }
 
-	function stopImageCarousel() {
-		if (hoverTimer) {
-			clearInterval(hoverTimer);
-			hoverTimer = null;
-		}
-		currentImageIndex = 0;
-	}
+    function stopImageCarousel() {
+        if (hoverTimer) {
+            clearInterval(hoverTimer);
+            hoverTimer = null;
+        }
+        currentImageIndex = 0;
+    }
 
-	function getDisplayImage(): string {
-		if (hoverTimer && displayImages.length > 0) {
-			return displayImages[currentImageIndex] || "";
-		}
-		if (theme.coverImage) {
-			return theme.coverImage;
-		}
-		return displayImages[0] || "";
-	}
+    function getDisplayImage(): string {
+        if (hoverTimer && displayImages.length > 0) {
+            return displayImages[currentImageIndex] || "";
+        }
+        if (theme.coverImage) {
+            return theme.coverImage;
+        }
+        return displayImages[0] || "";
+    }
 
-	let isInstalled = $derived(extensionState.installedThemeId === theme.themeId);
+    let isInstalled = $derived(
+        extensionState.installedThemeId === theme.themeId,
+    );
 
-	function handleInstall(e: Event) {
-		e.preventDefault();
-		e.stopPropagation();
+    function handleInstall(e: Event) {
+        e.preventDefault();
+        e.stopPropagation();
 
-		if (extensionState.isExtensionReady) {
-			dispatchThemeInstallation(theme.themeId, theme.themeName, [...SUPPORTED_DOMAINS]);
-		}
-	}
+        if (extensionState.isExtensionReady) {
+            dispatchThemeInstallation(theme.themeId, theme.themeName, [
+                ...SUPPORTED_DOMAINS,
+            ]);
+        }
+    }
 
-	function handleSave(e: Event) {
-		e.preventDefault();
-		e.stopPropagation();
+    function handleSave(e: Event) {
+        e.preventDefault();
+        e.stopPropagation();
 
-		if (extensionState.isExtensionReady) {
-			dispatchThemeSave(theme.themeId, theme.themeName, SUPPORTED_DOMAINS[0]);
-			// You could add a local "saved" toasted state if you had a toast system
-		}
-	}
+        if (extensionState.isExtensionReady) {
+            dispatchThemeSave(
+                theme.themeId,
+                theme.themeName,
+                SUPPORTED_DOMAINS[0],
+            );
+            // You could add a local "saved" toasted state if you had a toast system
+        }
+    }
 </script>
 
 <a
-	href="/themes/{theme.themeId}"
-	class="theme-card-wrapper"
-	onmouseenter={startImageCarousel}
-	onmouseleave={stopImageCarousel}
+    href="/themes/{theme.themeId}"
+    class="theme-card-wrapper"
+    onmouseenter={startImageCarousel}
+    onmouseleave={stopImageCarousel}
 >
-	<div class="theme-card glass-panel">
-		<div class="card-image">
-			{#if displayImages.length > 0 || theme.coverImage}
-				{#key currentImageIndex}
-					<img
-						src={getDisplayImage()}
-						alt={theme.themeName}
-						in:fade={{ duration: 300 }}
-					/>
-				{/key}
-			{:else}
-				<div class="placeholder">
-					<span class="premium-font">{theme.themeName.charAt(0)}</span>
-				</div>
-			{/if}
-			<div class="overlay">
-				<span class="view-tag">View Details</span>
-			</div>
-		</div>
+    <div class="theme-card glass-panel">
+        <div class="card-image">
+            {#if displayImages.length > 0 || theme.coverImage}
+                {#key currentImageIndex}
+                    <img
+                        src={getDisplayImage()}
+                        alt={theme.themeName}
+                        in:fade={{ duration: 300 }}
+                    />
+                {/key}
+            {:else}
+                <div class="placeholder">
+                    <span class="premium-font">{theme.themeName.charAt(0)}</span
+                    >
+                </div>
+            {/if}
+            <div class="overlay">
+                <span class="view-tag">View Details</span>
+            </div>
+        </div>
 
-		<div class="card-content">
-			<div class="header">
-				<div class="title-container">
-					<h3>{theme.themeName}</h3>
-					{#if theme.settings?.addOnStyleShiftItems}
-						<div class="custom-badge" title="This theme contains custom style features">
-							<MaterialIcon name="check" size={14} />
-						</div>
-					{/if}
-				</div>
-				<span class="downloads">
-					<MaterialIcon name="download" size={14} />
-					{theme.downloads}
-				</span>
-			</div>
-			<p>{theme.description || "No description provided."}</p>
-			<div class="footer">
-				<UserAvatar userId={theme.ownerId} size="sm" />
-				<div class="actions">
-						<button
-							class="action-btn icon-btn save-btn"
-							class:locked={!extensionState.isExtensionReady}
-							title={extensionState.isExtensionReady ? "Save Theme" : "Extension Required"}
-							disabled={!extensionState.isExtensionReady}
-							onclick={handleSave}
-						>
-							<MaterialIcon name="save" size={18} />
-						</button>
+        <div class="card-content">
+            <div class="header">
+                <div class="title-container">
+                    <h3>{theme.themeName}</h3>
+                    {#if theme.settings?.addOnStyleShiftItems}
+                        <div
+                            class="custom-badge"
+                            title="This theme contains custom style features"
+                        >
+                            <MaterialIcon name="check" size={14} />
+                        </div>
+                    {/if}
+                </div>
+                <span class="downloads">
+                    <MaterialIcon name="download" size={14} />
+                    {theme.downloads}
+                </span>
+            </div>
+            <p>{theme.description || "No description provided."}</p>
+            <div class="footer">
+                <UserAvatar userId={theme.ownerId} size="sm" />
+                <div class="actions">
+                    <button
+                        class="action-btn icon-btn save-btn"
+                        class:locked={!extensionState.isExtensionReady}
+                        title={extensionState.isExtensionReady
+                            ? "Save Theme"
+                            : "Extension Required"}
+                        disabled={!extensionState.isExtensionReady}
+                        onclick={handleSave}
+                    >
+                        <MaterialIcon name="save" size={18} />
+                    </button>
 
-					{#if isInstalled}
-						<div class="installed-badge">
-							<MaterialIcon name="check" size={14} />
-							<span>Installed</span>
-						</div>
-					{:else}
-						<button
-							class="action-btn icon-btn install-btn"
-							class:locked={!extensionState.isExtensionReady}
-							title={extensionState.isExtensionReady ? "Install Theme" : "Extension Required"}
-							disabled={!extensionState.isExtensionReady}
-							onclick={handleInstall}
-						>
-							{#if !extensionState.isExtensionReady}
-								<MaterialIcon name="lock" size={18} />
-							{:else}
-								<MaterialIcon name="add" size={18} />
-							{/if}
-						</button>
-					{/if}
-				</div>
-			</div>
-		</div>
-	</div>
+                    {#if isInstalled}
+                        <div class="installed-badge">
+                            <MaterialIcon name="check" size={14} />
+                            <span>Installed</span>
+                        </div>
+                    {:else}
+                        <button
+                            class="action-btn icon-btn install-btn"
+                            class:locked={!extensionState.isExtensionReady}
+                            title={extensionState.isExtensionReady
+                                ? "Install Theme"
+                                : "Extension Required"}
+                            disabled={!extensionState.isExtensionReady}
+                            onclick={handleInstall}
+                        >
+                            {#if !extensionState.isExtensionReady}
+                                <MaterialIcon name="lock" size={18} />
+                            {:else}
+                                <MaterialIcon name="add" size={18} />
+                            {/if}
+                        </button>
+                    {/if}
+                </div>
+            </div>
+        </div>
+    </div>
 </a>
 
 <style lang="scss">
-	.theme-card-wrapper {
-		text-decoration: none;
-		color: inherit;
-		display: block;
-		height: 100%;
-	}
+    .theme-card-wrapper {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        height: 100%;
+    }
 
-	.theme-card {
-		overflow: hidden;
-		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-		height: 100%;
-		display: flex;
-		flex-direction: column;
+    .theme-card {
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
 
-		&:hover {
-			transform: translateY(-4px);
-			border-color: rgba(255, 255, 255, 0.3);
-			box-shadow:
-				0 10px 30px rgba(0, 0, 0, 0.4),
-				0 0 15px rgba(255, 255, 255, 0.05);
+        &:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow:
+                0 10px 30px rgba(0, 0, 0, 0.4),
+                0 0 15px rgba(255, 255, 255, 0.05);
 
-			.overlay {
-				opacity: 1;
-			}
+            .overlay {
+                opacity: 1;
+            }
 
-			img {
-				transform: scale(1.1);
-			}
-		}
+            img {
+                transform: scale(1.1);
+            }
+        }
 
-		.card-image {
-			position: relative;
-			aspect-ratio: 16/9;
-			overflow: hidden;
-			background: rgba(0, 0, 0, 0.2);
+        .card-image {
+            position: relative;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
 
-			img {
-				width: 100%;
-				height: 100%;
-				object-fit: cover;
-				transition: transform 0.6s ease;
-			}
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.6s ease;
+            }
 
-			.placeholder {
-				width: 100%;
-				height: 100%;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
-				font-size: 3rem;
-				opacity: 0.5;
-			}
+            .placeholder {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+                font-size: 3rem;
+                opacity: 0.5;
+            }
 
-			.overlay {
-				position: absolute;
-				inset: 0;
-				background: rgba(0, 0, 0, 0.6);
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				opacity: 0;
-				transition: opacity 0.3s ease;
-				.view-tag {
-					color: white;
-					border: 1px solid rgba(255, 255, 255, 0.2);
-					pointer-events: none;
-				}
-			}
-		}
+            .overlay {
+                position: absolute;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                .view-tag {
+                    color: white;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    pointer-events: none;
+                }
+            }
+        }
 
-		.card-content {
-			padding: 1.5rem;
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			gap: 0.75rem;
+        .card-content {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
 
-			.header {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
 
-				.title-container {
-					display: flex;
-					align-items: center;
-					gap: 0.5rem;
-					overflow: hidden;
+                .title-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    overflow: hidden;
 
-					h3 {
-						margin: 0;
-						font-size: 1.25rem;
-						font-weight: 700;
-						white-space: nowrap;
-						overflow: hidden;
-						text-overflow: ellipsis;
-					}
+                    h3 {
+                        margin: 0;
+                        font-size: 1.25rem;
+                        font-weight: 700;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
 
-					.custom-badge {
-						flex-shrink: 0;
-						color: #00e5ff;
-						background: rgba(0, 229, 255, 0.1);
-						padding: 4px;
-						border-radius: 50%;
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						border: 1px solid rgba(0, 229, 255, 0.2);
-						box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
-					}
-				}
+                    .custom-badge {
+                        flex-shrink: 0;
+                        color: #00e5ff;
+                        background: rgba(0, 229, 255, 0.1);
+                        padding: 4px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border: 1px solid rgba(0, 229, 255, 0.2);
+                        box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+                    }
+                }
 
-				.downloads {
-					font-size: 0.85rem;
-					color: var(--text-muted);
-					white-space: nowrap;
-					display: flex;
-					align-items: center;
-					gap: 0.35rem;
-				}
-			}
+                .downloads {
+                    font-size: 0.85rem;
+                    color: var(--text-muted);
+                    white-space: nowrap;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                }
+            }
 
-			p {
-				margin: 0;
-				font-size: 0.95rem;
-				color: var(--text-secondary);
-				display: -webkit-box;
-				-webkit-line-clamp: 2;
-				line-clamp: 2;
-				-webkit-box-orient: vertical;
-				overflow: hidden;
-				line-height: 1.5;
-				flex: 1;
-			}
+            p {
+                margin: 0;
+                font-size: 0.95rem;
+                color: var(--text-secondary);
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                line-height: 1.5;
+                flex: 1;
+            }
 
-			.footer {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				margin-top: 0.5rem;
-				gap: 0.75rem;
+            .footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 0.5rem;
+                gap: 0.75rem;
 
-				.installed-badge {
-					display: flex;
-					align-items: center;
-					gap: 0.35rem;
-					color: #00ff96;
-					font-size: 0.85rem;
-					font-weight: 700;
-					background: rgba(0, 255, 150, 0.1);
-					padding: 6px 12px;
-					border-radius: var(--radius-sm);
-					border: 1px solid rgba(0, 255, 150, 0.2);
-				}
+                .installed-badge {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    color: #00ff96;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    background: rgba(0, 255, 150, 0.1);
+                    padding: 6px 12px;
+                    border-radius: var(--radius-sm);
+                    border: 1px solid rgba(0, 255, 150, 0.2);
+                }
 
-				.actions {
-					display: flex;
-					align-items: center;
-					gap: 0.5rem;
-				}
+                .actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
 
-				.action-btn {
-					&.icon-btn {
-						width: 36px;
-						height: 36px;
-						padding: 0;
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						border-radius: 50%;
-						background: rgba(255, 255, 255, 0.05);
-						color: var(--text-primary);
-						border: 1px solid var(--border-glass);
-						box-shadow: none;
-						transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                .action-btn {
+                    &.icon-btn {
+                        width: 36px;
+                        height: 36px;
+                        padding: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, 0.05);
+                        color: var(--text-primary);
+                        border: 1px solid var(--border-glass);
+                        box-shadow: none;
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-						&:hover {
-							background: var(--text-primary);
-							color: var(--bg-dark);
-							transform: scale(1.1);
-							box-shadow: 0 8px 25px
-								rgba(var(--text-primary-rgb), 0.25);
-						}
+                        &:hover {
+                            background: var(--text-primary);
+                            color: var(--bg-dark);
+                            transform: scale(1.1);
+                            box-shadow: 0 8px 25px
+                                rgba(var(--text-primary-rgb), 0.25);
+                        }
 
-						&.install-btn:hover {
-							transform: scale(1.1) rotate(90deg);
-						}
+                        &.install-btn:hover {
+                            transform: scale(1.1) rotate(90deg);
+                        }
 
-						&.save-btn:hover {
-							background: var(--secondary-glow);
-							border-color: var(--secondary-glow);
-						}
+                        &.save-btn:hover {
+                            background: var(--secondary-glow);
+                            border-color: var(--secondary-glow);
+                        }
 
-						&:active {
-							transform: scale(0.95);
-						}
+                        &:active {
+                            transform: scale(0.95);
+                        }
 
-						&.locked {
-							opacity: 0.5;
-							cursor: not-allowed;
-							
-							&:hover {
-								background: rgba(255, 255, 255, 0.05);
-								color: var(--text-primary);
-								transform: none;
-								box-shadow: none;
-								border-color: var(--border-glass);
-							}
-							
-							&:active {
-								transform: none;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+                        &.locked {
+                            opacity: 0.5;
+                            cursor: not-allowed;
+
+                            &:hover {
+                                background: rgba(255, 255, 255, 0.05);
+                                color: var(--text-primary);
+                                transform: none;
+                                box-shadow: none;
+                                border-color: var(--border-glass);
+                            }
+
+                            &:active {
+                                transform: none;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 </style>

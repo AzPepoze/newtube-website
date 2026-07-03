@@ -7,7 +7,7 @@ export const EXTENSION_EVENTS = {
     SAVE: "save_newtube_theme",
     CHECK_INSTALL: "is_newtube_theme_installed",
     READY: "newtube_is_ready",
-    INSTALL_STATUS: "newtube_theme_install_status"
+    INSTALL_STATUS: "newtube_theme_install_status",
 };
 
 export const SUPPORTED_DOMAINS = ["youtube.com"];

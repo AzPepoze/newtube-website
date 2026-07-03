@@ -47,7 +47,8 @@
                         </a>
                         <button
                             class="delete-btn"
-                            onclick={() => confirmDelete(theme.themeId, theme.themeName)}
+                            onclick={() =>
+                                confirmDelete(theme.themeId, theme.themeName)}
                         >
                             <MaterialIcon name="delete" size={14} /> Delete
                         </button>

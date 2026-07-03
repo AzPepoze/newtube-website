@@ -1,10 +1,11 @@
-import { Elysia } from 'elysia';
-import { env } from 'cloudflare:workers';
-import { createDb } from '../db';
-import { getSession } from '../db/sessions';
+import { Elysia } from "elysia";
+import { env } from "cloudflare:workers";
+import { createDb } from "../db";
+import { getSession } from "../db/sessions";
 
-export const contextPlugin = new Elysia({ name: 'context' })
-    .derive({ as: 'global' }, async ({ cookie }) => {
+export const contextPlugin = new Elysia({ name: "context" }).derive(
+    { as: "global" },
+    async ({ cookie }) => {
         const db = createDb(env.DB);
         const sessionId = cookie.sessionId?.value as string | undefined;
         let userId: string | undefined = undefined;
@@ -21,4 +22,5 @@ export const contextPlugin = new Elysia({ name: 'context' })
             db,
             env,
         };
-    });
+    },
+);

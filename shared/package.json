@@ -1,16 +1,16 @@
 {
-	"name": "shared",
-	"version": "1.0.0",
-	"type": "module",
-	"main": "./index.ts",
-	"exports": {
-		".": {
-			"types": "./index.ts",
-			"default": "./index.ts"
-		}
-	},
-	"files": [
-		"index.ts",
-		"constants.ts"
-	]
+    "name": "shared",
+    "version": "1.0.0",
+    "type": "module",
+    "main": "./index.ts",
+    "exports": {
+        ".": {
+            "types": "./index.ts",
+            "default": "./index.ts"
+        }
+    },
+    "files": [
+        "index.ts",
+        "constants.ts"
+    ]
 }

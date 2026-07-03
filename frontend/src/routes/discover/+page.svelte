@@ -1,291 +1,290 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-	import ThemeCard from "$lib/components/theme/ThemeCard.svelte";
-	import type { Theme } from "$lib/types/index";
-	import { fade, fly, scale } from "svelte/transition";
-	import { page } from "$app/state";
-	import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
-	import { debounce } from "$lib/utils/debounce";
-	import CustomDropdown from "$lib/components/common/CustomDropdown.svelte";
+    import { onMount } from "svelte";
+    import ThemeCard from "$lib/components/theme/ThemeCard.svelte";
+    import type { Theme } from "$lib/types/index";
+    import { fade, fly, scale } from "svelte/transition";
+    import { page } from "$app/state";
+    import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+    import { debounce } from "$lib/utils/debounce";
+    import CustomDropdown from "$lib/components/common/CustomDropdown.svelte";
 
-	let themes = $state<Theme[]>([]);
-	let searchQuery = $state("");
-	let sortBy = $state("popular");
-	let loading = $state(true);
+    let themes = $state<Theme[]>([]);
+    let searchQuery = $state("");
+    let sortBy = $state("popular");
+    let loading = $state(true);
 
-	const sortOptions = [
-		{ value: "popular", label: "Most Popular" },
-		{ value: "newest", label: "Recently Added" },
-		{ value: "alpha", label: "Alphabetical" },
-	];
+    const sortOptions = [
+        { value: "popular", label: "Most Popular" },
+        { value: "newest", label: "Recently Added" },
+        { value: "alpha", label: "Alphabetical" },
+    ];
 
-	import { PUBLIC_API_URL } from "$lib/constants/index";
-	import { ui } from "$lib/core/ui.svelte";
+    import { PUBLIC_API_URL } from "$lib/constants/index";
+    import { ui } from "$lib/core/ui.svelte";
 
-	async function fetchThemes() {
-		loading = true;
-		try {
-			const response = await fetch(
-				`${PUBLIC_API_URL}/themes?q=${searchQuery}&sort=${sortBy}`,
-				{ credentials: "include" },
-			);
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(
-					`Failed to fetch themes: ${response.status} ${errorText}`,
-				);
-			}
-			themes = await response.json();
-		} catch (error: any) {
-			ui.showModal(
-				"Discovery Error",
-				"Failed to load themes. Please check your internet connection.",
-				"error",
-			);
-		} finally {
-			loading = false;
-		}
-	}
+    async function fetchThemes() {
+        loading = true;
+        try {
+            const response = await fetch(
+                `${PUBLIC_API_URL}/themes?q=${searchQuery}&sort=${sortBy}`,
+                { credentials: "include" },
+            );
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(
+                    `Failed to fetch themes: ${response.status} ${errorText}`,
+                );
+            }
+            themes = await response.json();
+        } catch (error: any) {
+            ui.showModal(
+                "Discovery Error",
+                "Failed to load themes. Please check your internet connection.",
+                "error",
+            );
+        } finally {
+            loading = false;
+        }
+    }
 
-	onMount(() => {
-		searchQuery = page.url.searchParams.get("q") || "";
-	});
+    onMount(() => {
+        searchQuery = page.url.searchParams.get("q") || "";
+    });
 
-	const debouncedSearch = debounce(fetchThemes, 500);
+    const debouncedSearch = debounce(fetchThemes, 500);
 
-	let initialized = false;
-	$effect(() => {
-		searchQuery;
-		sortBy;
+    let initialized = false;
+    $effect(() => {
+        searchQuery;
+        sortBy;
 
-		if (!initialized) {
-			fetchThemes();
-			initialized = true;
-			return;
-		}
+        if (!initialized) {
+            fetchThemes();
+            initialized = true;
+            return;
+        }
 
-		debouncedSearch();
-	});
+        debouncedSearch();
+    });
 </script>
 
 <div
-	class="discover-container"
-	in:scale={{ delay: 200, start: 0.98, duration: 300 }}
-	out:scale={{ start: 0.98, duration: 200 }}
+    class="discover-container"
+    in:scale={{ delay: 200, start: 0.98, duration: 300 }}
+    out:scale={{ start: 0.98, duration: 200 }}
 >
-	<div class="discover-controls">
-		<div class="controls-left">
-			<div class="search-wrapper glass-panel">
-				<MaterialIcon name="search" size={22} />
-				<input
-					type="text"
-					placeholder="Search themes..."
-					bind:value={searchQuery}
-					onkeydown={(e) => e.key === "Enter" && fetchThemes()}
-				/>
-				{#if searchQuery}
-					<button
-						class="clear-search"
-						onclick={() => {
-							searchQuery = "";
-						}}
-					>
-						<MaterialIcon name="close" size={14} />
-					</button>
-				{/if}
-			</div>
-		</div>
+    <div class="discover-controls">
+        <div class="controls-left">
+            <div class="search-wrapper glass-panel">
+                <MaterialIcon name="search" size={22} />
+                <input
+                    type="text"
+                    placeholder="Search themes..."
+                    bind:value={searchQuery}
+                    onkeydown={(e) => e.key === "Enter" && fetchThemes()}
+                />
+                {#if searchQuery}
+                    <button
+                        class="clear-search"
+                        onclick={() => {
+                            searchQuery = "";
+                        }}
+                    >
+                        <MaterialIcon name="close" size={14} />
+                    </button>
+                {/if}
+            </div>
+        </div>
 
-		<div class="sort-wrapper">
-			<span>Sort by:</span>
-			<CustomDropdown options={sortOptions} bind:value={sortBy} />
-		</div>
-	</div>
+        <div class="sort-wrapper">
+            <span>Sort by:</span>
+            <CustomDropdown options={sortOptions} bind:value={sortBy} />
+        </div>
+    </div>
 
-	{#if loading}
-		<div class="loading-state">
-			<div class="spinner"></div>
-			<p>Curating themes for you...</p>
-		</div>
-	{:else}
-		<div class="theme-grid" in:fade={{ duration: 600 }}>
-			{#each themes as theme (theme.themeId)}
-				<div in:fly={{ y: 20, duration: 500 }}>
-					<ThemeCard {theme} />
-				</div>
-			{/each}
-		</div>
+    {#if loading}
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Curating themes for you...</p>
+        </div>
+    {:else}
+        <div class="theme-grid" in:fade={{ duration: 600 }}>
+            {#each themes as theme (theme.themeId)}
+                <div in:fly={{ y: 20, duration: 500 }}>
+                    <ThemeCard {theme} />
+                </div>
+            {/each}
+        </div>
 
-		{#if themes.length === 0}
-			<div class="empty-state">
-				<p>No themes found</p>
-				<button
-					class="clear-btn premium-button glass-panel"
-					onclick={() => {
-						searchQuery = "";
-					}}
-				>
-					<MaterialIcon name="close" size={16} /> Clear Search
-				</button>
-			</div>
-		{/if}
-	{/if}
+        {#if themes.length === 0}
+            <div class="empty-state">
+                <p>No themes found</p>
+                <button
+                    class="clear-btn premium-button glass-panel"
+                    onclick={() => {
+                        searchQuery = "";
+                    }}
+                >
+                    <MaterialIcon name="close" size={16} /> Clear Search
+                </button>
+            </div>
+        {/if}
+    {/if}
 </div>
 
 <style lang="scss">
-	.discover-container {
-		padding: 2rem 0;
-	}
+    .discover-container {
+        padding: 2rem 0;
+    }
 
-	.discover-controls {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 3rem;
-		gap: 2rem;
+    .discover-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3rem;
+        gap: 2rem;
 
-		@media (max-width: 768px) {
-			flex-direction: column;
-			align-items: flex-start;
-		}
+        @media (max-width: 768px) {
+            flex-direction: column;
+            align-items: flex-start;
+        }
 
-		.controls-left {
-			display: flex;
-			align-items: center;
-			gap: 2rem;
-			flex: 1;
-			width: 100%;
+        .controls-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            flex: 1;
+            width: 100%;
 
-			@media (max-width: 900px) {
-				flex-direction: column;
-				align-items: flex-start;
-				gap: 1rem;
-			}
-		}
+            @media (max-width: 900px) {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
 
-		.search-wrapper {
-			display: flex;
-			align-items: center;
-			gap: 0.75rem;
-			padding: 0.8rem 1.5rem;
-			background: rgba(var(--text-primary-rgb), 0.05);
-			border-radius: var(--radius-md);
-			flex: 1;
-			transition: all 0.3s;
-			color: var(--text-secondary);
-			:global(.light) & {
-				background: #ffffff;
-				border-color: rgba(0, 0, 0, 0.1);
-			}
+        .search-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(var(--text-primary-rgb), 0.05);
+            border-radius: var(--radius-md);
+            flex: 1;
+            transition: all 0.3s;
+            color: var(--text-secondary);
+            :global(.light) & {
+                background: #ffffff;
+                border-color: rgba(0, 0, 0, 0.1);
+            }
 
-			&:focus-within {
-				background: rgba(var(--text-primary-rgb), 0.08);
-				border-color: rgba(var(--text-primary-rgb), 0.2);
-				color: var(--text-primary);
+            &:focus-within {
+                background: rgba(var(--text-primary-rgb), 0.08);
+                border-color: rgba(var(--text-primary-rgb), 0.2);
+                color: var(--text-primary);
 
-				:global(.light) & {
-					background: #ffffff;
-					border-color: rgba(0, 0, 0, 0.2);
-				}
-			}
+                :global(.light) & {
+                    background: #ffffff;
+                    border-color: rgba(0, 0, 0, 0.2);
+                }
+            }
 
-			input {
-				background: transparent;
-				border: none;
-				color: inherit;
-				font-family: inherit;
-				font-size: 1.1rem;
-				width: 100%;
+            input {
+                background: transparent;
+                border: none;
+                color: inherit;
+                font-family: inherit;
+                font-size: 1.1rem;
+                width: 100%;
 
-				&::placeholder {
-					color: var(--text-muted);
-				}
+                &::placeholder {
+                    color: var(--text-muted);
+                }
 
-				&:focus {
-					outline: none;
-				}
-			}
+                &:focus {
+                    outline: none;
+                }
+            }
 
-			.clear-search {
-				background: transparent;
-				border: none;
-				color: var(--text-muted);
-				cursor: pointer;
-				display: flex;
-				padding: 4px;
-				border-radius: 50%;
-				transition: all 0.2s;
+            .clear-search {
+                background: transparent;
+                border: none;
+                color: var(--text-muted);
+                cursor: pointer;
+                display: flex;
+                padding: 4px;
+                border-radius: 50%;
+                transition: all 0.2s;
 
-				&:hover {
-					background: rgba(var(--text-primary-rgb), 0.1);
-					color: var(--text-primary);
-				}
-			}
-		}
-	}
+                &:hover {
+                    background: rgba(var(--text-primary-rgb), 0.1);
+                    color: var(--text-primary);
+                }
+            }
+        }
+    }
 
-	.sort-wrapper {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		color: var(--text-secondary);
-		font-size: 1.1rem;
-	}
+    .sort-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+    }
 
-	.theme-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-		gap: 3rem;
-	}
+    .theme-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 3rem;
+    }
 
-	.loading-state {
-		text-align: center;
-		padding: 5rem 0;
-		color: var(--text-muted);
+    .loading-state {
+        text-align: center;
+        padding: 5rem 0;
+        color: var(--text-muted);
 
-		.spinner {
-			width: 50px;
-			height: 50px;
-			border: 3px solid
-				rgba(var(--text-primary-rgb, 255, 255, 255), 0.1);
-			border-top-color: var(--primary-glow);
-			border-radius: 50%;
-			margin: 0 auto 1.5rem;
-			animation: spin 1s linear infinite;
-		}
-	}
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(var(--text-primary-rgb, 255, 255, 255), 0.1);
+            border-top-color: var(--primary-glow);
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            animation: spin 1s linear infinite;
+        }
+    }
 
-	.empty-state {
-		text-align: center;
-		padding: 5rem 0;
+    .empty-state {
+        text-align: center;
+        padding: 5rem 0;
 
-		p {
-			font-size: 1.25rem;
-			color: var(--text-secondary);
-			margin-bottom: 1.5rem;
-		}
+        p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
 
-		button.clear-btn {
-			display: inline-flex;
-			align-items: center;
-			gap: 0.75rem;
-			padding: 1.2rem 2.5rem;
-			font-size: 1.1rem;
-			background: var(--text-primary);
-			color: var(--bg-dark);
-			border: none;
+        button.clear-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1.2rem 2.5rem;
+            font-size: 1.1rem;
+            background: var(--text-primary);
+            color: var(--bg-dark);
+            border: none;
 
-			&:hover {
-				transform: translateY(-2px);
-				background: var(--text-primary);
-				opacity: 0.9;
-			}
-		}
-	}
+            &:hover {
+                transform: translateY(-2px);
+                background: var(--text-primary);
+                opacity: 0.9;
+            }
+        }
+    }
 
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
 </style>

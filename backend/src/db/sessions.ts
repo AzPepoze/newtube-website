@@ -1,8 +1,11 @@
-import { eq } from 'drizzle-orm';
-import { sessions } from './schema';
-import type { Database } from './index';
+import { eq } from "drizzle-orm";
+import type { Database } from "./index";
+import { sessions } from "./schema";
 
-export async function createSession(db: Database, userId: string): Promise<string> {
+export async function createSession(
+    db: Database,
+    userId: string,
+): Promise<string> {
     const sessionId = crypto.randomUUID();
     // Session expires in 30 days
     const expiresAt = new Date();
