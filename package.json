@@ -13,7 +13,7 @@
         "dev:backend": "bun run --filter backend dev",
         "build:frontend": "bun run --filter frontend build",
         "build:backend": "bun run --filter backend build",
-        "check": "bun run format:check && bun run --parallel check:frontend check:backend",
+        "check": "bun run format && bun run --parallel check:frontend check:backend",
         "check:frontend": "bun run --filter frontend check",
         "check:backend": "bun run --filter backend check",
         "test:frontend": "bun run --filter frontend test",

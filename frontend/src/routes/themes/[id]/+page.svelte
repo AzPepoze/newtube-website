@@ -208,8 +208,7 @@
 <style lang="scss">
     .theme-detail-container {
         padding: 2rem 0;
-        max-width: 1200px;
-        margin: 0 auto;
+        width: 100%;
     }
 
     .back-link {
@@ -231,7 +230,7 @@
 
     .detail-layout {
         display: grid;
-        grid-template-columns: minmax(160px, 210px) minmax(0, 1fr);
+        grid-template-columns: 200px minmax(0, 1fr);
         gap: 2rem;
         align-items: start;
 

@@ -406,7 +406,7 @@
 
     .editor-layout {
         display: grid;
-        grid-template-columns: minmax(160px, 210px) minmax(0, 1fr);
+        grid-template-columns: 200px minmax(0, 1fr);
         gap: 2rem;
         align-items: start;
 
