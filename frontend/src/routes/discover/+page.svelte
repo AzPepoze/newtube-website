@@ -154,6 +154,7 @@
             align-items: center;
             gap: 2rem;
             flex: 1;
+            min-width: 0;
             width: 100%;
 
             @media (max-width: 900px) {
@@ -171,6 +172,8 @@
             background: rgba(var(--text-primary-rgb), 0.05);
             border-radius: var(--radius-md);
             flex: 1;
+            min-width: 0;
+            width: 100%;
             transition: all 0.3s;
             color: var(--text-secondary);
             :global(.light) & {
@@ -190,6 +193,7 @@
             }
 
             input {
+                min-width: 0;
                 background: transparent;
                 border: none;
                 color: inherit;
@@ -234,7 +238,7 @@
 
     .theme-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
         gap: 3rem;
     }
 

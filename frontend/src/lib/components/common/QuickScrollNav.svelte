@@ -61,9 +61,12 @@
     }
 
     function scrollOffset() {
-        const mobileNavHeight = window.matchMedia("(max-width: 900px)").matches
-            ? navElement?.offsetHeight || 0
-            : 0;
+        const isInsideAppHeader = !!navElement?.closest(".app-container > nav");
+        const mobileNavHeight =
+            window.matchMedia("(max-width: 900px)").matches &&
+            !isInsideAppHeader
+                ? navElement?.offsetHeight || 0
+                : 0;
         return appHeaderBottom() + mobileNavHeight + 16;
     }
 
@@ -127,6 +130,25 @@
 
     onMount(() => {
         let observer: IntersectionObserver;
+        const originalParent = navElement.parentNode;
+        const placeholder = document.createComment("quick-scroll-nav");
+        originalParent?.insertBefore(placeholder, navElement);
+
+        const placeNavigation = () => {
+            const mobileTarget = document.querySelector<HTMLElement>(
+                ".app-container > nav .mobile-page-navigation",
+            );
+            if (
+                window.matchMedia("(max-width: 900px)").matches &&
+                mobileTarget
+            ) {
+                mobileTarget.appendChild(navElement);
+            } else if (placeholder.parentNode) {
+                placeholder.parentNode.insertBefore(navElement, placeholder);
+            }
+        };
+
+        placeNavigation();
 
         const updateActiveSection = () => {
             const offset = scrollOffset() + 8;
@@ -178,6 +200,7 @@
 
         observeSections();
         const handleResize = () => {
+            placeNavigation();
             if (!window.matchMedia("(max-width: 900px)").matches) {
                 closeMenu();
             }
@@ -222,6 +245,10 @@
             window.removeEventListener("hashchange", handleHashChange);
             document.removeEventListener("pointerdown", handlePointerDown);
             document.removeEventListener("keydown", handleKeydown);
+            if (placeholder.parentNode) {
+                placeholder.parentNode.insertBefore(navElement, placeholder);
+                placeholder.remove();
+            }
         };
     });
 </script>
@@ -282,6 +309,7 @@
     .quick-scroll {
         position: sticky;
         top: 7.5rem;
+        min-height: calc(100vh - 9rem);
         padding: 1.25rem;
         border-radius: var(--radius-md);
 
@@ -338,8 +366,10 @@
 
     @media (max-width: 900px) {
         .quick-scroll {
-            top: 6.75rem;
+            position: relative;
+            top: auto;
             z-index: 900;
+            min-height: 0;
             padding: 0;
             background: var(--bg-dark);
         }

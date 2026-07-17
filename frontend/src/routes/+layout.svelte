@@ -210,6 +210,8 @@
                     {/if}
                 </div>
             </div>
+
+            <div class="mobile-page-navigation"></div>
         </nav>
     {/if}
 
@@ -227,8 +229,6 @@
         min-height: 100vh;
         padding: 1.5rem 2rem;
         width: 100%;
-        max-width: 1440px;
-        margin: 0 auto;
     }
 
     nav {
@@ -236,7 +236,9 @@
         justify-content: space-between;
         align-items: center;
         padding: 0.4rem 1.5rem;
-        margin-bottom: 3rem;
+        width: 100%;
+        max-width: 1640px;
+        margin: 0 auto 3rem;
         border-radius: var(--radius-md);
         z-index: 1000;
         position: sticky;
@@ -254,6 +256,10 @@
             display: flex;
             align-items: center;
             gap: 2.5rem;
+        }
+
+        .mobile-page-navigation {
+            display: none;
         }
 
         .logo-img {
@@ -402,6 +408,8 @@
         animation: contentFade 0.6s ease-out;
         flex: 1;
         width: 100%;
+        max-width: 1640px;
+        margin: 0 auto;
     }
 
     @keyframes contentFade {
@@ -415,9 +423,102 @@
         }
     }
 
-    @media (max-width: 768px) {
-        .nav-links {
-            display: none;
+    @media (max-width: 900px) {
+        .app-container {
+            padding: 1rem;
+        }
+
+        nav {
+            top: 1rem;
+            padding: 0.35rem 0.75rem;
+            flex-wrap: wrap;
+
+            .nav-left,
+            .nav-right {
+                gap: 0.75rem;
+            }
+
+            .logo-img {
+                height: 48px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .nav-right {
+                gap: 0.5rem;
+
+                .github-link,
+                .theme-toggle {
+                    padding: 0.4rem;
+                }
+
+                .auth-section .login-btn {
+                    padding: 8px 14px;
+                    font-size: 0.9rem;
+                }
+            }
+
+            .mobile-page-navigation:not(:empty) {
+                display: block;
+                flex: 0 0 100%;
+                min-width: 0;
+            }
+        }
+
+        .profile-menu .user-profile {
+            gap: 0.5rem;
+            padding: 4px;
+
+            .avatar,
+            .avatar-fallback {
+                width: 36px;
+                height: 36px;
+            }
+        }
+    }
+
+    @media (max-width: 480px) {
+        .app-container {
+            padding: 0.5rem;
+        }
+
+        nav {
+            top: 0.5rem;
+            padding: 0.3rem 0.4rem;
+
+            .logo-img {
+                height: 44px;
+            }
+
+            .nav-right {
+                gap: 0.25rem;
+
+                .github-link,
+                .theme-toggle {
+                    padding: 0.3rem;
+                }
+
+                .auth-section .login-btn {
+                    padding: 7px 10px;
+                }
+            }
+        }
+
+        .profile-menu .user-profile {
+            gap: 0.25rem;
+            padding: 3px;
+
+            .avatar,
+            .avatar-fallback {
+                width: 34px;
+                height: 34px;
+            }
+
+            .chevron {
+                font-size: 0.6rem;
+            }
         }
     }
 </style>
