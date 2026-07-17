@@ -24,6 +24,15 @@
         coverImagePending ? URL.createObjectURL(coverImagePending) : coverImage,
     );
 
+    const parsedSettings = $derived.by(() => {
+        if (!settingsCode.trim()) return {};
+        try {
+            return JSON.parse(settingsCode);
+        } catch {
+            return {};
+        }
+    });
+
     $effect(() => {
         getCurrentUser().then((user) => {
             currentUser = user;
@@ -39,13 +48,13 @@
                 description: description || "No description provided.",
                 images,
                 coverImage: displayCoverImage,
-                settings: settingsCode ? JSON.parse(settingsCode) : {},
+                settings: parsedSettings,
                 downloads: 0,
             }) as Theme,
     );
 </script>
 
-<div class="preview-container">
+<div class="preview-container quick-scroll-section" id="preview">
     <div class="card-preview glass-panel">
         <h3>Card Preview</h3>
         <div class="card-wrapper">
@@ -62,7 +71,7 @@
                         description,
                         images,
                         coverImage,
-                        settings: JSON.parse(settingsCode || "{}"),
+                        settings: parsedSettings,
                     },
                     null,
                     2,

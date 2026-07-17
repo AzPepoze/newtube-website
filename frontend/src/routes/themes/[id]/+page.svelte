@@ -13,6 +13,15 @@
     import UserAvatar from "$lib/components/common/UserAvatar.svelte";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
     import MarkdownViewer from "$lib/components/common/MarkdownViewer.svelte";
+    import QuickScrollNav, {
+        type QuickScrollItem,
+    } from "$lib/components/common/QuickScrollNav.svelte";
+
+    const navigationItems: QuickScrollItem[] = [
+        { id: "overview", label: "Overview" },
+        { id: "description", label: "Description" },
+        { id: "settings", label: "Settings" },
+    ];
 
     function formatDate(dateStr: string | undefined) {
         if (!dateStr) return "N/A";
@@ -100,69 +109,97 @@
         <div in:fade={{ duration: 400 }}>
             <a href="/discover" class="back-link">← Back to Discover</a>
 
-            <div class="layout-single" in:fly={{ y: 20, duration: 600 }}>
-                <ThemeDetailHeader {theme} {currentUser} {deleteTheme} />
+            <div class="detail-layout" in:fly={{ y: 20, duration: 600 }}>
+                <aside>
+                    <QuickScrollNav
+                        items={navigationItems}
+                        label="Theme detail sections"
+                    />
+                </aside>
 
-                <div class="gallery-wrapper">
-                    <ThemeDetailGallery {theme} />
-                </div>
-
-                <div class="info-row">
-                    <div class="creator glass-panel">
-                        <UserAvatar
-                            userId={theme.ownerId}
-                            name={theme.creatorName}
-                            avatarUrl={theme.creatorAvatar}
-                            size="md"
-                            showLabel={true}
+                <div class="layout-single">
+                    <section
+                        id="overview"
+                        class="overview quick-scroll-section"
+                    >
+                        <ThemeDetailHeader
+                            {theme}
+                            {currentUser}
+                            {deleteTheme}
                         />
-                        <div class="theme-dates">
-                            <div class="date-item" title="Created Date">
-                                <MaterialIcon name="calendar_today" size={16} />
-                                <span
-                                    >Created: {formatDate(
-                                        theme.createdAt,
-                                    )}</span
-                                >
-                            </div>
-                            <div class="date-item" title="Last Updated">
-                                <MaterialIcon name="update" size={16} />
-                                <span
-                                    >Updated: {formatDate(
-                                        theme.updatedAt,
-                                    )}</span
-                                >
-                            </div>
+
+                        <div class="gallery-wrapper">
+                            <ThemeDetailGallery {theme} />
                         </div>
 
-                        {#if currentUser === theme.ownerId}
-                            <div class="creator-actions">
-                                <a
-                                    href="/themes/edit/{theme.themeId}"
-                                    class="edit-theme-btn premium-button"
-                                >
-                                    <MaterialIcon name="edit" size={16} />
-                                    <span>Edit Theme</span>
-                                </a>
+                        <div class="info-row">
+                            <div class="creator glass-panel">
+                                <UserAvatar
+                                    userId={theme.ownerId}
+                                    name={theme.creatorName}
+                                    avatarUrl={theme.creatorAvatar}
+                                    size="md"
+                                    showLabel={true}
+                                />
+                                <div class="theme-dates">
+                                    <div class="date-item" title="Created Date">
+                                        <MaterialIcon
+                                            name="calendar_today"
+                                            size={16}
+                                        />
+                                        <span
+                                            >Created: {formatDate(
+                                                theme.createdAt,
+                                            )}</span
+                                        >
+                                    </div>
+                                    <div class="date-item" title="Last Updated">
+                                        <MaterialIcon name="update" size={16} />
+                                        <span
+                                            >Updated: {formatDate(
+                                                theme.updatedAt,
+                                            )}</span
+                                        >
+                                    </div>
+                                </div>
+
+                                {#if currentUser === theme.ownerId}
+                                    <div class="creator-actions">
+                                        <a
+                                            href="/themes/edit/{theme.themeId}"
+                                            class="edit-theme-btn premium-button"
+                                        >
+                                            <MaterialIcon
+                                                name="edit"
+                                                size={16}
+                                            />
+                                            <span>Edit Theme</span>
+                                        </a>
+                                    </div>
+                                {/if}
                             </div>
-                        {/if}
-                    </div>
 
-                    <ThemeDetailStats {theme} />
+                            <ThemeDetailStats {theme} />
+                        </div>
+                    </section>
+
+                    <section
+                        id="description"
+                        class="section glass-panel description-panel quick-scroll-section"
+                    >
+                        <h3>Description</h3>
+                        <div class="description-content">
+                            <MarkdownViewer
+                                content={theme.description ||
+                                    "*No description provided.*"}
+                            />
+                        </div>
+                    </section>
+
+                    <section id="settings" class="quick-scroll-section">
+                        <ThemeDetailCodePreview {theme} />
+                    </section>
                 </div>
-
-                <!-- Description -->
-                <div class="section glass-panel description-panel">
-                    <h3>Description</h3>
-                    <div class="description-content">
-                        <MarkdownViewer
-                            content={theme.description ||
-                                "*No description provided.*"}
-                        />
-                    </div>
-                </div>
-
-                <ThemeDetailCodePreview {theme} />
             </div>
         </div>
     {/if}
@@ -190,6 +227,33 @@
         display: flex;
         flex-direction: column;
         gap: 2rem;
+    }
+
+    .detail-layout {
+        display: grid;
+        grid-template-columns: minmax(160px, 210px) minmax(0, 1fr);
+        gap: 2rem;
+        align-items: start;
+
+        aside {
+            min-width: 0;
+            height: 100%;
+        }
+    }
+
+    .overview {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .quick-scroll-section {
+        min-width: 0;
+        scroll-margin-top: 12rem;
+    }
+
+    #settings :global(.section) {
+        margin: 0;
     }
 
     .gallery-wrapper {
@@ -332,6 +396,27 @@
     @keyframes spin {
         to {
             transform: rotate(360deg);
+        }
+    }
+
+    @media (max-width: 900px) {
+        .detail-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+
+            aside,
+            .layout-single {
+                width: 100%;
+            }
+
+            aside {
+                display: contents;
+            }
+        }
+
+        .quick-scroll-section {
+            scroll-margin-top: 15rem;
         }
     }
 </style>

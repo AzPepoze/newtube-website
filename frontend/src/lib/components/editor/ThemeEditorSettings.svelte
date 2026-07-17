@@ -26,7 +26,7 @@
     });
 </script>
 
-<div class="card glass-panel">
+<div class="card glass-panel quick-scroll-section" id="theme-settings">
     <div class="card-header">
         <h3>Theme Settings (JSON)</h3>
         <span

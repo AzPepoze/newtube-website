@@ -54,7 +54,7 @@
     }
 </script>
 
-<div class="card glass-panel">
+<div class="card glass-panel quick-scroll-section" id="basic-info">
     <h3>Basic Information</h3>
     <FormField
         label="Name"
@@ -86,7 +86,7 @@
     </FormField>
 </div>
 
-<div class="card glass-panel">
+<div class="card glass-panel quick-scroll-section" id="cover-image">
     <div class="card-header">
         <h3>Cover Image</h3>
         <p class="hint">One image for your theme card preview</p>
@@ -106,7 +106,7 @@
     />
 </div>
 
-<div class="card glass-panel">
+<div class="card glass-panel quick-scroll-section" id="screenshots">
     <div class="card-header">
         <h3>Screenshots</h3>
         <p class="hint">Upload up to 5 screenshots of your theme</p>

@@ -1,7 +1,9 @@
 <script lang="ts">
     import { fade, fly } from "svelte/transition";
     import type { Theme } from "$lib/types/index";
-    import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+    import QuickScrollNav, {
+        type QuickScrollItem,
+    } from "$lib/components/common/QuickScrollNav.svelte";
     import { getSessionId } from "$lib/utils/auth";
     import { PUBLIC_API_URL } from "$lib/constants/index";
     import { ui } from "$lib/core/ui.svelte";
@@ -32,12 +34,18 @@
     let success = $state(false);
     let errorMessage = $state("");
     let infoMessage = $state("");
-    let activeTab = $state<"info" | "settings" | "preview">("info");
     let jsonError = $state("");
     let titleError = $state("");
     let descriptionError = $state("");
 
     const DRAFT_KEY = "newtube_theme_draft";
+    const navigationItems: QuickScrollItem[] = [
+        { id: "basic-info", label: "Basic Info" },
+        { id: "cover-image", label: "Cover Image" },
+        { id: "screenshots", label: "Screenshots" },
+        { id: "theme-settings", label: "Theme Settings" },
+        { id: "preview", label: "Preview" },
+    ];
     let hasRestored = false;
 
     // Initialize form with provided data or draft
@@ -48,7 +56,7 @@
             description = initialData.description || "";
             images = initialData.images || [];
             coverImage = initialData.coverImage || "";
-            settingsCode = "";
+            settingsCode = JSON.stringify(initialData.settings ?? {}, null, 2);
         } else {
             // Try to load draft from localStorage
             const savedDraft = localStorage.getItem(DRAFT_KEY);
@@ -234,29 +242,6 @@
         <h1 class="premium-font">
             {isEdit ? "Edit" : "Create"} <span class="glow">Theme</span>
         </h1>
-        <div class="tabs">
-            <button
-                class:active={activeTab === "info"}
-                onclick={() => (activeTab = "info")}
-                type="button"
-            >
-                <MaterialIcon name="edit" size={16} /> Basic Info
-            </button>
-            <button
-                class:active={activeTab === "settings"}
-                onclick={() => (activeTab = "settings")}
-                type="button"
-            >
-                <MaterialIcon name="settings" size={16} /> Theme Settings
-            </button>
-            <button
-                class:active={activeTab === "preview"}
-                onclick={() => (activeTab = "preview")}
-                type="button"
-            >
-                <MaterialIcon name="visibility" size={16} /> Preview
-            </button>
-        </div>
     </div>
 
     {#if success}
@@ -288,13 +273,19 @@
         </div>
     {/if}
 
-    <form onsubmit={handleSubmit} class="editor-grid">
-        <div class="sections-wrapper">
-            {#if activeTab === "info"}
+    <div class="editor-layout">
+        <aside>
+            <QuickScrollNav
+                items={navigationItems}
+                label="Theme editor sections"
+            />
+        </aside>
+
+        <form onsubmit={handleSubmit} class="editor-grid">
+            <div class="sections-wrapper">
                 <div
                     class="editor-main"
                     in:fly={{ y: 20, duration: 400, delay: 150 }}
-                    out:fly={{ y: -20, duration: 250 }}
                 >
                     <ThemeEditorBasicInfo
                         bind:themeName
@@ -305,21 +296,7 @@
                         bind:pendingImages
                         bind:errorMessage
                     />
-                </div>
-            {:else if activeTab === "settings"}
-                <div
-                    class="editor-main"
-                    in:fly={{ y: 20, duration: 400, delay: 150 }}
-                    out:fly={{ y: -20, duration: 250 }}
-                >
                     <ThemeEditorSettings bind:settingsCode bind:jsonError />
-                </div>
-            {:else}
-                <div
-                    class="preview-main"
-                    in:fly={{ y: 20, duration: 400, delay: 150 }}
-                    out:fly={{ y: -20, duration: 250 }}
-                >
                     <ThemeEditorPreview
                         {themeName}
                         {description}
@@ -329,36 +306,36 @@
                         {settingsCode}
                     />
                 </div>
-            {/if}
-        </div>
+            </div>
 
-        <div class="actions">
-            {#if !isEdit && (themeName || description !== defaultDescription || images.length > 0 || coverImage)}
+            <div class="actions">
+                {#if !isEdit && (themeName || description !== defaultDescription || images.length > 0 || coverImage)}
+                    <button
+                        type="button"
+                        class="clear-btn"
+                        onclick={clearDraft}
+                        disabled={submitting}
+                    >
+                        Clear Draft
+                    </button>
+                {/if}
                 <button
-                    type="button"
-                    class="clear-btn"
-                    onclick={clearDraft}
-                    disabled={submitting}
+                    type="submit"
+                    class="submit-btn premium-button"
+                    disabled={submitting ||
+                        !!jsonError ||
+                        !!titleError ||
+                        !!descriptionError}
                 >
-                    Clear Draft
+                    {submitting
+                        ? "Saving..."
+                        : isEdit
+                          ? "Update Theme"
+                          : "Publish Theme"}
                 </button>
-            {/if}
-            <button
-                type="submit"
-                class="submit-btn premium-button"
-                disabled={submitting ||
-                    !!jsonError ||
-                    !!titleError ||
-                    !!descriptionError}
-            >
-                {submitting
-                    ? "Saving..."
-                    : isEdit
-                      ? "Update Theme"
-                      : "Publish Theme"}
-            </button>
-        </div>
-    </form>
+            </div>
+        </form>
+    </div>
 </div>
 
 <style lang="scss">
@@ -376,35 +353,6 @@
         h1 {
             margin: 0;
             font-size: 3rem;
-        }
-    }
-
-    .tabs {
-        display: flex;
-        gap: 0.5rem;
-        background: rgba(var(--text-primary-rgb), 0.05);
-        padding: 0.3rem;
-        border-radius: var(--radius-md);
-        border: 1px solid var(--border-glass);
-
-        button {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            font-family: inherit;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: var(--radius-sm);
-            transition: all 0.2s;
-
-            &.active {
-                background: var(--text-primary);
-                color: var(--bg-dark);
-            }
         }
     }
 
@@ -456,6 +404,18 @@
         }
     }
 
+    .editor-layout {
+        display: grid;
+        grid-template-columns: minmax(160px, 210px) minmax(0, 1fr);
+        gap: 2rem;
+        align-items: start;
+
+        aside {
+            min-width: 0;
+            height: 100%;
+        }
+    }
+
     .editor-grid {
         display: flex;
         flex-direction: column;
@@ -463,17 +423,9 @@
     }
 
     .sections-wrapper {
-        display: grid;
-        grid-template-areas: "content";
         min-width: 0;
         width: 100%;
         overflow: hidden;
-
-        & > div {
-            grid-area: content;
-            min-width: 0;
-            width: 100%;
-        }
     }
 
     .editor-main,
@@ -514,6 +466,35 @@
                 opacity: 0.5;
                 cursor: not-allowed;
             }
+        }
+    }
+
+    :global(.quick-scroll-section) {
+        scroll-margin-top: 12rem;
+    }
+
+    @media (max-width: 900px) {
+        .header h1 {
+            font-size: clamp(2rem, 10vw, 3rem);
+        }
+
+        .editor-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+
+            aside,
+            .editor-grid {
+                width: 100%;
+            }
+
+            aside {
+                display: contents;
+            }
+        }
+
+        :global(.quick-scroll-section) {
+            scroll-margin-top: 15rem;
         }
     }
 </style>
