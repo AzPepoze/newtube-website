@@ -43,11 +43,13 @@
     let theme = $state<ThemeDetail | null>(null);
     let loading = $state(true);
     let currentUser = $state("");
+    let fetchError = $state("");
 
     async function fetchTheme() {
         const id = page.params.id;
         loading = true;
         currentUser = "";
+        fetchError = "";
         try {
             const [response, viewer] = await Promise.all([
                 fetch(`${PUBLIC_API_URL}/themes/${id}`, {
@@ -56,12 +58,15 @@
                 getCurrentUser(),
             ]);
 
-            if (!response.ok) throw new Error("Theme not found");
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.message || errData.error || "Theme not found");
+            }
 
             theme = await response.json();
             currentUser = viewer?.id ?? "";
         } catch (error) {
-            ui.showModal("Error", "Failed to fetch theme details.", "error");
+            fetchError = error instanceof Error ? error.message : "Failed to fetch theme details.";
             theme = null;
         } finally {
             loading = false;
@@ -171,6 +176,16 @@
                 </div>
             </div>
         </div>
+    {:else}
+        <div class="error-state glass-panel" in:fade>
+            <div class="error-icon">⚠️</div>
+            <h2>Theme Not Found</h2>
+            <p>{fetchError || "Failed to fetch theme details."}</p>
+            <div class="error-actions">
+                <a href="/discover" class="action-btn primary">Back to Discover</a>
+                <a href="/" class="action-btn secondary">Back to Home</a>
+            </div>
+        </div>
     {/if}
 </div>
 
@@ -192,6 +207,72 @@
             border-radius: 50%;
             margin: 0 auto 1.5rem;
             animation: spin 1s linear infinite;
+        }
+    }
+
+    .error-state {
+        max-width: 480px;
+        margin: 4rem auto;
+        padding: 3rem 2rem;
+        text-align: center;
+        border-radius: var(--radius-lg, 16px);
+        border: 1px solid var(--border-glass);
+        background: rgba(var(--text-primary-rgb), 0.03);
+        backdrop-filter: blur(10px);
+
+        .error-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            margin: 0 0 0.5rem;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin: 0 0 2rem;
+            font-size: 0.95rem;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+
+            .action-btn {
+                padding: 0.7rem 1.4rem;
+                border-radius: var(--radius-md, 8px);
+                font-weight: 600;
+                font-size: 0.9rem;
+                text-decoration: none;
+                transition: all 0.2s ease;
+
+                &.primary {
+                    background: var(--text-primary);
+                    color: var(--bg-dark, #000);
+
+                    &:hover {
+                        transform: translateY(-2px);
+                        filter: brightness(1.1);
+                    }
+                }
+
+                &.secondary {
+                    background: rgba(var(--text-primary-rgb), 0.08);
+                    color: var(--text-primary);
+                    border: 1px solid var(--border-glass);
+
+                    &:hover {
+                        background: rgba(var(--text-primary-rgb), 0.15);
+                        transform: translateY(-2px);
+                    }
+                }
+            }
         }
     }
 

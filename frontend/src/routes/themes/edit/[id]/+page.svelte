@@ -50,10 +50,13 @@
         </div>
     {:else if error}
         <div class="error-state glass-panel">
-            <p>⚠️ {error}</p>
-            <a href="/profile" class="back-btn premium-button"
-                >Back to Profile</a
-            >
+            <div class="error-icon">⚠️</div>
+            <h2>Theme Not Found</h2>
+            <p>{error}</p>
+            <div class="error-actions">
+                <a href="/discover" class="action-btn primary">Back to Discover</a>
+                <a href="/" class="action-btn secondary">Back to Home</a>
+            </div>
         </div>
     {:else if theme}
         <ThemeEditor initialData={theme} isEdit={true} />
@@ -92,8 +95,44 @@
         }
     }
 
-    .back-btn {
-        background: rgba(255, 255, 255, 0.05);
-        color: var(--text-primary);
+    .error-icon {
+        font-size: 2.5rem;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+
+        .action-btn {
+            padding: 0.7rem 1.4rem;
+            border-radius: var(--radius-md, 8px);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+
+            &.primary {
+                background: var(--text-primary);
+                color: var(--bg-dark, #000);
+
+                &:hover {
+                    transform: translateY(-2px);
+                    filter: brightness(1.1);
+                }
+            }
+
+            &.secondary {
+                background: rgba(var(--text-primary-rgb), 0.08);
+                color: var(--text-primary);
+                border: 1px solid var(--border-glass);
+
+                &:hover {
+                    background: rgba(var(--text-primary-rgb), 0.15);
+                    transform: translateY(-2px);
+                }
+            }
+        }
     }
 </style>
