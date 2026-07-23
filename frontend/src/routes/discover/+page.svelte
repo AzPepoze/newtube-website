@@ -6,6 +6,7 @@
     import { fade, fly, scale } from "svelte/transition";
     import { page } from "$app/state";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+    import CustomDropdown from "$lib/components/common/CustomDropdown.svelte";
     import { debounce } from "$lib/utils/debounce";
 
     const PAGE_SIZE = 12;
@@ -315,11 +316,11 @@
 
         <div class="sort-wrapper">
             <span>Sort by:</span>
-            <select bind:value={sortBy} onchange={applyFilters} aria-label="Sort themes">
-                {#each sortOptions as option}
-                    <option value={option.value}>{option.label}</option>
-                {/each}
-            </select>
+            <CustomDropdown
+                options={sortOptions}
+                bind:value={sortBy}
+                onChange={applyFilters}
+            />
         </div>
     </div>
 
@@ -518,24 +519,6 @@
         gap: 1rem;
         color: var(--text-secondary);
         font-size: 1.1rem;
-
-        select {
-            appearance: none;
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-sm);
-            padding: 0.65rem 2.2rem 0.65rem 0.8rem;
-            color: var(--text-primary);
-            background:
-                linear-gradient(45deg, transparent 50%, var(--text-muted) 50%) calc(100% - 14px) 50% / 5px 5px no-repeat,
-                linear-gradient(135deg, var(--text-muted) 50%, transparent 50%) calc(100% - 9px) 50% / 5px 5px no-repeat,
-                rgba(var(--text-primary-rgb), 0.05);
-            font: inherit;
-            cursor: pointer;
-
-            option {
-                color: #111;
-            }
-        }
     }
 
     .theme-grid {

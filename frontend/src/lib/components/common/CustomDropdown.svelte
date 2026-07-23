@@ -19,12 +19,14 @@
         placeholder = "Select an option",
         mode = "select", // "select" or "menu"
         trigger = null, // Custom trigger snippet
+        onChange = undefined,
     } = $props<{
         options: Option[];
         value?: string;
         placeholder?: string;
         mode?: "select" | "menu";
         trigger?: Snippet<[toggle: () => void]>;
+        onChange?: (value: string) => void;
     }>();
 
     let isOpen = $state(false);
@@ -44,6 +46,7 @@
             option.onClick();
         } else if (option.value !== undefined) {
             value = option.value;
+            onChange?.(option.value);
         }
         isOpen = false;
     }

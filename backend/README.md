@@ -2,43 +2,32 @@
 
 ## Marketplace migration for an existing D1 database
 
-`schema.sql` is rerunnable for tables and indexes, but SQLite/D1 cannot make
-`ALTER TABLE ... ADD COLUMN` idempotent. Therefore the legacy `is_admin`
-bridge must be run manually and exactly once. It is not part of an automatic
-application startup path.
+The backend has a schema-aware migration command. It inspects `Users`, adds
+the legacy `is_admin` column only when it is missing, then runs the rerunnable
+bootstrap schema for tables and indexes.
+
+Run this before local development:
+
+```bash
+bun run db:migrate:local
+```
+
+Production deployment runs the remote migration automatically before the
+Worker deploy. It can also be run on its own:
+
+```bash
+bun run db:migrate:remote
+```
+
+The command is safe to rerun. It does not grant administrator access.
+
+## Manual verification
 
 From `backend/`, first inspect the remote database:
 
 ```bash
 npx wrangler d1 execute DB --remote --command "PRAGMA table_info(Users);"
 ```
-
-If the output already contains `is_admin`, do **not** run the legacy file.
-Instead deploy the safe bootstrap schema to add the marketplace tables:
-
-```bash
-npx wrangler d1 execute DB --remote --file=schema.sql
-```
-
-If `is_admin` is absent, take a backup according to the project's D1 backup
-procedure, then apply the bridge once, followed by the bootstrap schema:
-
-```bash
-npx wrangler d1 execute DB --remote --file=migrations/0001_add_users_is_admin.sql
-npx wrangler d1 execute DB --remote --file=schema.sql
-```
-
-Verify the new column before proceeding:
-
-```bash
-npx wrangler d1 execute DB --remote --command "PRAGMA table_info(Users);"
-```
-
-New databases must run only `schema.sql`; they must not run the legacy bridge.
-
-Until the column exists, normal requests continue to treat every session as a
-non-admin. Administrator-only actions remain unavailable rather than granting
-access accidentally.
 
 ## Administrator bootstrap
 
