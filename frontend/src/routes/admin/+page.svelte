@@ -124,7 +124,7 @@
 <div class="admin-page" in:scale={{ delay: 120, start: 0.98, duration: 250 }}>
     <header><p class="eyebrow">Marketplace safety</p><h1 class="premium-font">Moderation queue</h1><p>Review community reports, resolve false positives, or remove a public theme from discovery.</p></header>
     <section class="category-panel glass-panel">
-        <div><p class="eyebrow">Marketplace taxonomy</p><h2>Create category</h2><p>Categories make discovery filters easier to browse.</p></div>
+        <div><p class="eyebrow">Theme classification</p><h2>Create category</h2><p>Categories make discovery filters easier to browse.</p></div>
         <form onsubmit={(event) => { event.preventDefault(); createCategory(); }}>
             <input bind:value={categoryName} maxlength="48" placeholder="Category name" aria-label="Category name" />
             <input bind:value={categorySlug} maxlength="48" placeholder="Slug (generated if blank)" aria-label="Category slug" />

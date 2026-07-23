@@ -29,7 +29,7 @@ bun run db:migrate:remote
 npx wrangler d1 migrations list DB --remote
 ```
 
-The migration creates the application schema and starter taxonomy. This is
+The migration creates the application schema and starter theme classifications.
 destructive only when paired with a database reset, so never reset production
 after it contains data.
 

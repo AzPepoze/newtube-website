@@ -1,4 +1,5 @@
 import { asc, eq, inArray } from "drizzle-orm";
+import { THEME_CATEGORIES } from "../../constants/marketplace";
 import type { Database } from "../index";
 import { categories, tags, themeCategories, themeTags } from "../schema";
 
@@ -22,6 +23,17 @@ export async function listCategories(db: Database) {
 
 export function getCategoryById(db: Database, id: string) {
     return db.select().from(categories).where(eq(categories.id, id)).get();
+}
+
+export async function ensureCategoryById(db: Database, id: string) {
+    const existing = await getCategoryById(db, id);
+    if (existing) return existing;
+
+    const category = THEME_CATEGORIES.find((item) => item.id === id);
+    if (!category) return undefined;
+
+    await db.insert(categories).values(category).onConflictDoNothing();
+    return getCategoryById(db, id);
 }
 
 export async function createCategory(
@@ -110,11 +122,7 @@ export async function setThemeCategory(
             set: { categoryId },
         });
 
-    return db
-        .select()
-        .from(categories)
-        .where(eq(categories.id, categoryId))
-        .get();
+    return ensureCategoryById(db, categoryId);
 }
 
 export async function getThemeClassification(db: Database, themeId: string) {

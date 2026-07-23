@@ -1,6 +1,7 @@
 export {
     applyThemeClassification,
     createCategory,
+    ensureCategoryById,
     getCategoryById,
     getThemeClassification,
     listCategories,
@@ -9,7 +10,7 @@ export {
     setThemeCategory,
     setThemeTagNames,
     tagSlug,
-} from "./marketplace/taxonomy";
+} from "./marketplace/theme-classification";
 export {
     createThemeVersion,
     getThemeVersion,

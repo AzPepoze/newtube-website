@@ -6,7 +6,7 @@ import {
     type CategorySnapshot,
     type TagSnapshot,
 } from "../schema";
-import { getThemeClassification } from "./taxonomy";
+import { getThemeClassification } from "./theme-classification";
 
 export async function createThemeVersion(db: Database, themeId: string) {
     const theme = await db

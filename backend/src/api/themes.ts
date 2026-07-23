@@ -9,7 +9,7 @@ import {
     type ThemeSort,
 } from "../db/themes";
 import {
-    getCategoryById,
+    ensureCategoryById,
     getThemeClassification,
     getThemeReviewSummary,
     getThemeVersion,
@@ -111,7 +111,7 @@ async function validateThemePayload(db: any, data: any) {
     if (failed && !failed.valid) return failed.message;
 
     if (data.categoryId) {
-        const category = await getCategoryById(db, data.categoryId);
+        const category = await ensureCategoryById(db, data.categoryId);
         if (!category) return "Category not found";
     }
     return null;
