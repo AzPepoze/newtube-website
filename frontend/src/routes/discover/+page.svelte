@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { goto } from "$app/navigation";
+    import { afterNavigate, goto } from "$app/navigation";
     import ThemeCard from "$lib/components/theme/ThemeCard.svelte";
     import type { Theme } from "$lib/types/index";
     import { fade, fly, scale } from "svelte/transition";
@@ -23,6 +23,8 @@
     let initialized = false;
     let requestId = 0;
     let controller: AbortController | null = null;
+    let filterRequestVersion = 0;
+    const localNavigationHrefs = new Set<string>();
     let taxonomyTags = $state<Array<{ name: string; slug: string }>>([]);
     let taxonomyCategories = $state<Array<{ name: string; slug: string }>>([]);
 
@@ -103,26 +105,6 @@
         offset = asOffset(params.get("offset"));
     }
 
-    function stateSignature() {
-        return [
-            searchQuery,
-            sortBy,
-            selectedTags.join(","),
-            selectedCategories.join(","),
-            offset,
-        ].join("\u0000");
-    }
-
-    function urlSignature(params: URLSearchParams) {
-        return [
-            params.get("q") ?? "",
-            params.get("sort") ?? "popular",
-            parseFilterValues(params.get("tag")).join(","),
-            parseFilterValues(params.get("category")).join(","),
-            asOffset(params.get("offset")),
-        ].join("\u0000");
-    }
-
     function buildSearchParams() {
         const params = new URLSearchParams();
         if (searchQuery.trim()) params.set("q", searchQuery.trim());
@@ -151,11 +133,13 @@
 
     function updateUrl() {
         const params = buildSearchParams();
-        void goto(`/discover?${params.toString()}`, {
+        const href = `/discover?${params.toString()}`;
+        localNavigationHrefs.add(href);
+        void goto(href, {
             replaceState: true,
             keepFocus: true,
             noScroll: true,
-        });
+        }).catch(() => localNavigationHrefs.delete(href));
     }
 
     function matchesLegacyFilters(theme: Theme) {
@@ -237,32 +221,49 @@
         initialized = true;
         loadTaxonomy();
         fetchThemes();
-        return () => controller?.abort();
+        return () => {
+            filterRequestVersion += 1;
+            controller?.abort();
+        };
     });
 
     function applyFilters() {
+        filterRequestVersion += 1;
         offset = 0;
         updateUrl();
         fetchThemes();
     }
 
-    const debouncedFilterChange = debounce(applyFilters, 500);
+    const debouncedFilterChange = debounce((version: number) => {
+        if (version === filterRequestVersion) fetchThemes();
+    }, 500);
 
     function queueFilterChange() {
-        debouncedFilterChange();
+        filterRequestVersion += 1;
+        offset = 0;
+        updateUrl();
+        debouncedFilterChange(filterRequestVersion);
     }
 
-    $effect(() => {
-        const params = page.url.searchParams;
-        if (initialized && urlSignature(params) !== stateSignature()) {
-            syncStateFromUrl(params);
-            fetchThemes();
+    afterNavigate((navigation) => {
+        if (!initialized || navigation.type === "enter") return;
+
+        const href = `${page.url.pathname}${page.url.search}`;
+        if (navigation.type !== "popstate" && localNavigationHrefs.delete(href)) {
+            return;
         }
+
+        // Any navigation not initiated by the filters wins over a queued request.
+        localNavigationHrefs.clear();
+        filterRequestVersion += 1;
+        syncStateFromUrl(page.url.searchParams);
+        fetchThemes();
     });
 
     function goToPage(pageNumber: number) {
         const nextOffset = (pageNumber - 1) * pageLimit;
         if (nextOffset === offset || pageNumber < 1 || pageNumber > totalPages) return;
+        filterRequestVersion += 1;
         offset = nextOffset;
         updateUrl();
         fetchThemes();
