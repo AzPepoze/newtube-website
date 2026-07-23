@@ -14,7 +14,7 @@
         {
             "binding": "DB",
             "database_name": "newtube-db",
-            "database_id": "c8cd869e-d76c-4709-b396-25436821038e",
+            "database_id": "15999e3e-f297-453d-b7ed-21694b447985",
             "migrations_dir": "drizzle",
         },
     ],
