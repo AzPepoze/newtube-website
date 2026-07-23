@@ -4,9 +4,11 @@
 
     let {
         mode = $bindable(),
+        isFullscreen = $bindable(false),
         handleAction,
     }: {
         mode: "split" | "editor" | "preview";
+        isFullscreen?: boolean;
         handleAction: (action: string) => void;
     } = $props();
 
@@ -141,6 +143,19 @@
             <MaterialIcon name="visibility" size={14} />
             <span>Preview</span>
         </button>
+
+        <div class="divider"></div>
+
+        <button
+            class="mode-btn"
+            class:active={isFullscreen}
+            onclick={() => (isFullscreen = !isFullscreen)}
+            title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen"}
+            type="button"
+        >
+            <MaterialIcon name={isFullscreen ? "fullscreen_exit" : "fullscreen"} size={14} />
+            <span>{isFullscreen ? "Exit" : "Fullscreen"}</span>
+        </button>
     </div>
 </div>
 
@@ -226,6 +241,13 @@
                     color: var(--text-primary);
                     font-weight: 600;
                 }
+            }
+
+            .divider {
+                width: 1px;
+                height: 14px;
+                background: var(--border-glass);
+                margin: auto 0.25rem;
             }
         }
     }
