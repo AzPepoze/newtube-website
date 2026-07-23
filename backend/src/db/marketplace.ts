@@ -31,13 +31,3 @@ export {
     setThemeVisibility,
     setUserAdmin,
 } from "./marketplace/moderation";
-export {
-    addThemeToCollection,
-    createCollection,
-    deleteCollection,
-    getCollectionForOwner,
-    listCollectionThemes,
-    listCollectionsByUser,
-    removeThemeFromCollection,
-    updateCollection,
-} from "./marketplace/collections";

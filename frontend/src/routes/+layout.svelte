@@ -170,6 +170,22 @@
             in:fly={{ y: -100, delay: 200, duration: 1000 }}
         >
             <div class="nav-left">
+                <button
+                    type="button"
+                    class="mobile-menu-toggle"
+                    bind:this={mobileMenuButton}
+                    onclick={toggleMobileMenu}
+                    aria-label={isMobileMenuOpen
+                        ? "Close navigation menu"
+                        : "Open navigation menu"}
+                    aria-controls="mobile-primary-navigation"
+                    aria-expanded={isMobileMenuOpen}
+                >
+                    <MaterialIcon
+                        name={isMobileMenuOpen ? "close" : "menu"}
+                        size={26}
+                    />
+                </button>
                 <a href="/" class="logo-link" in:fade={{ duration: 200 }}>
                     <img src="/logo.png" alt="NewTube" class="logo-img" />
                 </a>
@@ -263,23 +279,6 @@
                         >
                     {/if}
                 </div>
-
-                <button
-                    type="button"
-                    class="mobile-menu-toggle"
-                    bind:this={mobileMenuButton}
-                    onclick={toggleMobileMenu}
-                    aria-label={isMobileMenuOpen
-                        ? "Close navigation menu"
-                        : "Open navigation menu"}
-                    aria-controls="mobile-primary-navigation"
-                    aria-expanded={isMobileMenuOpen}
-                >
-                    <MaterialIcon
-                        name={isMobileMenuOpen ? "close" : "menu"}
-                        size={26}
-                    />
-                </button>
             </div>
 
             {#if isMobileMenuOpen}
@@ -454,10 +453,6 @@
                     font-size: 1rem;
                 }
             }
-
-            .mobile-menu-toggle {
-                display: none;
-            }
         }
     }
 
@@ -566,22 +561,22 @@
                     padding: 8px 14px;
                     font-size: 0.9rem;
                 }
+            }
 
-                .mobile-menu-toggle {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 0.4rem;
-                    border: 0;
-                    border-radius: var(--radius-sm);
-                    background: transparent;
-                    color: var(--text-primary);
-                    cursor: pointer;
+            .nav-left .mobile-menu-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0.4rem;
+                border: 0;
+                border-radius: var(--radius-sm);
+                background: transparent;
+                color: var(--text-primary);
+                cursor: pointer;
 
-                    &:hover,
-                    &:focus-visible {
-                        background: rgba(var(--text-primary-rgb), 0.08);
-                    }
+                &:hover,
+                &:focus-visible {
+                    background: rgba(var(--text-primary-rgb), 0.08);
                 }
             }
 
@@ -650,14 +645,17 @@
                 gap: 0.25rem;
 
                 .github-link,
-                .theme-toggle,
-                .mobile-menu-toggle {
+                .theme-toggle {
                     padding: 0.3rem;
                 }
 
                 .auth-section .login-btn {
                     padding: 7px 10px;
                 }
+            }
+
+            .nav-left .mobile-menu-toggle {
+                padding: 0.3rem;
             }
         }
 

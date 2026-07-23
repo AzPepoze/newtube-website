@@ -15,7 +15,6 @@
     } | null>(null);
     let loading = $state(true);
     let drafts = $state<any[]>([]);
-    let collections = $state<any[]>([]);
     let reviews = $state<any[]>([]);
 
     import { PUBLIC_API_URL } from "$lib/constants/index";
@@ -38,7 +37,6 @@
             const data = await response.json();
             myThemes = data.themes || [];
             drafts = data.drafts || [];
-            collections = data.collections || [];
             reviews = data.reviews || [];
             userData = data.user;
         } catch (error) {
@@ -74,10 +72,6 @@
             );
         }
     }
-
-    function updateCollections(nextCollections: any[]) {
-        collections = nextCollections;
-    }
 </script>
 
 <div
@@ -88,12 +82,7 @@
     <ProfileHeader {userData} />
     <ProfileThemeList {loading} {myThemes} {deleteTheme} />
     {#if !loading}
-        <ProfileMarketplace
-            {collections}
-            {reviews}
-            {drafts}
-            onCollectionsChange={updateCollections}
-        />
+        <ProfileMarketplace {reviews} {drafts} />
     {/if}
 </div>
 

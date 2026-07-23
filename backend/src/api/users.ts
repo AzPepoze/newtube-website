@@ -1,10 +1,6 @@
 import { Elysia } from "elysia";
 import { getUserById, getUserProfile } from "../db/users";
-import {
-    getUserReviewActivity,
-    isUserAdmin,
-    listCollectionsByUser,
-} from "../db/marketplace";
+import { getUserReviewActivity, isUserAdmin } from "../db/marketplace";
 import { contextPlugin } from "../plugins/context";
 import { authGuard } from "../plugins/auth-guard";
 
@@ -42,15 +38,11 @@ export const userRoute = new Elysia({ prefix: "/users" })
             };
         }
 
-        const [collections, reviews] = await Promise.all([
-            listCollectionsByUser(db, targetUserId),
-            getUserReviewActivity(db, targetUserId, {
-                includePrivateThemes: true,
-            }),
-        ]);
+        const reviews = await getUserReviewActivity(db, targetUserId, {
+            includePrivateThemes: true,
+        });
         return {
             ...profile,
-            collections,
             reviews,
             drafts: userThemes.filter((theme) => !theme.isPublic),
         };
