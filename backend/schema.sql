@@ -62,6 +62,32 @@ CREATE TABLE IF NOT EXISTS Tags (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Starter taxonomy keeps creation and discovery useful before the community
+-- has added its own categories and tags. These inserts are safe to rerun.
+INSERT OR IGNORE INTO Categories (id, slug, name) VALUES
+    ('category-gaming', 'gaming', 'Gaming'),
+    ('category-entertainment', 'entertainment', 'Entertainment'),
+    ('category-music', 'music', 'Music'),
+    ('category-productivity', 'productivity', 'Productivity'),
+    ('category-education', 'education', 'Education'),
+    ('category-technology', 'technology', 'Technology'),
+    ('category-news', 'news', 'News'),
+    ('category-lifestyle', 'lifestyle', 'Lifestyle');
+
+INSERT OR IGNORE INTO Tags (id, slug, name) VALUES
+    ('tag-dark-mode', 'dark-mode', 'Dark Mode'),
+    ('tag-minimal', 'minimal', 'Minimal'),
+    ('tag-colorful', 'colorful', 'Colorful'),
+    ('tag-retro', 'retro', 'Retro'),
+    ('tag-anime', 'anime', 'Anime'),
+    ('tag-gaming', 'gaming', 'Gaming'),
+    ('tag-music', 'music', 'Music'),
+    ('tag-focus', 'focus', 'Focus'),
+    ('tag-accessibility', 'accessibility', 'Accessibility'),
+    ('tag-high-contrast', 'high-contrast', 'High Contrast'),
+    ('tag-oled', 'oled', 'OLED'),
+    ('tag-pastel', 'pastel', 'Pastel');
+
 CREATE TABLE IF NOT EXISTS ThemeTags (
     theme_id TEXT NOT NULL,
     tag_id TEXT NOT NULL,
