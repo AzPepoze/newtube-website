@@ -30,8 +30,6 @@
             </div>
         </div>
 
-        <div class="stat-divider"></div>
-
         <div class="stat-item">
             <div class="stat-icon-wrapper downloads">
                 <MaterialIcon name="download" size={24} />
@@ -44,8 +42,6 @@
             </div>
         </div>
 
-        <div class="stat-divider"></div>
-
         <div class="stat-item">
             <div class="stat-icon-wrapper screenshots">
                 <MaterialIcon name="image" size={24} />
@@ -55,8 +51,6 @@
                 <span class="stat-label">Screenshots</span>
             </div>
         </div>
-
-        <div class="stat-divider"></div>
 
         <div class="stat-item">
             <div class="stat-icon-wrapper settings">
@@ -69,8 +63,6 @@
                 <span class="stat-label">Settings</span>
             </div>
         </div>
-
-        <div class="stat-divider"></div>
 
         <div class="stat-item">
             <div class="stat-icon-wrapper size">
@@ -92,31 +84,28 @@
         border: 1px solid var(--border-glass);
         width: 100%;
         overflow: hidden;
+        display: flex;
+        align-items: center;
 
         .stat-group {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
             align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 2rem;
-
-            @media (max-width: 768px) {
-                justify-content: center;
-                gap: 1.5rem;
-            }
         }
 
         .stat-item {
             display: flex;
             align-items: center;
-            gap: 1.25rem;
-            flex: 1;
-            min-width: 140px;
+            gap: 1rem;
+            min-width: 0;
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 
             .stat-icon-wrapper {
-                width: 48px;
-                height: 48px;
+                width: 44px;
+                height: 44px;
+                flex-shrink: 0;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -154,7 +143,7 @@
                 gap: 0.1rem;
 
                 .stat-value {
-                    font-size: 1.5rem;
+                    font-size: 1.4rem;
                     font-weight: 800;
                     color: var(--text-primary);
                     line-height: 1;
@@ -162,27 +151,12 @@
                 }
 
                 .stat-label {
-                    font-size: 0.75rem;
+                    font-size: 0.7rem;
                     font-weight: 600;
                     color: var(--text-primary);
                     text-transform: uppercase;
                     letter-spacing: 0.05em;
                 }
-            }
-        }
-
-        .stat-divider {
-            width: 1px;
-            height: 32px;
-            background: linear-gradient(
-                to bottom,
-                transparent,
-                var(--border-glass),
-                transparent
-            );
-
-            @media (max-width: 1024px) {
-                display: none;
             }
         }
     }

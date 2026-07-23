@@ -54,39 +54,65 @@
 <style lang="scss">
     .creator {
         display: flex;
-        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
         gap: 1.5rem;
-        padding: 1.5rem;
+        padding: 1.25rem 2rem;
         border-radius: var(--radius-lg);
+        width: 100%;
+        flex-wrap: wrap;
 
         .theme-dates {
             display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border-glass);
+            align-items: center;
+            gap: 1.5rem;
+            padding-top: 0;
 
             .date-item {
                 display: flex;
                 align-items: center;
                 gap: 0.5rem;
                 font-size: 0.85rem;
-                color: var(--text-muted);
+                color: var(--text-primary);
+                white-space: nowrap;
             }
         }
 
         .creator-actions {
-            padding-top: 0.5rem;
+            padding-top: 0;
+            margin-left: auto;
 
             .edit-theme-btn {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 gap: 0.5rem;
-                width: 100%;
-                padding: 0.75rem;
-                font-size: 0.9rem;
+                padding: 0.65rem 1.25rem;
+                font-size: 0.85rem;
+                font-weight: 600;
                 text-decoration: none;
+                white-space: nowrap;
+                border-radius: var(--radius-md);
+            }
+        }
+
+        @media (max-width: 640px) {
+            flex-direction: column;
+            align-items: flex-start;
+
+            .theme-dates {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .creator-actions {
+                margin-left: 0;
+                width: 100%;
+
+                .edit-theme-btn {
+                    width: 100%;
+                }
             }
         }
     }

@@ -319,13 +319,10 @@
             }
 
             .info-row {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 2rem;
-
-                @media (max-width: 900px) {
-                    grid-template-columns: 1fr;
-                }
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                width: 100%;
             }
         }
 
