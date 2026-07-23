@@ -38,7 +38,13 @@
     let titleError = $state("");
     let descriptionError = $state("");
 
-    const DRAFT_KEY = "newtube_theme_draft";
+    const NEW_DRAFT_KEY = "newtube_theme_draft";
+    let draftKey = $derived(
+        props.initialData?.themeId
+            ? `newtube_theme_draft_${props.initialData.themeId}`
+            : NEW_DRAFT_KEY,
+    );
+    let isServerDraft = $derived((initialData as any)?.isPublic === false);
     const navigationItems: QuickScrollItem[] = [
         { id: "basic-info", label: "Basic Info" },
         { id: "cover-image", label: "Cover Image" },
@@ -57,35 +63,32 @@
             images = initialData.images || [];
             coverImage = initialData.coverImage || "";
             settingsCode = JSON.stringify(initialData.settings ?? {}, null, 2);
-        } else {
-            // Try to load draft from localStorage
-            const savedDraft = localStorage.getItem(DRAFT_KEY);
-            if (savedDraft) {
-                try {
-                    const draft = JSON.parse(savedDraft);
-                    themeName = draft.themeName || "";
-                    description = draft.description || "";
-                    images = draft.images || [];
-                    coverImage = draft.coverImage || "";
-                    settingsCode = draft.settingsCode || "";
-                    if (themeName || description || settingsCode) {
-                        success = false;
-                        infoMessage = "Draft restored from last session.";
-                        setTimeout(() => {
-                            if (
-                                infoMessage ===
-                                "Draft restored from last session."
-                            )
-                                infoMessage = "";
-                        }, 15000);
-                    }
-                } catch (e) {
-                    ui.showModal(
-                        "Draft Error",
-                        "Failed to load your draft. It may be corrupted.",
-                        "warning",
-                    );
+        }
+
+        // A browser backup is deliberately separate from the server draft. It
+        // restores unsaved typing after a refresh or a dropped connection.
+        const savedDraft = localStorage.getItem(draftKey);
+        if (savedDraft) {
+            try {
+                const draft = JSON.parse(savedDraft);
+                themeName = draft.themeName || "";
+                description = draft.description || "";
+                images = draft.images || [];
+                coverImage = draft.coverImage || "";
+                settingsCode = draft.settingsCode || "";
+                if (themeName || description || settingsCode) {
+                    success = false;
+                    infoMessage = "Browser backup restored from your last session.";
+                    setTimeout(() => {
+                        if (infoMessage === "Browser backup restored from your last session.") infoMessage = "";
+                    }, 15000);
                 }
+            } catch (e) {
+                ui.showModal(
+                    "Draft Error",
+                    "Failed to load your browser backup. It may be corrupted.",
+                    "warning",
+                );
             }
         }
         hasRestored = true;
@@ -93,16 +96,14 @@
 
     // Auto-save draft
     $effect(() => {
-        if (!isEdit) {
-            const draft = {
-                themeName,
-                description,
-                images,
-                coverImage,
-                settingsCode,
-            };
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-        }
+        const draft = {
+            themeName,
+            description,
+            images,
+            coverImage,
+            settingsCode,
+        };
+        localStorage.setItem(draftKey, JSON.stringify(draft));
     });
 
     // Track validation state for submit button
@@ -115,11 +116,11 @@
     });
 
     function clearDraft() {
-        localStorage.removeItem(DRAFT_KEY);
+        localStorage.removeItem(draftKey);
         window.location.reload();
     }
 
-    async function handleSubmit(e: Event) {
+    async function handleSubmit(e: Event, publish = true) {
         e.preventDefault();
         if (!userId) {
             errorMessage = "You must be logged in to save a theme.";
@@ -193,6 +194,7 @@
                 pendingImages: pendingImagesData,
                 pendingCoverImage: pendingCoverImageData,
                 settings: JSON.parse(settingsCode),
+                isPublic: publish,
             };
 
             const method = isEdit ? "PUT" : "POST";
@@ -218,9 +220,19 @@
                 .json()
                 .catch(() => ({ themeId: props.initialData?.themeId }));
 
-            if (!isEdit) {
-                localStorage.removeItem(DRAFT_KEY);
+            if (!publish) {
+                localStorage.removeItem(draftKey);
+                const draftId = data.themeId || props.initialData?.themeId;
+                infoMessage = "Draft saved. It will be available from your profile on any device.";
+                if (!isEdit && draftId) {
+                    setTimeout(() => {
+                        window.location.href = `/themes/edit/${draftId}`;
+                    }, 600);
+                }
+                return;
             }
+
+            localStorage.removeItem(draftKey);
 
             success = true;
             setTimeout(() => {
@@ -254,7 +266,7 @@
         <div class="status-banner info" in:fade>
             <div class="message-content">
                 <span>✨ {infoMessage}</span>
-                {#if infoMessage === "Draft restored from last session."}
+                {#if infoMessage === "Browser backup restored from your last session."}
                     <button
                         type="button"
                         class="action-btn"
@@ -309,7 +321,7 @@
             </div>
 
             <div class="actions">
-                {#if !isEdit && (themeName || description !== defaultDescription || images.length > 0 || coverImage)}
+                {#if (themeName || description !== defaultDescription || images.length > 0 || coverImage)}
                     <button
                         type="button"
                         class="clear-btn"
@@ -330,9 +342,21 @@
                     {submitting
                         ? "Saving..."
                         : isEdit
-                          ? "Update Theme"
+                          ? isServerDraft
+                              ? "Publish Theme"
+                              : "Update Theme"
                           : "Publish Theme"}
                 </button>
+                {#if !isEdit || isServerDraft}
+                    <button
+                        type="button"
+                        class="draft-btn"
+                        onclick={(event) => handleSubmit(event, false)}
+                        disabled={submitting || !!jsonError || !!titleError || !!descriptionError}
+                    >
+                        Save Draft
+                    </button>
+                {/if}
             </div>
         </form>
     </div>
@@ -466,6 +490,18 @@
                 opacity: 0.5;
                 cursor: not-allowed;
             }
+        }
+
+        .draft-btn {
+            padding: 0 1.25rem;
+            background: rgba(var(--text-primary-rgb), 0.05);
+            border: 1px solid var(--border-glass);
+            color: var(--text-primary);
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+
+            &:disabled { opacity: 0.5; cursor: not-allowed; }
         }
     }
 

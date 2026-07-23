@@ -5,6 +5,7 @@
     import { requireAuth, getSessionId, getUserId } from "$lib/utils/auth";
     import ProfileThemeList from "$lib/components/profile/ProfileThemeList.svelte";
     import ProfileHeader from "$lib/components/profile/ProfileHeader.svelte";
+    import ProfileMarketplace from "$lib/components/profile/ProfileMarketplace.svelte";
 
     let myThemes = $state<Theme[]>([]);
     let userData = $state<{
@@ -13,6 +14,9 @@
         createdAt: string;
     } | null>(null);
     let loading = $state(true);
+    let drafts = $state<any[]>([]);
+    let collections = $state<any[]>([]);
+    let reviews = $state<any[]>([]);
 
     import { PUBLIC_API_URL } from "$lib/constants/index";
     import { ui } from "$lib/core/ui.svelte";
@@ -33,6 +37,9 @@
             });
             const data = await response.json();
             myThemes = data.themes || [];
+            drafts = data.drafts || [];
+            collections = data.collections || [];
+            reviews = data.reviews || [];
             userData = data.user;
         } catch (error) {
             ui.showModal(
@@ -67,6 +74,10 @@
             );
         }
     }
+
+    function updateCollections(nextCollections: any[]) {
+        collections = nextCollections;
+    }
 </script>
 
 <div
@@ -76,6 +87,14 @@
 >
     <ProfileHeader {userData} />
     <ProfileThemeList {loading} {myThemes} {deleteTheme} />
+    {#if !loading}
+        <ProfileMarketplace
+            {collections}
+            {reviews}
+            {drafts}
+            onCollectionsChange={updateCollections}
+        />
+    {/if}
 </div>
 
 <style lang="scss">

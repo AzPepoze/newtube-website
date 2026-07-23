@@ -10,6 +10,7 @@
     import ThemeDetailGallery from "$lib/components/theme/ThemeDetailGallery.svelte";
     import ThemeDetailCodePreview from "$lib/components/theme/ThemeDetailCodePreview.svelte";
     import ThemeDetailStats from "$lib/components/theme/ThemeDetailStats.svelte";
+    import ThemeDetailCommunity from "$lib/components/theme/ThemeDetailCommunity.svelte";
     import UserAvatar from "$lib/components/common/UserAvatar.svelte";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
     import MarkdownViewer from "$lib/components/common/MarkdownViewer.svelte";
@@ -21,6 +22,8 @@
         { id: "overview", label: "Overview" },
         { id: "description", label: "Description" },
         { id: "settings", label: "Settings" },
+        { id: "reviews", label: "Reviews" },
+        { id: "versions", label: "Versions" },
     ];
 
     function formatDate(dateStr: string | undefined) {
@@ -199,6 +202,8 @@
                     <section id="settings" class="quick-scroll-section">
                         <ThemeDetailCodePreview {theme} />
                     </section>
+
+                    <ThemeDetailCommunity themeId={theme.themeId} />
                 </div>
             </div>
         </div>
