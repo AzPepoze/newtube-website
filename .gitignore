@@ -173,3 +173,6 @@ dist
 
 # Local linked worktrees
 .worktrees/
+
+# Superpowers execution ledger
+.superpowers/
