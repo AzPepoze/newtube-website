@@ -279,11 +279,7 @@
             user-select: none;
         }
 
-        &.split {
-            .editor-pane {
-                /* split-divider handles border separation */
-            }
-        }
+
 
         &.editor-only {
             .editor-pane {
