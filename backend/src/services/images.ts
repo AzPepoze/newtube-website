@@ -55,7 +55,10 @@ export async function uploadFileToR2(env: Env, file: File): Promise<string> {
     return `${env.R2_PUBLIC_URL}/${objectKey}`;
 }
 
-export async function deleteImageFromR2(env: Env, imageUrl: string): Promise<void> {
+export async function deleteImageFromR2(
+    env: Env,
+    imageUrl: string,
+): Promise<void> {
     try {
         const url = new URL(imageUrl);
         const objectKey = url.pathname.substring(1);

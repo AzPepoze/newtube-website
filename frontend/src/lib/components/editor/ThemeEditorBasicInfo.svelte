@@ -34,8 +34,12 @@
     let titleError = $state("");
     let isNameDisabled = $state(false);
     let tagInput = $state("");
-    let availableTags = $state<Array<{ id: string; name: string; slug: string }>>([]);
-    let categories = $state<Array<{ id: string; name: string; slug: string }>>([]);
+    let availableTags = $state<
+        Array<{ id: string; name: string; slug: string }>
+    >([]);
+    let categories = $state<Array<{ id: string; name: string; slug: string }>>(
+        [],
+    );
     let taxonomyError = $state("");
 
     $effect(() => {
@@ -71,7 +75,8 @@
         const tag = normalizeTag(tagInput);
         if (!tag) return;
         if (tag.length > 32 || !/[a-z0-9]/i.test(tag)) {
-            taxonomyError = "Tags must be 1–32 characters and include a letter or number.";
+            taxonomyError =
+                "Tags must be 1–32 characters and include a letter or number.";
             return;
         }
         if (tagNames.includes(tag)) {
@@ -95,18 +100,23 @@
         try {
             const [tagsResponse, categoriesResponse] = await Promise.all([
                 fetch(`${PUBLIC_API_URL}/tags`, { credentials: "include" }),
-                fetch(`${PUBLIC_API_URL}/categories`, { credentials: "include" }),
+                fetch(`${PUBLIC_API_URL}/categories`, {
+                    credentials: "include",
+                }),
             ]);
             if (tagsResponse.ok) availableTags = await tagsResponse.json();
             if (categoriesResponse.ok) {
                 categories = await categoriesResponse.json();
                 const existing = categories.find(
-                    (category) => category.name === categoryId || category.slug === categoryId,
+                    (category) =>
+                        category.name === categoryId ||
+                        category.slug === categoryId,
                 );
                 if (existing) categoryId = existing.id;
             }
         } catch {
-            taxonomyError = "Tags and categories could not be loaded. You can still add new tags.";
+            taxonomyError =
+                "Tags and categories could not be loaded. You can still add new tags.";
         }
     }
 
@@ -145,7 +155,10 @@
     </FormField>
 
     <div class="taxonomy">
-        <div class="taxonomy-heading"><label for="theme-tags">Tags</label><span>{tagNames.length}/10</span></div>
+        <div class="taxonomy-heading">
+            <label for="theme-tags">Tags</label><span>{tagNames.length}/10</span
+            >
+        </div>
         <div class="tag-entry">
             <input
                 id="theme-tags"
@@ -153,18 +166,43 @@
                 bind:value={tagInput}
                 maxlength="32"
                 placeholder="e.g. oled, minimal, purple"
-                onkeydown={(event) => { if (event.key === "Enter" || event.key === ",") { event.preventDefault(); addTag(); } }}
+                onkeydown={(event) => {
+                    if (event.key === "Enter" || event.key === ",") {
+                        event.preventDefault();
+                        addTag();
+                    }
+                }}
             />
-            <button type="button" onclick={addTag} disabled={tagNames.length >= 10}>Add</button>
+            <button
+                type="button"
+                onclick={addTag}
+                disabled={tagNames.length >= 10}>Add</button
+            >
         </div>
-        <datalist id="known-tags">{#each availableTags as tag}<option value={tag.name}></option>{/each}</datalist>
-        {#if tagNames.length}<div class="tag-list">{#each tagNames as tag (tag)}<button type="button" class="tag" onclick={() => removeTag(tag)}>{tag}<span aria-hidden="true">×</span><span class="sr-only">Remove {tag}</span></button>{/each}</div>{/if}
+        <datalist id="known-tags"
+            >{#each availableTags as tag}<option value={tag.name}
+                ></option>{/each}</datalist
+        >
+        {#if tagNames.length}<div class="tag-list">
+                {#each tagNames as tag (tag)}<button
+                        type="button"
+                        class="tag"
+                        onclick={() => removeTag(tag)}
+                        >{tag}<span aria-hidden="true">×</span><span
+                            class="sr-only">Remove {tag}</span
+                        ></button
+                    >{/each}
+            </div>{/if}
         <label class="category-label" for="theme-category">Category</label>
         <select id="theme-category" bind:value={categoryId}>
             <option value="">No category</option>
-            {#each categories as category (category.id)}<option value={category.id}>{category.name}</option>{/each}
+            {#each categories as category (category.id)}<option
+                    value={category.id}>{category.name}</option
+                >{/each}
         </select>
-        {#if taxonomyError}<p class="taxonomy-error" role="status">{taxonomyError}</p>{/if}
+        {#if taxonomyError}<p class="taxonomy-error" role="status">
+                {taxonomyError}
+            </p>{/if}
     </div>
 </div>
 
@@ -290,10 +328,80 @@
         }
     }
 
-    .taxonomy { display:grid; gap:.65rem; padding-top:.25rem; }
-    .taxonomy-heading { display:flex; justify-content:space-between; color:var(--text-secondary); font-size:.9rem; }
-    .tag-entry { display:flex; gap:.6rem; } .tag-entry button,.tag { border:1px solid var(--border-glass); border-radius:var(--radius-sm); background:rgba(var(--text-primary-rgb),.06); color:var(--text-primary); cursor:pointer; font:inherit; font-weight:600; } .tag-entry button { padding:0 .9rem; } .tag-entry button:disabled { opacity:.5; cursor:not-allowed; }
-    .tag-list { display:flex; flex-wrap:wrap; gap:.45rem; } .tag { padding:.35rem .55rem; display:flex; gap:.35rem; align-items:center; } .tag span:first-child { font-size:1rem; line-height:1; }
-    .category-label { color:var(--text-secondary); font-size:.9rem; margin-top:.25rem; } select { background:rgba(var(--text-primary-rgb),.03); border:1px solid var(--border-glass); padding:.8rem 1rem; border-radius:var(--radius-md); color:var(--text-primary); font:inherit; } select option { color:#111; } .taxonomy-error { margin:0; color:#ff9696; font-size:.85rem; }
-    .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+    .taxonomy {
+        display: grid;
+        gap: 0.65rem;
+        padding-top: 0.25rem;
+    }
+    .taxonomy-heading {
+        display: flex;
+        justify-content: space-between;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+    .tag-entry {
+        display: flex;
+        gap: 0.6rem;
+    }
+    .tag-entry button,
+    .tag {
+        border: 1px solid var(--border-glass);
+        border-radius: var(--radius-sm);
+        background: rgba(var(--text-primary-rgb), 0.06);
+        color: var(--text-primary);
+        cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+    }
+    .tag-entry button {
+        padding: 0 0.9rem;
+    }
+    .tag-entry button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+    }
+    .tag {
+        padding: 0.35rem 0.55rem;
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+    }
+    .tag span:first-child {
+        font-size: 1rem;
+        line-height: 1;
+    }
+    .category-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+    select {
+        background: rgba(var(--text-primary-rgb), 0.03);
+        border: 1px solid var(--border-glass);
+        padding: 0.8rem 1rem;
+        border-radius: var(--radius-md);
+        color: var(--text-primary);
+        font: inherit;
+    }
+    select option {
+        color: #111;
+    }
+    .taxonomy-error {
+        margin: 0;
+        color: #ff9696;
+        font-size: 0.85rem;
+    }
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+    }
 </style>

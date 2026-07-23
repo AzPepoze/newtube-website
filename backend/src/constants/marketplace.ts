@@ -26,7 +26,11 @@ export const REPORT_RESOLUTION_STATUSES = [
 
 export const THEME_CATEGORIES = [
     { id: "category-gaming", slug: "gaming", name: "Gaming" },
-    { id: "category-entertainment", slug: "entertainment", name: "Entertainment" },
+    {
+        id: "category-entertainment",
+        slug: "entertainment",
+        name: "Entertainment",
+    },
     { id: "category-music", slug: "music", name: "Music" },
     { id: "category-productivity", slug: "productivity", name: "Productivity" },
     { id: "category-education", slug: "education", name: "Education" },

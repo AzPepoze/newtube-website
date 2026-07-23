@@ -18,14 +18,18 @@ type AuthControllerContext = {
 
 function getRedirectUri(request: Request) {
     const url = new URL(request.url);
-    const protocol = url.hostname.includes("localhost") ? url.protocol : "https:";
+    const protocol = url.hostname.includes("localhost")
+        ? url.protocol
+        : "https:";
     return `${protocol}//${url.host}/auth/callback`;
 }
 
 export const authController = {
     async google({ query, request, redirect, env }: AuthControllerContext) {
         const redirectUri = getRedirectUri(request);
-        console.log(`[Auth] Starting Google OAuth. Redirect URI: ${redirectUri}`);
+        console.log(
+            `[Auth] Starting Google OAuth. Redirect URI: ${redirectUri}`,
+        );
         const authUrl = await startGoogleAuthentication(
             env,
             redirectUri,
@@ -34,7 +38,15 @@ export const authController = {
         return redirect(authUrl);
     },
 
-    async callback({ request, query, redirect, set, cookie, env, db }: AuthControllerContext) {
+    async callback({
+        request,
+        query,
+        redirect,
+        set,
+        cookie,
+        env,
+        db,
+    }: AuthControllerContext) {
         const code = query.code as string;
         if (!code) {
             console.error("[Auth Callback] Missing code in query params");
@@ -67,14 +79,20 @@ export const authController = {
                 ...cookieOptions,
                 httpOnly: true,
             });
-            cookie.userId.set({ value: authentication.userId, ...cookieOptions });
+            cookie.userId.set({
+                value: authentication.userId,
+                ...cookieOptions,
+            });
 
             console.log(
                 `[Auth Callback] Redirecting to frontend: ${authentication.redirectDestination}`,
             );
             return redirect(authentication.redirectDestination);
         } catch (error: any) {
-            console.error("[Auth Callback] Error during authentication:", error);
+            console.error(
+                "[Auth Callback] Error during authentication:",
+                error,
+            );
             set.status = 500;
             return { error: "Authentication failed", message: error.message };
         }

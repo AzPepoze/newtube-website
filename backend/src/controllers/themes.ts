@@ -81,8 +81,7 @@ async function validateThemeInput(
     db: Database,
     body: unknown,
 ): Promise<
-    | { input: ThemeInput; message?: never }
-    | { input?: never; message: string }
+    { input: ThemeInput; message?: never } | { input?: never; message: string }
 > {
     if (!body || typeof body !== "object" || Array.isArray(body)) {
         return { message: "Request body must be an object" };
@@ -274,7 +273,14 @@ export const themeController = {
         return createdTheme;
     },
 
-    async update({ userId, params, body, db, set, env }: ThemeControllerContext) {
+    async update({
+        userId,
+        params,
+        body,
+        db,
+        set,
+        env,
+    }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         if (!idValidation.valid) {
             set.status = 400;
@@ -311,7 +317,12 @@ export const themeController = {
             set.status = 400;
             return { error: "Invalid theme ID", message: idValidation.message };
         }
-        const wasDeleted = await deleteThemeForOwner(db, env, params.id, userId!);
+        const wasDeleted = await deleteThemeForOwner(
+            db,
+            env,
+            params.id,
+            userId!,
+        );
         if (!wasDeleted) {
             set.status = 403;
             return {
@@ -322,7 +333,13 @@ export const themeController = {
         set.status = 204;
     },
 
-    async upsertReview({ userId, params, body, db, set }: ThemeControllerContext) {
+    async upsertReview({
+        userId,
+        params,
+        body,
+        db,
+        set,
+    }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         const reviewInput = body as { rating?: unknown; body?: unknown } | null;
         const ratingValidation = validateRating(reviewInput?.rating);

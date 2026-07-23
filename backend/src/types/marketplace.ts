@@ -1,10 +1,5 @@
 export type ReportReason =
-    | "copyright"
-    | "inappropriate"
-    | "malware"
-    | "broken"
-    | "spam"
-    | "other";
+    "copyright" | "inappropriate" | "malware" | "broken" | "spam" | "other";
 
 export type ReportStatus = "open" | "resolved" | "dismissed";
 

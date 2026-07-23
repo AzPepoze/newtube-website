@@ -1,9 +1,6 @@
 import type { Database } from "../db";
 import type { ResponseStatus } from "../types/http";
-import {
-    listThemeCategories,
-    listThemeTags,
-} from "../services/marketplace";
+import { listThemeCategories, listThemeTags } from "../services/marketplace";
 
 export type MarketplaceControllerContext = {
     db: Database;

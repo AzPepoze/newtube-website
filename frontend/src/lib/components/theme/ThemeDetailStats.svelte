@@ -23,7 +23,9 @@
                 <MaterialIcon name="star" size={24} />
             </div>
             <div class="stat-content">
-                <span class="stat-value">{rating === null ? "New" : rating.toFixed(1)}</span>
+                <span class="stat-value"
+                    >{rating === null ? "New" : rating.toFixed(1)}</span
+                >
                 <span class="stat-label">Rating</span>
             </div>
         </div>

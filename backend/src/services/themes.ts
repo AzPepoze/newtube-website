@@ -80,7 +80,9 @@ export async function listThemes(
     const page = await searchThemesPage(db, options);
     return {
         ...page,
-        items: await Promise.all(page.items.map((theme) => enrichTheme(db, theme))),
+        items: await Promise.all(
+            page.items.map((theme) => enrichTheme(db, theme)),
+        ),
     };
 }
 
@@ -323,6 +325,10 @@ export async function createThemeReview(
     };
 }
 
-export function removeThemeReview(db: Database, themeId: string, userId: string) {
+export function removeThemeReview(
+    db: Database,
+    themeId: string,
+    userId: string,
+) {
     return deleteThemeReview(db, themeId, userId);
 }

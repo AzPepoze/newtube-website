@@ -34,7 +34,11 @@ export async function createCategory(
     const id = crypto.randomUUID();
     await db
         .insert(categories)
-        .values({ id, name: categoryInput.name.trim(), slug: categoryInput.slug })
+        .values({
+            id,
+            name: categoryInput.name.trim(),
+            slug: categoryInput.slug,
+        })
         .onConflictDoNothing();
 
     return db

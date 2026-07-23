@@ -16,7 +16,7 @@
         heading?: string;
     } = $props();
 
-    let activeId = $state(items[0]?.id ?? "");
+    let activeId = $state("");
     let menuOpen = $state(false);
     let navElement: HTMLElement;
     let menuElement: HTMLElement;
@@ -30,6 +30,12 @@
             items[0]?.label ??
             heading,
     );
+
+    $effect(() => {
+        if (!items.some((item) => item.id === activeId)) {
+            activeId = items[0]?.id ?? "";
+        }
+    });
 
     async function openMenu() {
         menuOpen = true;
@@ -289,6 +295,8 @@
         id={menuId}
         class="mobile-menu"
         class:open={menuOpen}
+        role="menu"
+        tabindex="-1"
         aria-labelledby={buttonId}
         onkeydown={handleMenuKeydown}
     >
@@ -296,6 +304,7 @@
             <a
                 href="#{item.id}"
                 class:active={activeId === item.id}
+                role="menuitem"
                 aria-current={activeId === item.id ? "location" : undefined}
                 onclick={(event) => handleClick(event, item.id)}
             >

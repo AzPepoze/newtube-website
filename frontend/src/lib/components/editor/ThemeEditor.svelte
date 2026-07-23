@@ -84,9 +84,14 @@
                 categoryId = draft.categoryId || "";
                 if (themeName || description || settingsCode) {
                     success = false;
-                    infoMessage = "Browser backup restored from your last session.";
+                    infoMessage =
+                        "Browser backup restored from your last session.";
                     setTimeout(() => {
-                        if (infoMessage === "Browser backup restored from your last session.") infoMessage = "";
+                        if (
+                            infoMessage ===
+                            "Browser backup restored from your last session."
+                        )
+                            infoMessage = "";
                     }, 15000);
                 }
             } catch (e) {
@@ -233,7 +238,8 @@
             if (!publish) {
                 localStorage.removeItem(draftKey);
                 const draftId = data.themeId || props.initialData?.themeId;
-                infoMessage = "Draft saved. It will be available from your profile on any device.";
+                infoMessage =
+                    "Draft saved. It will be available from your profile on any device.";
                 if (!isEdit && draftId) {
                     setTimeout(() => {
                         window.location.href = `/themes/edit/${draftId}`;
@@ -333,7 +339,7 @@
             </div>
 
             <div class="actions">
-                {#if (themeName || description !== defaultDescription || images.length > 0 || coverImage)}
+                {#if themeName || description !== defaultDescription || images.length > 0 || coverImage}
                     <button
                         type="button"
                         class="clear-btn"
@@ -364,7 +370,10 @@
                         type="button"
                         class="draft-btn"
                         onclick={(event) => handleSubmit(event, false)}
-                        disabled={submitting || !!jsonError || !!titleError || !!descriptionError}
+                        disabled={submitting ||
+                            !!jsonError ||
+                            !!titleError ||
+                            !!descriptionError}
                     >
                         Save Draft
                     </button>
@@ -464,8 +473,7 @@
         overflow: hidden;
     }
 
-    .editor-main,
-    .preview-main {
+    .editor-main {
         display: flex;
         flex-direction: column;
         gap: 2rem;
@@ -513,7 +521,10 @@
             font-weight: 700;
             cursor: pointer;
 
-            &:disabled { opacity: 0.5; cursor: not-allowed; }
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
         }
     }
 

@@ -6,8 +6,7 @@ type Sponsor = {
 };
 
 type SponsorsResult =
-    | { status: "ok"; sponsors: Sponsor[] }
-    | { status: "failed" };
+    { status: "ok"; sponsors: Sponsor[] } | { status: "failed" };
 
 const SPONSORS_CACHE_URL = "https://sponsors.cache/fetch";
 
@@ -68,14 +67,17 @@ export async function getSponsors(env: Env): Promise<SponsorsResult> {
         if (gqlResponse.ok) {
             const graphqlResult: any = await gqlResponse.json();
             if (graphqlResult.data?.viewer?.sponsorshipsAsMaintainer?.nodes) {
-                const sponsors = graphqlResult.data.viewer.sponsorshipsAsMaintainer.nodes.map(
-                    (node: any) => ({
-                        name: node.sponsorEntity.name || node.sponsorEntity.login,
-                        avatar: node.sponsorEntity.avatarUrl,
-                        link: node.sponsorEntity.url,
-                        tier: node.tier?.name,
-                    }),
-                );
+                const sponsors =
+                    graphqlResult.data.viewer.sponsorshipsAsMaintainer.nodes.map(
+                        (node: any) => ({
+                            name:
+                                node.sponsorEntity.name ||
+                                node.sponsorEntity.login,
+                            avatar: node.sponsorEntity.avatarUrl,
+                            link: node.sponsorEntity.url,
+                            tier: node.tier?.name,
+                        }),
+                    );
 
                 await cache.put(
                     cacheKey,

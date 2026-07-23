@@ -3,7 +3,11 @@ import {
     createReportForUser,
     listReportsForUser,
 } from "../../services/marketplace/reports";
-import { validateEnum, validateText, validateUuid } from "../../utils/validation";
+import {
+    validateEnum,
+    validateText,
+    validateUuid,
+} from "../../utils/validation";
 import type { MarketplaceControllerContext } from "../marketplace";
 
 function invalidMessage(result: { valid: boolean; message?: string }) {
@@ -11,17 +15,30 @@ function invalidMessage(result: { valid: boolean; message?: string }) {
 }
 
 export const marketplaceReportsController = {
-    async create({ params, body, userId, db, set }: MarketplaceControllerContext) {
+    async create({
+        params,
+        body,
+        userId,
+        db,
+        set,
+    }: MarketplaceControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
-        const reportInput = body as { reason?: unknown; details?: unknown } | null;
+        const reportInput = body as {
+            reason?: unknown;
+            details?: unknown;
+        } | null;
         const reasonValidation = validateEnum(
             reportInput?.reason,
             REPORT_REASONS,
             "reason",
         );
-        const detailsValidation = validateText(reportInput?.details, "Details", {
-            max: 2_000,
-        });
+        const detailsValidation = validateText(
+            reportInput?.details,
+            "Details",
+            {
+                max: 2_000,
+            },
+        );
         if (
             !idValidation.valid ||
             !reasonValidation.valid ||

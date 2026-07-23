@@ -45,7 +45,9 @@
         extensionState.installedThemeId === theme.themeId,
     );
     const visibleTags = $derived(theme.tags?.slice(0, 3) ?? []);
-    const remainingTagCount = $derived((theme.tags?.length ?? 0) - visibleTags.length);
+    const remainingTagCount = $derived(
+        (theme.tags?.length ?? 0) - visibleTags.length,
+    );
     const rating = $derived(
         typeof theme.rating === "number" && Number.isFinite(theme.rating)
             ? theme.rating

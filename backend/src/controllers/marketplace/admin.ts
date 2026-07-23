@@ -30,15 +30,24 @@ function forbidden(set: MarketplaceControllerContext["set"]) {
 }
 
 export const marketplaceAdminController = {
-    async createCategory({ body, userId, db, set }: MarketplaceControllerContext) {
+    async createCategory({
+        body,
+        userId,
+        db,
+        set,
+    }: MarketplaceControllerContext) {
         if (!(await isMarketplaceAdmin(db, userId))) return forbidden(set);
 
         const categoryInput = body as { name?: unknown; slug?: unknown } | null;
-        const nameValidation = validateText(categoryInput?.name, "Category name", {
-            min: 1,
-            max: 48,
-            required: true,
-        });
+        const nameValidation = validateText(
+            categoryInput?.name,
+            "Category name",
+            {
+                min: 1,
+                max: 48,
+                required: true,
+            },
+        );
         const slug =
             typeof categoryInput?.slug === "string"
                 ? categoryInput.slug.trim().toLowerCase()
@@ -78,7 +87,12 @@ export const marketplaceAdminController = {
         return categoryOutcome.category;
     },
 
-    async listReports({ query, userId, db, set }: MarketplaceControllerContext) {
+    async listReports({
+        query,
+        userId,
+        db,
+        set,
+    }: MarketplaceControllerContext) {
         if (!(await isMarketplaceAdmin(db, userId))) return forbidden(set);
 
         const pagination = parsePagination(query, { limit: 50 });
@@ -105,7 +119,13 @@ export const marketplaceAdminController = {
             : reportsOutcome.reports;
     },
 
-    async resolveReport({ params, body, userId, db, set }: MarketplaceControllerContext) {
+    async resolveReport({
+        params,
+        body,
+        userId,
+        db,
+        set,
+    }: MarketplaceControllerContext) {
         if (!(await isMarketplaceAdmin(db, userId))) return forbidden(set);
 
         const idValidation = validateUuid(params.id, "report ID");
@@ -129,9 +149,11 @@ export const marketplaceAdminController = {
             db,
             userId,
             params.id,
-            reportResolutionInput!.status as (typeof REPORT_RESOLUTION_STATUSES)[number],
+            reportResolutionInput!
+                .status as (typeof REPORT_RESOLUTION_STATUSES)[number],
         );
-        if (reportResolutionOutcome.status === "forbidden") return forbidden(set);
+        if (reportResolutionOutcome.status === "forbidden")
+            return forbidden(set);
         if (reportResolutionOutcome.status === "not-found") {
             set.status = 404;
             return { error: "Report not found" };

@@ -12,19 +12,14 @@ import {
 export type TagSnapshot = { id: string; slug: string; name: string };
 export type CategorySnapshot = { id: string; slug: string; name: string };
 
-export const users = sqliteTable(
-    "Users",
-    {
-        id: text("id").primaryKey(),
-        email: text("email").notNull().unique(),
-        name: text("name").notNull(),
-        avatarUrl: text("avatar_url"),
-        isAdmin: integer("is_admin", { mode: "boolean" })
-            .notNull()
-            .default(false),
-        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-    },
-);
+export const users = sqliteTable("Users", {
+    id: text("id").primaryKey(),
+    email: text("email").notNull().unique(),
+    name: text("name").notNull(),
+    avatarUrl: text("avatar_url"),
+    isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
+    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
 
 export const sessions = sqliteTable(
     "Sessions",
@@ -80,25 +75,19 @@ export const uploads = sqliteTable(
     (table) => [index("idx_uploads_user").on(table.userId)],
 );
 
-export const categories = sqliteTable(
-    "Categories",
-    {
-        id: text("id").primaryKey(),
-        slug: text("slug").notNull().unique(),
-        name: text("name").notNull().unique(),
-        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-    },
-);
+export const categories = sqliteTable("Categories", {
+    id: text("id").primaryKey(),
+    slug: text("slug").notNull().unique(),
+    name: text("name").notNull().unique(),
+    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
 
-export const tags = sqliteTable(
-    "Tags",
-    {
-        id: text("id").primaryKey(),
-        slug: text("slug").notNull().unique(),
-        name: text("name").notNull(),
-        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-    },
-);
+export const tags = sqliteTable("Tags", {
+    id: text("id").primaryKey(),
+    slug: text("slug").notNull().unique(),
+    name: text("name").notNull(),
+    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
 
 export const themeTags = sqliteTable(
     "ThemeTags",
@@ -283,16 +272,19 @@ export const themeTagsRelations = relations(themeTags, ({ one }) => ({
     }),
 }));
 
-export const themeCategoriesRelations = relations(themeCategories, ({ one }) => ({
-    theme: one(themes, {
-        fields: [themeCategories.themeId],
-        references: [themes.themeId],
+export const themeCategoriesRelations = relations(
+    themeCategories,
+    ({ one }) => ({
+        theme: one(themes, {
+            fields: [themeCategories.themeId],
+            references: [themes.themeId],
+        }),
+        category: one(categories, {
+            fields: [themeCategories.categoryId],
+            references: [categories.id],
+        }),
     }),
-    category: one(categories, {
-        fields: [themeCategories.categoryId],
-        references: [categories.id],
-    }),
-}));
+);
 
 export const themeVersionsRelations = relations(themeVersions, ({ one }) => ({
     theme: one(themes, {

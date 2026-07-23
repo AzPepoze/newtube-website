@@ -61,9 +61,8 @@
                   ...new Set(
                       themes
                           .map((theme) => theme.category)
-                          .filter(
-                              (category): category is string =>
-                                  Boolean(category),
+                          .filter((category): category is string =>
+                              Boolean(category),
                           ),
                   ),
               ].map((name) => ({ name, slug: slugify(name) }))
@@ -81,7 +80,10 @@
     const pageNumbers = $derived.by(() => {
         const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
         const end = Math.min(totalPages, start + 4);
-        return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+        return Array.from(
+            { length: end - start + 1 },
+            (_, index) => start + index,
+        );
     });
 
     function asOffset(value: string | null) {
@@ -97,7 +99,9 @@
 
     function syncStateFromUrl(params: URLSearchParams) {
         searchQuery = params.get("q") ?? "";
-        sortBy = sortOptions.some((option) => option.value === params.get("sort"))
+        sortBy = sortOptions.some(
+            (option) => option.value === params.get("sort"),
+        )
             ? (params.get("sort") ?? "popular")
             : "popular";
         selectedTags = parseFilterValues(params.get("tag"));
@@ -122,10 +126,13 @@
         try {
             const [tagsResponse, categoriesResponse] = await Promise.all([
                 fetch(`${PUBLIC_API_URL}/tags`, { credentials: "include" }),
-                fetch(`${PUBLIC_API_URL}/categories`, { credentials: "include" }),
+                fetch(`${PUBLIC_API_URL}/categories`, {
+                    credentials: "include",
+                }),
             ]);
             if (tagsResponse.ok) taxonomyTags = await tagsResponse.json();
-            if (categoriesResponse.ok) taxonomyCategories = await categoriesResponse.json();
+            if (categoriesResponse.ok)
+                taxonomyCategories = await categoriesResponse.json();
         } catch {
             // Existing theme metadata remains a useful fallback for older deployments.
         }
@@ -177,7 +184,9 @@
             // Older deployments return Theme[]; preserve useful pagination and
             // tag/category filtering locally until the paginated API is deployed.
             if (Array.isArray(data)) {
-                const matchingThemes = (data as Theme[]).filter(matchesLegacyFilters);
+                const matchingThemes = (data as Theme[]).filter(
+                    matchesLegacyFilters,
+                );
                 total = matchingThemes.length;
                 pageLimit = PAGE_SIZE;
                 themes = matchingThemes.slice(offset, offset + pageLimit);
@@ -194,21 +203,26 @@
                 };
                 themes = result.items;
                 total =
-                    typeof result.total === "number" && Number.isFinite(result.total)
+                    typeof result.total === "number" &&
+                    Number.isFinite(result.total)
                         ? Math.max(0, result.total)
                         : result.items.length;
-                pageLimit = result.limit && result.limit > 0 ? result.limit : PAGE_SIZE;
+                pageLimit =
+                    result.limit && result.limit > 0 ? result.limit : PAGE_SIZE;
                 offset =
                     typeof result.offset === "number" && result.offset >= 0
                         ? result.offset
                         : offset;
             } else {
-                throw new Error("The themes API returned an unexpected response.");
+                throw new Error(
+                    "The themes API returned an unexpected response.",
+                );
             }
         } catch (error) {
             if ((error as DOMException).name === "AbortError") return;
             if (thisRequest !== requestId) return;
-            errorMessage = "We couldn't load themes right now. Please try again.";
+            errorMessage =
+                "We couldn't load themes right now. Please try again.";
             themes = [];
             total = 0;
         } finally {
@@ -249,7 +263,10 @@
         if (!initialized || navigation.type === "enter") return;
 
         const href = `${page.url.pathname}${page.url.search}`;
-        if (navigation.type !== "popstate" && localNavigationHrefs.delete(href)) {
+        if (
+            navigation.type !== "popstate" &&
+            localNavigationHrefs.delete(href)
+        ) {
             return;
         }
 
@@ -262,7 +279,8 @@
 
     function goToPage(pageNumber: number) {
         const nextOffset = (pageNumber - 1) * pageLimit;
-        if (nextOffset === offset || pageNumber < 1 || pageNumber > totalPages) return;
+        if (nextOffset === offset || pageNumber < 1 || pageNumber > totalPages)
+            return;
         filterRequestVersion += 1;
         offset = nextOffset;
         updateUrl();
@@ -299,10 +317,7 @@
                     oninput={queueFilterChange}
                 />
                 {#if searchQuery}
-                    <button
-                        class="clear-search"
-                        onclick={clearSearch}
-                    >
+                    <button class="clear-search" onclick={clearSearch}>
                         <MaterialIcon name="close" size={14} />
                     </button>
                 {/if}
@@ -348,7 +363,10 @@
         <div class="empty-state error-state" role="alert">
             <MaterialIcon name="error" size={28} />
             <p>{errorMessage}</p>
-            <button class="clear-btn premium-button glass-panel" onclick={fetchThemes}>
+            <button
+                class="clear-btn premium-button glass-panel"
+                onclick={fetchThemes}
+            >
                 <MaterialIcon name="refresh" size={16} /> Try Again
             </button>
         </div>
@@ -366,14 +384,18 @@
                 <MaterialIcon name="search_off" size={28} />
                 <p>No themes match those filters.</p>
                 {#if hasActiveFilters}
-                    <button class="clear-btn premium-button glass-panel" onclick={clearFilters}>
+                    <button
+                        class="clear-btn premium-button glass-panel"
+                        onclick={clearFilters}
+                    >
                         <MaterialIcon name="close" size={16} /> Clear Filters
                     </button>
                 {/if}
             </div>
         {:else}
             <div class="results-summary" aria-live="polite">
-                Showing {offset + 1}–{Math.min(offset + themes.length, total)} of {total} themes
+                Showing {offset + 1}–{Math.min(offset + themes.length, total)} of
+                {total} themes
             </div>
         {/if}
 
@@ -392,8 +414,10 @@
                         class="pagination-btn"
                         class:active={pageNumber === currentPage}
                         onclick={() => goToPage(pageNumber)}
-                        aria-current={pageNumber === currentPage ? "page" : undefined}
-                    >{pageNumber}</button>
+                        aria-current={pageNumber === currentPage
+                            ? "page"
+                            : undefined}>{pageNumber}</button
+                    >
                 {/each}
                 <button
                     class="pagination-btn"
