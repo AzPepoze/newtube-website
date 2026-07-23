@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { fade, slide, fly } from "svelte/transition";
-    import { onMount, type Snippet } from "svelte";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+    import { onMount, type Snippet } from "svelte";
+    import { fade, fly, slide } from "svelte/transition";
 
     interface Option {
         value?: string;
@@ -44,7 +44,7 @@
                 ? placeholder
                 : `${selectedValues.length} selected`
             : options.find((opt: Option) => opt.value === value)?.label ||
-              placeholder,
+                  placeholder,
     );
 
     function toggle() {
@@ -57,7 +57,9 @@
         } else if (option.value !== undefined) {
             if (multiple) {
                 selectedValues = selectedValues.includes(option.value)
-                    ? selectedValues.filter((item: string) => item !== option.value)
+                    ? selectedValues.filter(
+                          (item: string) => item !== option.value,
+                      )
                     : [...selectedValues, option.value];
                 onValuesChange?.(selectedValues);
                 return;
@@ -305,6 +307,8 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+            justify-content: space-between;
+            width: 100%;
         }
 
         .icon {

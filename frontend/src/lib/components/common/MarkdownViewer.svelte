@@ -1,6 +1,6 @@
 <script lang="ts">
-    import MarkdownIt from "markdown-it";
     import PrismEditor from "$lib/components/editor/PrismEditor.svelte";
+    import MarkdownIt from "markdown-it";
 
     let { content = "" }: { content: string } = $props();
 
@@ -98,7 +98,7 @@
 
         :global(.prism-editor-host) {
             border-radius: var(--radius-md);
-            background: #282a36; // Default to dracula background for consistency
+            background: #282a36;
         }
 
         :global(.light .prism-editor-host) {
