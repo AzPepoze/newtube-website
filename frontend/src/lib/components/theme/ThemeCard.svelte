@@ -122,6 +122,7 @@
                     <MaterialIcon name="download" size={14} />
                     {theme.downloads}
                 </span>
+                <span class="header-divider" aria-hidden="true"></span>
                 <span
                     class="rating"
                     title={rating === null
@@ -319,6 +320,14 @@
                     display: flex;
                     align-items: center;
                     gap: 0.35rem;
+                }
+
+                .header-divider {
+                    flex-shrink: 0;
+                    width: 1px;
+                    height: 1rem;
+                    margin: 0 0.25rem;
+                    background: var(--border-glass);
                 }
 
                 .rating {
