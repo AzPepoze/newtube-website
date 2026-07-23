@@ -61,35 +61,17 @@ export function getCategoryById(db: Database, id: string) {
 
 export async function ensureCategoryById(db: Database, id: string) {
     await syncThemeTagsAndCategories(db);
-    const existing = await getCategoryById(db, id);
-    if (existing) return existing;
-
-    const category = THEME_CATEGORIES.find((item) => item.id === id);
-    if (!category) return undefined;
-
-    await db.insert(categories).values(category).onConflictDoNothing();
     return getCategoryById(db, id);
 }
 
-export async function createCategory(
-    db: Database,
-    categoryInput: { name: string; slug: string },
-) {
-    const id = crypto.randomUUID();
-    await db
-        .insert(categories)
-        .values({
-            id,
-            name: categoryInput.name.trim(),
-            slug: categoryInput.slug,
-        })
-        .onConflictDoNothing();
-
-    return db
-        .select()
-        .from(categories)
-        .where(eq(categories.slug, categoryInput.slug))
-        .get();
+export async function findThemeTagsByNames(db: Database, tagNames: string[]) {
+    await syncThemeTagsAndCategories(db);
+    const slugs = [
+        ...new Set(tagNames.map(normalizeTagName).map(tagSlug).filter(Boolean)),
+    ];
+    return slugs.length
+        ? db.select().from(tags).where(inArray(tags.slug, slugs)).all()
+        : [];
 }
 
 export async function setThemeTagNames(
@@ -97,40 +79,7 @@ export async function setThemeTagNames(
     themeId: string,
     tagNames: string[],
 ) {
-    await syncThemeTagsAndCategories(db);
-    const normalized = [
-        ...new Set(tagNames.map(normalizeTagName).filter(Boolean)),
-    ];
-    const slugs = normalized.map(tagSlug).filter(Boolean);
-
-    if (slugs.length > 0) {
-        const existing = await db
-            .select()
-            .from(tags)
-            .where(inArray(tags.slug, slugs))
-            .all();
-        const existingSlugs = new Set(existing.map((tag) => tag.slug));
-        const missing = normalized
-            .filter((name) => !existingSlugs.has(tagSlug(name)))
-            .map((name) => ({
-                id: crypto.randomUUID(),
-                name,
-                slug: tagSlug(name),
-            }));
-
-        if (missing.length > 0) {
-            await db.insert(tags).values(missing).onConflictDoNothing();
-        }
-    }
-
-    const selectedTags =
-        slugs.length > 0
-            ? await db
-                  .select()
-                  .from(tags)
-                  .where(inArray(tags.slug, slugs))
-                  .all()
-            : [];
+    const selectedTags = await findThemeTagsByNames(db, tagNames);
 
     await db.delete(themeTags).where(eq(themeTags.themeId, themeId));
     if (selectedTags.length > 0) {

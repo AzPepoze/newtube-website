@@ -1,7 +1,7 @@
 export {
     applyThemeClassification,
-    createCategory,
     ensureCategoryById,
+    findThemeTagsByNames,
     getCategoryById,
     getThemeClassification,
     listCategories,

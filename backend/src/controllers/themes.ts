@@ -16,6 +16,7 @@ import {
     updateThemeForOwner,
 } from "../services/themes";
 import type { ThemeSort } from "../db/themes";
+import { findThemeTagsByNames } from "../db/marketplace";
 import {
     parsePagination,
     validateBoolean,
@@ -105,6 +106,16 @@ async function validateThemeInput(
     }
     const failed = validations.find((result) => !result.valid);
     if (failed && !failed.valid) return { message: failed.message };
+
+    if (themeInput.tagNames) {
+        const selectedTags = await findThemeTagsByNames(
+            db,
+            themeInput.tagNames,
+        );
+        if (selectedTags.length !== themeInput.tagNames.length) {
+            return { message: "Tags must be selected from the available tags" };
+        }
+    }
 
     if (themeInput.categoryId) {
         const category = await ensureThemeCategoryById(

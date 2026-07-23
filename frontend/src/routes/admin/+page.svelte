@@ -18,10 +18,6 @@
     let loading = $state(true);
     let error = $state("");
     let busy = $state<string | null>(null);
-    let categoryName = $state("");
-    let categorySlug = $state("");
-    let categoryStatus = $state("");
-    let creatingCategory = $state(false);
 
     function unwrapList(data: any) {
         return Array.isArray(data) ? data : data?.reports || data?.items || [];
@@ -110,46 +106,6 @@
         }
     }
 
-    function slugify(value: string) {
-        return value
-            .trim()
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
-    }
-
-    async function createCategory() {
-        const name = categoryName.trim();
-        const slug = slugify(categorySlug || name);
-        if (!name || !slug) {
-            categoryStatus =
-                "Enter a category name containing letters or numbers.";
-            return;
-        }
-        creatingCategory = true;
-        categoryStatus = "";
-        try {
-            const response = await fetch(`${PUBLIC_API_URL}/admin/categories`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, slug }),
-            });
-            if (!response.ok) throw new Error("Unable to create category.");
-            categoryName = "";
-            categorySlug = "";
-            categoryStatus =
-                "Category created. It is now available in the theme editor.";
-        } catch (cause) {
-            categoryStatus =
-                cause instanceof Error
-                    ? cause.message
-                    : "Unable to create category.";
-        } finally {
-            creatingCategory = false;
-        }
-    }
-
     onMount(() => {
         if (requireAuth()) loadReports();
     });
@@ -164,38 +120,6 @@
             public theme from discovery.
         </p>
     </header>
-    <section class="category-panel glass-panel">
-        <div>
-            <p class="eyebrow">Theme classification</p>
-            <h2>Create category</h2>
-            <p>Categories make discovery filters easier to browse.</p>
-        </div>
-        <form
-            onsubmit={(event) => {
-                event.preventDefault();
-                createCategory();
-            }}
-        >
-            <input
-                bind:value={categoryName}
-                maxlength="48"
-                placeholder="Category name"
-                aria-label="Category name"
-            />
-            <input
-                bind:value={categorySlug}
-                maxlength="48"
-                placeholder="Slug (generated if blank)"
-                aria-label="Category slug"
-            />
-            <button type="submit" disabled={creatingCategory}
-                >{creatingCategory ? "Creating…" : "Create category"}</button
-            >
-        </form>
-        {#if categoryStatus}<p class="category-status" role="status">
-                {categoryStatus}
-            </p>{/if}
-    </section>
     {#if loading}<div class="state glass-panel">Loading reports…</div>
     {:else if error}<div class="state glass-panel error">
             <p>{error}</p>
@@ -363,41 +287,6 @@
     .state button {
         margin-top: 0.75rem;
     }
-    .category-panel {
-        display: grid;
-        grid-template-columns: minmax(12rem, 1fr) minmax(20rem, 2fr);
-        gap: 1rem 2rem;
-        padding: 1.25rem;
-        margin-bottom: 1.5rem;
-    }
-    .category-panel h2 {
-        margin: 0.25rem 0;
-    }
-    .category-panel p:not(.eyebrow) {
-        margin: 0.4rem 0 0;
-        color: var(--text-muted);
-        font-size: 0.9rem;
-    }
-    .category-panel form {
-        display: grid;
-        grid-template-columns: 1fr 1fr auto;
-        gap: 0.6rem;
-        align-items: center;
-    }
-    .category-panel input {
-        min-width: 0;
-        padding: 0.55rem 0.7rem;
-        border: 1px solid var(--border-glass);
-        border-radius: var(--radius-sm);
-        background: rgba(0, 0, 0, 0.12);
-        color: var(--text-primary);
-        font: inherit;
-    }
-    .category-status {
-        grid-column: 1 / -1;
-        margin: 0;
-        color: var(--text-secondary);
-    }
     @media (max-width: 700px) {
         .report {
             flex-direction: column;
@@ -406,10 +295,6 @@
         dl {
             flex-direction: column;
             gap: 0.5rem;
-        }
-        .category-panel,
-        .category-panel form {
-            grid-template-columns: 1fr;
         }
     }
 </style>

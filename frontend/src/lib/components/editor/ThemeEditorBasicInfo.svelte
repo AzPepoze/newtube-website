@@ -40,7 +40,7 @@
     let categories = $state<Array<{ id: string; name: string; slug: string }>>(
         [],
     );
-    let taxonomyError = $state("");
+    let tagsAndCategoriesError = $state("");
 
     $effect(() => {
         const validation = validateTitle(themeName);
@@ -74,9 +74,12 @@
     function addTag() {
         const tag = normalizeTag(tagInput);
         if (!tag) return;
-        if (tag.length > 32 || !/[a-z0-9]/i.test(tag)) {
-            taxonomyError =
-                "Tags must be 1–32 characters and include a letter or number.";
+        if (
+            !availableTags.some(
+                (availableTag) => normalizeTag(availableTag.name) === tag,
+            )
+        ) {
+            tagsAndCategoriesError = "Select a tag from the available tags.";
             return;
         }
         if (tagNames.includes(tag)) {
@@ -84,19 +87,19 @@
             return;
         }
         if (tagNames.length >= 10) {
-            taxonomyError = "A theme can have at most 10 tags.";
+            tagsAndCategoriesError = "A theme can have at most 10 tags.";
             return;
         }
         tagNames = [...tagNames, tag];
         tagInput = "";
-        taxonomyError = "";
+        tagsAndCategoriesError = "";
     }
 
     function removeTag(tag: string) {
         tagNames = tagNames.filter((value) => value !== tag);
     }
 
-    async function loadTaxonomy() {
+    async function loadTagsAndCategories() {
         try {
             const [tagsResponse, categoriesResponse] = await Promise.all([
                 fetch(`${PUBLIC_API_URL}/tags`, { credentials: "include" }),
@@ -115,12 +118,12 @@
                 if (existing) categoryId = existing.id;
             }
         } catch {
-            taxonomyError =
-                "Tags and categories could not be loaded. You can still add new tags.";
+            tagsAndCategoriesError =
+                "Tags and categories could not be loaded. Please try again.";
         }
     }
 
-    onMount(loadTaxonomy);
+    onMount(loadTagsAndCategories);
 </script>
 
 <div class="card glass-panel quick-scroll-section" id="basic-info">
@@ -154,35 +157,26 @@
         </div>
     </FormField>
 
-    <div class="taxonomy">
-        <div class="taxonomy-heading">
+    <div class="tags-and-categories">
+        <div class="tags-and-categories-heading">
             <label for="theme-tags">Tags</label><span>{tagNames.length}/10</span
             >
         </div>
         <div class="tag-entry">
-            <input
-                id="theme-tags"
-                list="known-tags"
-                bind:value={tagInput}
-                maxlength="32"
-                placeholder="e.g. oled, minimal, purple"
-                onkeydown={(event) => {
-                    if (event.key === "Enter" || event.key === ",") {
-                        event.preventDefault();
-                        addTag();
-                    }
-                }}
-            />
+            <select id="theme-tags" bind:value={tagInput}>
+                <option value="">Select a tag</option>
+                {#each availableTags as tag (tag.id)}<option
+                        value={tag.name}
+                        disabled={tagNames.includes(normalizeTag(tag.name))}
+                        >{tag.name}</option
+                    >{/each}
+            </select>
             <button
                 type="button"
                 onclick={addTag}
-                disabled={tagNames.length >= 10}>Add</button
+                disabled={!tagInput || tagNames.length >= 10}>Add</button
             >
         </div>
-        <datalist id="known-tags"
-            >{#each availableTags as tag}<option value={tag.name}
-                ></option>{/each}</datalist
-        >
         {#if tagNames.length}<div class="tag-list">
                 {#each tagNames as tag (tag)}<button
                         type="button"
@@ -200,8 +194,11 @@
                     value={category.id}>{category.name}</option
                 >{/each}
         </select>
-        {#if taxonomyError}<p class="taxonomy-error" role="status">
-                {taxonomyError}
+        {#if tagsAndCategoriesError}<p
+                class="tags-and-categories-error"
+                role="status"
+            >
+                {tagsAndCategoriesError}
             </p>{/if}
     </div>
 </div>
@@ -328,12 +325,12 @@
         }
     }
 
-    .taxonomy {
+    .tags-and-categories {
         display: grid;
         gap: 0.65rem;
         padding-top: 0.25rem;
     }
-    .taxonomy-heading {
+    .tags-and-categories-heading {
         display: flex;
         justify-content: space-between;
         color: var(--text-secondary);
@@ -391,7 +388,7 @@
     select option {
         color: #111;
     }
-    .taxonomy-error {
+    .tags-and-categories-error {
         margin: 0;
         color: #ff9696;
         font-size: 0.85rem;

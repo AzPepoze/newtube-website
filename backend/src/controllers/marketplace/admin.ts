@@ -3,7 +3,6 @@ import {
     REPORT_STATUSES,
 } from "../../constants/marketplace";
 import {
-    createCategoryForAdmin,
     isMarketplaceAdmin,
     listReportsForAdmin,
     resolveReportForAdmin,
@@ -14,10 +13,8 @@ import {
     parsePagination,
     validateBoolean,
     validateEnum,
-    validateText,
     validateUuid,
 } from "../../utils/validation";
-import { tagSlug } from "../../utils/marketplace";
 import type { MarketplaceControllerContext } from "../marketplace";
 
 function invalidMessage(result: { valid: boolean; message?: string }) {
@@ -30,63 +27,6 @@ function forbidden(set: MarketplaceControllerContext["set"]) {
 }
 
 export const marketplaceAdminController = {
-    async createCategory({
-        body,
-        userId,
-        db,
-        set,
-    }: MarketplaceControllerContext) {
-        if (!(await isMarketplaceAdmin(db, userId))) return forbidden(set);
-
-        const categoryInput = body as { name?: unknown; slug?: unknown } | null;
-        const nameValidation = validateText(
-            categoryInput?.name,
-            "Category name",
-            {
-                min: 1,
-                max: 48,
-                required: true,
-            },
-        );
-        const slug =
-            typeof categoryInput?.slug === "string"
-                ? categoryInput.slug.trim().toLowerCase()
-                : tagSlug(
-                      typeof categoryInput?.name === "string"
-                          ? categoryInput.name
-                          : "",
-                  );
-        if (
-            !nameValidation.valid ||
-            !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ||
-            slug.length > 48
-        ) {
-            set.status = 400;
-            return {
-                error: "Invalid category",
-                message: !nameValidation.valid
-                    ? invalidMessage(nameValidation)
-                    : "slug must contain lowercase letters, numbers, and hyphens",
-            };
-        }
-
-        const categoryOutcome = await createCategoryForAdmin(db, userId, {
-            name: (categoryInput?.name as string).trim(),
-            slug,
-        });
-        if (categoryOutcome.status === "forbidden") return forbidden(set);
-        if (categoryOutcome.status === "conflict") {
-            set.status = 409;
-            return {
-                error: "Category already exists",
-                message:
-                    "A category with that name already exists under a different slug",
-            };
-        }
-        set.status = 201;
-        return categoryOutcome.category;
-    },
-
     async listReports({
         query,
         userId,

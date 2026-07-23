@@ -1,5 +1,4 @@
 import {
-    createCategory,
     isUserAdmin,
     listModerationReports,
     resolveThemeReport,
@@ -13,20 +12,6 @@ import type {
 
 export async function isMarketplaceAdmin(db: Database, userId?: string) {
     return Boolean(userId && (await isUserAdmin(db, userId)));
-}
-
-export async function createCategoryForAdmin(
-    db: Database,
-    userId: string | undefined,
-    categoryInput: { name: string; slug: string },
-) {
-    if (!(await isMarketplaceAdmin(db, userId)))
-        return { status: "forbidden" as const };
-
-    const category = await createCategory(db, categoryInput);
-    return category
-        ? { status: "created" as const, category }
-        : { status: "conflict" as const };
 }
 
 export async function listReportsForAdmin(

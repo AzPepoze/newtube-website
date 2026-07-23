@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { THEME_CATEGORIES, THEME_TAGS } from "../../constants/marketplace";
 import { createDb } from "../index";
 import { categories, tags, themeCategories, themeTags } from "../schema";
-import { syncThemeTagsAndCategories } from "./theme-classification";
+import {
+    setThemeTagNames,
+    syncThemeTagsAndCategories,
+} from "./theme-classification";
 
 const db = createDb(env.DB);
 
@@ -42,6 +45,17 @@ describe("syncThemeTagsAndCategories", () => {
         await syncThemeTagsAndCategories(db);
         expect(await db.select().from(themeTags).all()).toEqual([]);
         expect(await db.select().from(tags).all()).toHaveLength(12);
+    });
+
+    it("does not create a submitted tag absent from THEME_TAGS", async () => {
+        await syncThemeTagsAndCategories(db);
+        await env.DB.exec(
+            "INSERT INTO Users (id, email, name) VALUES ('owner-3', 'owner-3@example.test', 'Owner');" +
+                "INSERT INTO Themes (theme_id, owner_id, theme_name, settings, is_public) VALUES ('theme-3', 'owner-3', 'Theme', '{}', 1);",
+        );
+        await setThemeTagNames(db, "theme-3", ["not-defined-in-code"]);
+        expect(await db.select().from(tags).all()).toHaveLength(12);
+        expect(await db.select().from(themeTags).all()).toEqual([]);
     });
 
     it("finishes and clears tags when no tags are code-defined", async () => {

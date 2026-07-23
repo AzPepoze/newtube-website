@@ -12,6 +12,7 @@ export type MarketplaceControllerContext = {
 };
 
 export const marketplaceController = {
-    listTags: () => listThemeTags(),
-    listCategories: () => listThemeCategories(),
+    listTags: ({ db }: MarketplaceControllerContext) => listThemeTags(db),
+    listCategories: ({ db }: MarketplaceControllerContext) =>
+        listThemeCategories(db),
 };

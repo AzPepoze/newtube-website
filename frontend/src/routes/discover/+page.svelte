@@ -25,8 +25,8 @@
     let controller: AbortController | null = null;
     let filterRequestVersion = 0;
     const localNavigationHrefs = new Set<string>();
-    let taxonomyTags = $state<Array<{ name: string; slug: string }>>([]);
-    let taxonomyCategories = $state<Array<{ name: string; slug: string }>>([]);
+    let availableTags = $state<Array<{ name: string; slug: string }>>([]);
+    let availableCategories = $state<Array<{ name: string; slug: string }>>([]);
 
     const sortOptions = [
         { value: "popular", label: "Most Popular" },
@@ -45,8 +45,8 @@
     }
 
     const tagOptions = $derived(
-        (taxonomyTags.length
-            ? taxonomyTags
+        (availableTags.length
+            ? availableTags
             : [...new Set(themes.flatMap((theme) => theme.tags ?? []))].map(
                   (name) => ({ name, slug: slugify(name) }),
               )
@@ -55,8 +55,8 @@
             .sort((a, b) => a.label.localeCompare(b.label)),
     );
     const categoryOptions = $derived(
-        (taxonomyCategories.length
-            ? taxonomyCategories
+        (availableCategories.length
+            ? availableCategories
             : [
                   ...new Set(
                       themes
@@ -122,7 +122,7 @@
         return params;
     }
 
-    async function loadTaxonomy() {
+    async function loadTagsAndCategories() {
         try {
             const [tagsResponse, categoriesResponse] = await Promise.all([
                 fetch(`${PUBLIC_API_URL}/tags`, { credentials: "include" }),
@@ -130,9 +130,9 @@
                     credentials: "include",
                 }),
             ]);
-            if (tagsResponse.ok) taxonomyTags = await tagsResponse.json();
+            if (tagsResponse.ok) availableTags = await tagsResponse.json();
             if (categoriesResponse.ok)
-                taxonomyCategories = await categoriesResponse.json();
+                availableCategories = await categoriesResponse.json();
         } catch {
             // Existing theme metadata remains a useful fallback for older deployments.
         }
@@ -233,7 +233,7 @@
     onMount(() => {
         syncStateFromUrl(page.url.searchParams);
         initialized = true;
-        loadTaxonomy();
+        loadTagsAndCategories();
         fetchThemes();
         return () => {
             filterRequestVersion += 1;
