@@ -25,7 +25,7 @@
 {#if infoMessage}
     <div class="status-banner info" in:fade>
         <div class="message-content">
-            <span>✨ {infoMessage}</span>
+            <span>{infoMessage}</span>
             {#if infoMessage === "Browser backup restored from your last session."}
                 <button type="button" class="action-btn" onclick={clearDraft}>
                     Discard Draft
