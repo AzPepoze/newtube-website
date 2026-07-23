@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS Users (
     email TEXT UNIQUE NOT NULL,
     name TEXT,
     avatar_url TEXT,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -41,3 +42,114 @@ CREATE TABLE IF NOT EXISTS Uploads (
     FOREIGN KEY (user_id) REFERENCES Users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_uploads_user ON Uploads(user_id);
+
+-- Existing D1 databases created before 2026-07-23 need this additive,
+-- one-time migration before deploying the tables below. SQLite/D1 has no
+-- `ADD COLUMN IF NOT EXISTS`, so do not run this statement after it succeeds.
+-- ALTER TABLE Users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS Categories (
+    id TEXT PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS Tags (
+    id TEXT PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ThemeTags (
+    theme_id TEXT NOT NULL,
+    tag_id TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (theme_id, tag_id),
+    FOREIGN KEY (theme_id) REFERENCES Themes(theme_id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES Tags(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_theme_tags_tag ON ThemeTags(tag_id);
+
+CREATE TABLE IF NOT EXISTS ThemeCategories (
+    theme_id TEXT PRIMARY KEY,
+    category_id TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (theme_id) REFERENCES Themes(theme_id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES Categories(id) ON DELETE RESTRICT
+);
+CREATE INDEX IF NOT EXISTS idx_theme_categories_category ON ThemeCategories(category_id);
+
+CREATE TABLE IF NOT EXISTS ThemeVersions (
+    id TEXT PRIMARY KEY,
+    theme_id TEXT NOT NULL,
+    version_number INTEGER NOT NULL,
+    theme_name TEXT NOT NULL,
+    description TEXT,
+    images JSON,
+    cover_image TEXT,
+    settings JSON NOT NULL,
+    is_public BOOLEAN NOT NULL,
+    tags JSON NOT NULL DEFAULT '[]',
+    category JSON,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (theme_id, version_number),
+    FOREIGN KEY (theme_id) REFERENCES Themes(theme_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_theme_versions_theme ON ThemeVersions(theme_id, version_number DESC);
+
+CREATE TABLE IF NOT EXISTS Reviews (
+    id TEXT PRIMARY KEY,
+    theme_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    body TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (theme_id, user_id),
+    FOREIGN KEY (theme_id) REFERENCES Themes(theme_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_reviews_theme ON Reviews(theme_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reviews_user ON Reviews(user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS ThemeReports (
+    id TEXT PRIMARY KEY,
+    theme_id TEXT NOT NULL,
+    reporter_id TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    details TEXT,
+    status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved', 'dismissed')),
+    resolved_by TEXT,
+    resolved_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (theme_id) REFERENCES Themes(theme_id) ON DELETE CASCADE,
+    FOREIGN KEY (reporter_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (resolved_by) REFERENCES Users(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_theme_reports_reporter ON ThemeReports(reporter_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_theme_reports_moderation ON ThemeReports(status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS Collections (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, name),
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_collections_user ON Collections(user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS CollectionItems (
+    collection_id TEXT NOT NULL,
+    theme_id TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (collection_id, theme_id),
+    FOREIGN KEY (collection_id) REFERENCES Collections(id) ON DELETE CASCADE,
+    FOREIGN KEY (theme_id) REFERENCES Themes(theme_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_collection_items_theme ON CollectionItems(theme_id);
