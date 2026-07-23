@@ -1,17 +1,27 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
     import ThemeCard from "$lib/components/theme/ThemeCard.svelte";
     import type { Theme } from "$lib/types/index";
     import { fade, fly, scale } from "svelte/transition";
     import { page } from "$app/state";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
     import { debounce } from "$lib/utils/debounce";
-    import CustomDropdown from "$lib/components/common/CustomDropdown.svelte";
 
+    const PAGE_SIZE = 12;
     let themes = $state<Theme[]>([]);
     let searchQuery = $state("");
     let sortBy = $state("popular");
+    let selectedTag = $state("");
+    let selectedCategory = $state("");
+    let offset = $state(0);
+    let total = $state(0);
+    let pageLimit = $state(PAGE_SIZE);
     let loading = $state(true);
+    let errorMessage = $state<string | null>(null);
+    let initialized = false;
+    let requestId = 0;
+    let controller: AbortController | null = null;
 
     const sortOptions = [
         { value: "popular", label: "Most Popular" },
@@ -20,52 +30,197 @@
     ];
 
     import { PUBLIC_API_URL } from "$lib/constants/index";
-    import { ui } from "$lib/core/ui.svelte";
+
+    const availableTags = $derived(
+        [...new Set(themes.flatMap((theme) => theme.tags ?? []))].sort((a, b) =>
+            a.localeCompare(b),
+        ),
+    );
+    const availableCategories = $derived(
+        [
+            ...new Set(
+                themes
+                    .map((theme) => theme.category)
+                    .filter((category): category is string => Boolean(category)),
+            ),
+        ].sort((a, b) => a.localeCompare(b)),
+    );
+    const currentPage = $derived(Math.floor(offset / pageLimit) + 1);
+    const totalPages = $derived(Math.max(1, Math.ceil(total / pageLimit)));
+    const hasActiveFilters = $derived(
+        Boolean(searchQuery || selectedTag || selectedCategory),
+    );
+    const pageNumbers = $derived.by(() => {
+        const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+        const end = Math.min(totalPages, start + 4);
+        return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+    });
+
+    function asOffset(value: string | null) {
+        const parsed = Number.parseInt(value ?? "0", 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    }
+
+    function syncStateFromUrl(params: URLSearchParams) {
+        searchQuery = params.get("q") ?? "";
+        sortBy = sortOptions.some((option) => option.value === params.get("sort"))
+            ? (params.get("sort") ?? "popular")
+            : "popular";
+        selectedTag = params.get("tag") ?? "";
+        selectedCategory = params.get("category") ?? "";
+        offset = asOffset(params.get("offset"));
+    }
+
+    function stateSignature() {
+        return [searchQuery, sortBy, selectedTag, selectedCategory, offset].join("\u0000");
+    }
+
+    function urlSignature(params: URLSearchParams) {
+        return [
+            params.get("q") ?? "",
+            params.get("sort") ?? "popular",
+            params.get("tag") ?? "",
+            params.get("category") ?? "",
+            asOffset(params.get("offset")),
+        ].join("\u0000");
+    }
+
+    function buildSearchParams() {
+        const params = new URLSearchParams();
+        if (searchQuery.trim()) params.set("q", searchQuery.trim());
+        if (sortBy !== "popular") params.set("sort", sortBy);
+        if (selectedTag.trim()) params.set("tag", selectedTag.trim());
+        if (selectedCategory.trim()) {
+            params.set("category", selectedCategory.trim());
+        }
+        params.set("limit", String(PAGE_SIZE));
+        if (offset > 0) params.set("offset", String(offset));
+        return params;
+    }
+
+    function updateUrl() {
+        const params = buildSearchParams();
+        void goto(`/discover?${params.toString()}`, {
+            replaceState: true,
+            keepFocus: true,
+            noScroll: true,
+        });
+    }
+
+    function matchesLegacyFilters(theme: Theme) {
+        const tag = selectedTag.trim().toLowerCase();
+        const category = selectedCategory.trim().toLowerCase();
+        return (
+            (!tag || (theme.tags ?? []).some((value) => value.toLowerCase() === tag)) &&
+            (!category || theme.category?.toLowerCase() === category)
+        );
+    }
 
     async function fetchThemes() {
+        const thisRequest = ++requestId;
+        controller?.abort();
+        controller = new AbortController();
         loading = true;
+        errorMessage = null;
         try {
-            const response = await fetch(
-                `${PUBLIC_API_URL}/themes?q=${searchQuery}&sort=${sortBy}`,
-                { credentials: "include" },
-            );
+            const params = buildSearchParams();
+            const response = await fetch(`${PUBLIC_API_URL}/themes?${params}`, {
+                credentials: "include",
+                signal: controller.signal,
+            });
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(
                     `Failed to fetch themes: ${response.status} ${errorText}`,
                 );
             }
-            themes = await response.json();
-        } catch (error: any) {
-            ui.showModal(
-                "Discovery Error",
-                "Failed to load themes. Please check your internet connection.",
-                "error",
-            );
+            const data: unknown = await response.json();
+            if (thisRequest !== requestId) return;
+
+            // Older deployments return Theme[]; preserve useful pagination and
+            // tag/category filtering locally until the paginated API is deployed.
+            if (Array.isArray(data)) {
+                const matchingThemes = (data as Theme[]).filter(matchesLegacyFilters);
+                total = matchingThemes.length;
+                pageLimit = PAGE_SIZE;
+                themes = matchingThemes.slice(offset, offset + pageLimit);
+            } else if (
+                data &&
+                typeof data === "object" &&
+                Array.isArray((data as { items?: unknown }).items)
+            ) {
+                const result = data as {
+                    items: Theme[];
+                    total?: number;
+                    limit?: number;
+                    offset?: number;
+                };
+                themes = result.items;
+                total =
+                    typeof result.total === "number" && Number.isFinite(result.total)
+                        ? Math.max(0, result.total)
+                        : result.items.length;
+                pageLimit = result.limit && result.limit > 0 ? result.limit : PAGE_SIZE;
+                offset =
+                    typeof result.offset === "number" && result.offset >= 0
+                        ? result.offset
+                        : offset;
+            } else {
+                throw new Error("The themes API returned an unexpected response.");
+            }
+        } catch (error) {
+            if ((error as DOMException).name === "AbortError") return;
+            if (thisRequest !== requestId) return;
+            errorMessage = "We couldn't load themes right now. Please try again.";
+            themes = [];
+            total = 0;
         } finally {
-            loading = false;
+            if (thisRequest === requestId) loading = false;
         }
     }
 
     onMount(() => {
-        searchQuery = page.url.searchParams.get("q") || "";
+        syncStateFromUrl(page.url.searchParams);
+        initialized = true;
+        fetchThemes();
+        return () => controller?.abort();
     });
 
-    const debouncedSearch = debounce(fetchThemes, 500);
+    function applyFilters() {
+        offset = 0;
+        updateUrl();
+        fetchThemes();
+    }
 
-    let initialized = false;
+    const debouncedFilterChange = debounce(applyFilters, 500);
+
     $effect(() => {
-        searchQuery;
-        sortBy;
-
-        if (!initialized) {
+        const params = page.url.searchParams;
+        if (initialized && urlSignature(params) !== stateSignature()) {
+            syncStateFromUrl(params);
             fetchThemes();
-            initialized = true;
-            return;
         }
-
-        debouncedSearch();
     });
+
+    function goToPage(pageNumber: number) {
+        const nextOffset = (pageNumber - 1) * pageLimit;
+        if (nextOffset === offset || pageNumber < 1 || pageNumber > totalPages) return;
+        offset = nextOffset;
+        updateUrl();
+        fetchThemes();
+    }
+
+    function clearFilters() {
+        searchQuery = "";
+        selectedTag = "";
+        selectedCategory = "";
+        applyFilters();
+    }
+
+    function clearSearch() {
+        searchQuery = "";
+        applyFilters();
+    }
 </script>
 
 <div
@@ -81,24 +236,61 @@
                     type="text"
                     placeholder="Search themes..."
                     bind:value={searchQuery}
-                    onkeydown={(e) => e.key === "Enter" && fetchThemes()}
+                    onkeydown={(e) => e.key === "Enter" && applyFilters()}
+                    oninput={debouncedFilterChange}
                 />
                 {#if searchQuery}
                     <button
                         class="clear-search"
-                        onclick={() => {
-                            searchQuery = "";
-                        }}
+                        onclick={clearSearch}
                     >
                         <MaterialIcon name="close" size={14} />
                     </button>
                 {/if}
             </div>
+
+            <div class="filter-input glass-panel">
+                <MaterialIcon name="sell" size={18} />
+                <input
+                    list="theme-tags"
+                    placeholder="Filter by tag"
+                    aria-label="Filter themes by tag"
+                    bind:value={selectedTag}
+                    oninput={debouncedFilterChange}
+                    onkeydown={(e) => e.key === "Enter" && applyFilters()}
+                />
+                <datalist id="theme-tags">
+                    {#each availableTags as tag}
+                        <option value={tag}></option>
+                    {/each}
+                </datalist>
+            </div>
+
+            <div class="filter-input glass-panel">
+                <MaterialIcon name="category" size={18} />
+                <input
+                    list="theme-categories"
+                    placeholder="Filter by category"
+                    aria-label="Filter themes by category"
+                    bind:value={selectedCategory}
+                    oninput={debouncedFilterChange}
+                    onkeydown={(e) => e.key === "Enter" && applyFilters()}
+                />
+                <datalist id="theme-categories">
+                    {#each availableCategories as category}
+                        <option value={category}></option>
+                    {/each}
+                </datalist>
+            </div>
         </div>
 
         <div class="sort-wrapper">
             <span>Sort by:</span>
-            <CustomDropdown options={sortOptions} bind:value={sortBy} />
+            <select bind:value={sortBy} onchange={applyFilters} aria-label="Sort themes">
+                {#each sortOptions as option}
+                    <option value={option.value}>{option.label}</option>
+                {/each}
+            </select>
         </div>
     </div>
 
@@ -106,6 +298,14 @@
         <div class="loading-state">
             <div class="spinner"></div>
             <p>Curating themes for you...</p>
+        </div>
+    {:else if errorMessage}
+        <div class="empty-state error-state" role="alert">
+            <MaterialIcon name="error" size={28} />
+            <p>{errorMessage}</p>
+            <button class="clear-btn premium-button glass-panel" onclick={fetchThemes}>
+                <MaterialIcon name="refresh" size={16} /> Try Again
+            </button>
         </div>
     {:else}
         <div class="theme-grid" in:fade={{ duration: 600 }}>
@@ -118,16 +318,47 @@
 
         {#if themes.length === 0}
             <div class="empty-state">
-                <p>No themes found</p>
-                <button
-                    class="clear-btn premium-button glass-panel"
-                    onclick={() => {
-                        searchQuery = "";
-                    }}
-                >
-                    <MaterialIcon name="close" size={16} /> Clear Search
-                </button>
+                <MaterialIcon name="search_off" size={28} />
+                <p>No themes match those filters.</p>
+                {#if hasActiveFilters}
+                    <button class="clear-btn premium-button glass-panel" onclick={clearFilters}>
+                        <MaterialIcon name="close" size={16} /> Clear Filters
+                    </button>
+                {/if}
             </div>
+        {:else}
+            <div class="results-summary" aria-live="polite">
+                Showing {offset + 1}–{Math.min(offset + themes.length, total)} of {total} themes
+            </div>
+        {/if}
+
+        {#if totalPages > 1}
+            <nav class="pagination" aria-label="Theme discovery pages">
+                <button
+                    class="pagination-btn"
+                    onclick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    aria-label="Previous page"
+                >
+                    <MaterialIcon name="chevron_left" size={20} />
+                </button>
+                {#each pageNumbers as pageNumber}
+                    <button
+                        class="pagination-btn"
+                        class:active={pageNumber === currentPage}
+                        onclick={() => goToPage(pageNumber)}
+                        aria-current={pageNumber === currentPage ? "page" : undefined}
+                    >{pageNumber}</button>
+                {/each}
+                <button
+                    class="pagination-btn"
+                    onclick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    aria-label="Next page"
+                >
+                    <MaterialIcon name="chevron_right" size={20} />
+                </button>
+            </nav>
         {/if}
     {/if}
 </div>
@@ -157,10 +388,34 @@
             min-width: 0;
             width: 100%;
 
-            @media (max-width: 900px) {
+            @media (max-width: 1050px) {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 1rem;
+            }
+
+            .filter-input {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.75rem 1rem;
+                min-width: 10.5rem;
+                color: var(--text-secondary);
+
+                input {
+                    width: 100%;
+                    min-width: 0;
+                    border: 0;
+                    outline: 0;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font: inherit;
+                    font-size: 0.9rem;
+
+                    &::placeholder {
+                        color: var(--text-muted);
+                    }
+                }
             }
         }
 
@@ -234,6 +489,24 @@
         gap: 1rem;
         color: var(--text-secondary);
         font-size: 1.1rem;
+
+        select {
+            appearance: none;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            padding: 0.65rem 2.2rem 0.65rem 0.8rem;
+            color: var(--text-primary);
+            background:
+                linear-gradient(45deg, transparent 50%, var(--text-muted) 50%) calc(100% - 14px) 50% / 5px 5px no-repeat,
+                linear-gradient(135deg, var(--text-muted) 50%, transparent 50%) calc(100% - 9px) 50% / 5px 5px no-repeat,
+                rgba(var(--text-primary-rgb), 0.05);
+            font: inherit;
+            cursor: pointer;
+
+            option {
+                color: #111;
+            }
+        }
     }
 
     .theme-grid {
@@ -255,6 +528,45 @@
             border-radius: 50%;
             margin: 0 auto 1.5rem;
             animation: spin 1s linear infinite;
+        }
+    }
+
+    .results-summary {
+        margin-top: 2rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1.25rem;
+
+        .pagination-btn {
+            min-width: 2.5rem;
+            height: 2.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            background: rgba(var(--text-primary-rgb), 0.05);
+            cursor: pointer;
+
+            &:hover:not(:disabled),
+            &.active {
+                background: var(--text-primary);
+                color: var(--bg-dark);
+            }
+
+            &:disabled {
+                cursor: not-allowed;
+                opacity: 0.4;
+            }
         }
     }
 

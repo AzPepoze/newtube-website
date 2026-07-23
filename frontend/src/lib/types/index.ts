@@ -7,6 +7,11 @@ export interface Theme {
     coverImage?: string;
     settings: any;
     downloads: number;
+    /** Marketplace metadata is optional while older API deployments are active. */
+    category?: string | null;
+    tags?: string[];
+    rating?: number | null;
+    ratingCount?: number;
     createdAt?: string;
     updatedAt?: string;
 }

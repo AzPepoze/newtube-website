@@ -44,6 +44,11 @@
     let isInstalled = $derived(
         extensionState.installedThemeId === theme.themeId,
     );
+    const visibleTags = $derived(theme.tags?.slice(0, 3) ?? []);
+    const remainingTagCount = $derived((theme.tags?.length ?? 0) - visibleTags.length);
+    const hasRating = $derived(
+        typeof theme.rating === "number" && Number.isFinite(theme.rating),
+    );
 
     function handleInstall(e: Event) {
         e.preventDefault();
@@ -115,7 +120,32 @@
                     <MaterialIcon name="download" size={14} />
                     {theme.downloads}
                 </span>
+                {#if hasRating}
+                    <span class="rating" title={`${theme.rating!.toFixed(1)} out of 5 stars`}>
+                        <MaterialIcon name="star" size={14} />
+                        {theme.rating!.toFixed(1)}
+                        {#if theme.ratingCount}
+                            <span class="rating-count">({theme.ratingCount})</span>
+                        {/if}
+                    </span>
+                {/if}
             </div>
+            {#if theme.category || visibleTags.length > 0}
+                <div class="metadata" aria-label="Theme category and tags">
+                    {#if theme.category}
+                        <span class="category-chip">
+                            <MaterialIcon name="category" size={13} />
+                            {theme.category}
+                        </span>
+                    {/if}
+                    {#each visibleTags as tag}
+                        <span class="tag-chip">#{tag}</span>
+                    {/each}
+                    {#if remainingTagCount > 0}
+                        <span class="tag-chip">+{remainingTagCount}</span>
+                    {/if}
+                </div>
+            {/if}
             <p>{theme.description || "No description provided."}</p>
             <div class="footer">
                 <UserAvatar userId={theme.ownerId} size="sm" />
@@ -273,13 +303,47 @@
                     }
                 }
 
-                .downloads {
+                .downloads,
+                .rating {
                     font-size: 0.85rem;
                     color: var(--text-muted);
                     white-space: nowrap;
                     display: flex;
                     align-items: center;
                     gap: 0.35rem;
+                }
+
+                .rating {
+                    color: #ffd166;
+
+                    .rating-count {
+                        color: var(--text-muted);
+                    }
+                }
+            }
+
+            .metadata {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+                min-height: 1.7rem;
+
+                .category-chip,
+                .tag-chip {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.25rem;
+                    padding: 0.25rem 0.5rem;
+                    border: 1px solid var(--border-glass);
+                    border-radius: 999px;
+                    color: var(--text-secondary);
+                    font-size: 0.75rem;
+                    line-height: 1;
+                }
+
+                .category-chip {
+                    color: var(--primary-glow);
+                    background: rgba(var(--text-primary-rgb), 0.06);
                 }
             }
 
