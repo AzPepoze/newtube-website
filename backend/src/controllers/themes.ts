@@ -1,13 +1,10 @@
-import {
-    ensureCategoryById,
-    tagSlug,
-} from "../db/marketplace";
 import type { Database } from "../db";
 import type { ResponseStatus } from "../types/http";
 import {
     createThemeForOwner,
     createThemeReview,
     deleteThemeForOwner,
+    ensureThemeCategoryById,
     getTheme,
     getThemeReviews,
     getThemeVersion,
@@ -33,6 +30,7 @@ import {
     validateThemeTitle,
     validateUuid,
 } from "../utils/validation";
+import { tagSlug } from "../utils/marketplace";
 
 const THEME_SORTS = ["popular", "newest", "alpha"] as const;
 
@@ -110,7 +108,10 @@ async function validateThemeInput(
     if (failed && !failed.valid) return { message: failed.message };
 
     if (themeInput.categoryId) {
-        const category = await ensureCategoryById(db, themeInput.categoryId);
+        const category = await ensureThemeCategoryById(
+            db,
+            themeInput.categoryId,
+        );
         if (!category) return { message: "Category not found" };
     }
     return { input: themeInput };
@@ -323,9 +324,11 @@ export const themeController = {
 
     async upsertReview({ userId, params, body, db, set }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
-        const data = body as { rating?: unknown; body?: unknown } | null;
-        const ratingValidation = validateRating(data?.rating);
-        const bodyValidation = validateText(data?.body, "Review", { max: 2_000 });
+        const reviewInput = body as { rating?: unknown; body?: unknown } | null;
+        const ratingValidation = validateRating(reviewInput?.rating);
+        const bodyValidation = validateText(reviewInput?.body, "Review", {
+            max: 2_000,
+        });
         if (
             !idValidation.valid ||
             !ratingValidation.valid ||
@@ -345,8 +348,8 @@ export const themeController = {
             db,
             params.id,
             userId!,
-            data!.rating as number,
-            data!.body as string | undefined,
+            reviewInput!.rating as number,
+            reviewInput!.body as string | undefined,
         );
         if (reviewOutcome.status === "not-found") {
             set.status = 404;

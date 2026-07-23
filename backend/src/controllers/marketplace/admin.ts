@@ -2,7 +2,6 @@ import {
     REPORT_RESOLUTION_STATUSES,
     REPORT_STATUSES,
 } from "../../constants/marketplace";
-import { tagSlug } from "../../db/marketplace";
 import {
     createCategoryForAdmin,
     isMarketplaceAdmin,
@@ -18,6 +17,7 @@ import {
     validateText,
     validateUuid,
 } from "../../utils/validation";
+import { tagSlug } from "../../utils/marketplace";
 import type { MarketplaceControllerContext } from "../marketplace";
 
 function invalidMessage(result: { valid: boolean; message?: string }) {

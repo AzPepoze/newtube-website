@@ -6,6 +6,7 @@ import {
     getThemeForViewer,
     searchThemesPage,
     updateThemeRecordForOwner,
+    type ThemePersistenceInput,
     type ThemeSort,
 } from "../db/themes";
 import {
@@ -19,6 +20,7 @@ import {
     listThemeVersions,
     upsertThemeReview,
     deleteThemeReview,
+    ensureCategoryById,
 } from "../db/marketplace";
 import type { Database } from "../db";
 import { deleteImageFromR2, uploadImageToR2 } from "./images";
@@ -58,6 +60,10 @@ async function findThemeForViewer(
 ) {
     const isAdmin = userId ? await isUserAdmin(db, userId) : false;
     return getThemeForViewer(db, themeId, { userId, isAdmin });
+}
+
+export function ensureThemeCategoryById(db: Database, categoryId: string) {
+    return ensureCategoryById(db, categoryId);
 }
 
 export async function listThemes(
@@ -177,19 +183,24 @@ export async function createThemeForOwner(
         }
     }
 
-    const result = await createThemeRecord(db, ownerId, {
+    const createPersistenceInput: ThemePersistenceInput = {
         themeName: themeInput.themeName,
         description: themeInput.description,
         images: [...(themeInput.imgs ?? []), ...uploadedUrls],
         coverImage: finalCoverImage,
-        settings: themeInput.settings,
+        settings: themeInput.settings ?? {},
         isPublic: themeInput.isPublic ?? true,
-    });
-    if (result) {
-        await applyThemeClassification(db, result.themeId, themeInput);
-        await createThemeVersion(db, result.themeId);
+    };
+    const createdTheme = await createThemeRecord(
+        db,
+        ownerId,
+        createPersistenceInput,
+    );
+    if (createdTheme) {
+        await applyThemeClassification(db, createdTheme.themeId, themeInput);
+        await createThemeVersion(db, createdTheme.themeId);
     }
-    return result;
+    return createdTheme;
 }
 
 export async function updateThemeForOwner(
@@ -254,19 +265,25 @@ export async function updateThemeForOwner(
         }
     }
 
-    const updated = await updateThemeRecordForOwner(db, themeId, ownerId, {
+    const updatePersistenceInput: ThemePersistenceInput = {
         themeName: themeInput.themeName,
         description: themeInput.description,
         images,
         coverImage: finalCoverImage,
-        settings: themeInput.settings,
+        settings: themeInput.settings ?? {},
         isPublic: themeInput.isPublic ?? existingTheme.isPublic ?? true,
-    });
-    if (updated) {
+    };
+    const wasUpdated = await updateThemeRecordForOwner(
+        db,
+        themeId,
+        ownerId,
+        updatePersistenceInput,
+    );
+    if (wasUpdated) {
         await applyThemeClassification(db, themeId, themeInput);
         await createThemeVersion(db, themeId);
     }
-    return updated;
+    return wasUpdated;
 }
 
 export async function deleteThemeForOwner(

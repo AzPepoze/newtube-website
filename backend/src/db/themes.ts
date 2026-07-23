@@ -167,34 +167,37 @@ export async function getThemeForViewer(
 export async function createThemeRecord(
     db: Database,
     ownerId: string,
-    data: ThemePersistenceInput,
+    persistenceInput: ThemePersistenceInput,
 ) {
     const themeId = crypto.randomUUID();
 
     console.log("[db/createTheme] Inserting into database...", {
         themeId,
         ownerId,
-        themeName: data.themeName,
+        themeName: persistenceInput.themeName,
     });
     try {
-        const result = await db
+        const createdTheme = await db
             .insert(themes)
             .values({
                 themeId,
                 ownerId,
-                themeName: data.themeName,
-                description: data.description,
-                images: data.images,
-                coverImage: data.coverImage,
-                settings: data.settings ?? {},
-                isPublic: data.isPublic,
+                themeName: persistenceInput.themeName,
+                description: persistenceInput.description,
+                images: persistenceInput.images,
+                coverImage: persistenceInput.coverImage,
+                settings: persistenceInput.settings ?? {},
+                isPublic: persistenceInput.isPublic,
             })
             .returning({ themeId: themes.themeId })
-            .then((res) => {
-                console.log("[db/createTheme] Insert successful, result:", res);
-                return res[0];
+            .then((createdThemeRows) => {
+                console.log(
+                    "[db/createTheme] Insert successful, result:",
+                    createdThemeRows,
+                );
+                return createdThemeRows[0];
             });
-        return result;
+        return createdTheme;
     } catch (error) {
         console.error(
             "[db/createTheme] Insert failed:",
@@ -208,23 +211,23 @@ export async function updateThemeRecordForOwner(
     db: Database,
     themeId: string,
     ownerId: string,
-    data: ThemePersistenceInput,
+    persistenceInput: ThemePersistenceInput,
 ) {
-    const result = await db
+    const updateOutcome = await db
         .update(themes)
         .set({
-            themeName: data.themeName,
-            description: data.description,
-            images: data.images,
-            coverImage: data.coverImage,
-            settings: data.settings ?? {},
-            isPublic: data.isPublic,
+            themeName: persistenceInput.themeName,
+            description: persistenceInput.description,
+            images: persistenceInput.images,
+            coverImage: persistenceInput.coverImage,
+            settings: persistenceInput.settings ?? {},
+            isPublic: persistenceInput.isPublic,
             updatedAt: sql`CURRENT_TIMESTAMP`,
         })
         .where(and(eq(themes.themeId, themeId), eq(themes.ownerId, ownerId)))
         .run();
 
-    return result.meta.changes > 0;
+    return updateOutcome.meta.changes > 0;
 }
 
 export async function deleteThemeRecordForOwner(
@@ -232,10 +235,10 @@ export async function deleteThemeRecordForOwner(
     themeId: string,
     ownerId: string,
 ) {
-    const result = await db
+    const deleteOutcome = await db
         .delete(themes)
         .where(and(eq(themes.themeId, themeId), eq(themes.ownerId, ownerId)))
         .run();
 
-    return result.meta.changes > 0;
+    return deleteOutcome.meta.changes > 0;
 }

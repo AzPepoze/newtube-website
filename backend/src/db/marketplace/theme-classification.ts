@@ -1,17 +1,8 @@
 import { asc, eq, inArray } from "drizzle-orm";
 import { THEME_CATEGORIES } from "../../constants/marketplace";
+import { normalizeTagName, tagSlug } from "../../utils/marketplace";
 import type { Database } from "../index";
 import { categories, tags, themeCategories, themeTags } from "../schema";
-
-export function normalizeTagName(name: string) {
-    return name.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-export function tagSlug(name: string) {
-    return normalizeTagName(name)
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-}
 
 export async function listTags(db: Database) {
     return db.select().from(tags).orderBy(asc(tags.name)).all();

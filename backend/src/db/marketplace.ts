@@ -6,10 +6,8 @@ export {
     getThemeClassification,
     listCategories,
     listTags,
-    normalizeTagName,
     setThemeCategory,
     setThemeTagNames,
-    tagSlug,
 } from "./marketplace/theme-classification";
 export {
     createThemeVersion,
