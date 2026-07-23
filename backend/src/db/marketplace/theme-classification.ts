@@ -1,14 +1,47 @@
-import { asc, eq, inArray } from "drizzle-orm";
-import { THEME_CATEGORIES } from "../../constants/marketplace";
+import { asc, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { THEME_CATEGORIES, THEME_TAGS } from "../../constants/marketplace";
 import { normalizeTagName, tagSlug } from "../../utils/marketplace";
 import type { Database } from "../index";
 import { categories, tags, themeCategories, themeTags } from "../schema";
 
+export async function syncThemeTagsAndCategories(db: Database) {
+    const tagIds = THEME_TAGS.map((tag) => tag.id);
+    const categoryIds = THEME_CATEGORIES.map((category) => category.id);
+
+    if (categoryIds.length) {
+        await db
+            .delete(themeCategories)
+            .where(notInArray(themeCategories.categoryId, categoryIds));
+        await db
+            .delete(categories)
+            .where(notInArray(categories.id, categoryIds));
+    } else {
+        await db.delete(themeCategories);
+        await db.delete(categories);
+    }
+    if (tagIds.length) {
+        await db.delete(tags).where(notInArray(tags.id, tagIds));
+    } else {
+        await db.delete(tags);
+    }
+
+    await db.insert(tags).values([...THEME_TAGS]).onConflictDoUpdate({
+        target: tags.id,
+        set: { slug: sql`excluded.slug`, name: sql`excluded.name` },
+    });
+    await db.insert(categories).values([...THEME_CATEGORIES]).onConflictDoUpdate({
+        target: categories.id,
+        set: { slug: sql`excluded.slug`, name: sql`excluded.name` },
+    });
+}
+
 export async function listTags(db: Database) {
+    await syncThemeTagsAndCategories(db);
     return db.select().from(tags).orderBy(asc(tags.name)).all();
 }
 
 export async function listCategories(db: Database) {
+    await syncThemeTagsAndCategories(db);
     return db.select().from(categories).orderBy(asc(categories.name)).all();
 }
 
@@ -17,6 +50,7 @@ export function getCategoryById(db: Database, id: string) {
 }
 
 export async function ensureCategoryById(db: Database, id: string) {
+    await syncThemeTagsAndCategories(db);
     const existing = await getCategoryById(db, id);
     if (existing) return existing;
 
@@ -53,6 +87,7 @@ export async function setThemeTagNames(
     themeId: string,
     tagNames: string[],
 ) {
+    await syncThemeTagsAndCategories(db);
     const normalized = [
         ...new Set(tagNames.map(normalizeTagName).filter(Boolean)),
     ];
@@ -102,6 +137,7 @@ export async function setThemeCategory(
     themeId: string,
     categoryId: string | null,
 ) {
+    await syncThemeTagsAndCategories(db);
     if (!categoryId) {
         await db
             .delete(themeCategories)

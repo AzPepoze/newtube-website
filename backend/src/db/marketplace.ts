@@ -8,6 +8,7 @@ export {
     listTags,
     setThemeCategory,
     setThemeTagNames,
+    syncThemeTagsAndCategories,
 } from "./marketplace/theme-classification";
 export {
     createThemeVersion,
