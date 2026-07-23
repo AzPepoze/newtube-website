@@ -57,7 +57,7 @@
         } else if (option.value !== undefined) {
             if (multiple) {
                 selectedValues = selectedValues.includes(option.value)
-                    ? selectedValues.filter((item) => item !== option.value)
+                    ? selectedValues.filter((item: string) => item !== option.value)
                     : [...selectedValues, option.value];
                 onValuesChange?.(selectedValues);
                 return;

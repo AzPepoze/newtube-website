@@ -5,7 +5,7 @@
     import type { Theme } from "$lib/types/index";
     import { PUBLIC_API_URL } from "$lib/constants/index";
     import { ui } from "$lib/core/ui.svelte";
-    import { getUserId } from "$lib/utils/auth";
+    import { getCurrentUser } from "$lib/utils/auth";
     import ThemeDetailHeader from "$lib/components/theme/ThemeDetailHeader.svelte";
     import ThemeDetailGallery from "$lib/components/theme/ThemeDetailGallery.svelte";
     import ThemeDetailCodePreview from "$lib/components/theme/ThemeDetailCodePreview.svelte";
@@ -46,15 +46,21 @@
     let currentUser = $state("");
 
     async function fetchTheme() {
-        currentUser = getUserId() || "";
         const id = page.params.id;
         loading = true;
+        currentUser = "";
         try {
-            const response = await fetch(`${PUBLIC_API_URL}/themes/${id}`, {
-                credentials: "include",
-            });
+            const [response, viewer] = await Promise.all([
+                fetch(`${PUBLIC_API_URL}/themes/${id}`, {
+                    credentials: "include",
+                }),
+                getCurrentUser(),
+            ]);
+
             if (!response.ok) throw new Error("Theme not found");
+
             theme = await response.json();
+            currentUser = viewer?.id ?? "";
         } catch (error) {
             ui.showModal("Error", "Failed to fetch theme details.", "error");
             theme = null;
