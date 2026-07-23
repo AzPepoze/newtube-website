@@ -15,7 +15,7 @@ import {
     listDraftThemes,
     listThemes,
     removeThemeReview,
-    type ThemePayload,
+    type ThemeInput,
     updateThemeForOwner,
 } from "../services/themes";
 import type { ThemeSort } from "../db/themes";
@@ -36,7 +36,7 @@ import {
 
 const THEME_SORTS = ["popular", "newest", "alpha"] as const;
 
-type ThemeContext = {
+type ThemeControllerContext = {
     db: Database;
     env: Env;
     userId?: string;
@@ -79,45 +79,45 @@ function parseDiscoverySlugs(value: unknown, label: string) {
     return { valid: true as const, values };
 }
 
-async function validateThemePayload(
+async function validateThemeInput(
     db: Database,
     body: unknown,
 ): Promise<
-    | { data: ThemePayload; message?: never }
-    | { data?: never; message: string }
+    | { input: ThemeInput; message?: never }
+    | { input?: never; message: string }
 > {
     if (!body || typeof body !== "object" || Array.isArray(body)) {
         return { message: "Request body must be an object" };
     }
-    const data = body as ThemePayload;
+    const themeInput = body as ThemeInput;
     const validations = [
-        validateThemeTitle(data.themeName),
-        validateThemeDescription(data.description),
-        validatePendingImages(data.pendingImages),
-        validatePendingCoverImage(data.pendingCoverImage),
-        validateSettingsJSON(data.settings),
+        validateThemeTitle(themeInput.themeName),
+        validateThemeDescription(themeInput.description),
+        validatePendingImages(themeInput.pendingImages),
+        validatePendingCoverImage(themeInput.pendingCoverImage),
+        validateSettingsJSON(themeInput.settings),
     ];
-    if (data.isPublic !== undefined) {
-        validations.push(validateBoolean(data.isPublic, "isPublic"));
+    if (themeInput.isPublic !== undefined) {
+        validations.push(validateBoolean(themeInput.isPublic, "isPublic"));
     }
-    if (data.tagNames !== undefined) {
-        validations.push(validateTagNames(data.tagNames));
+    if (themeInput.tagNames !== undefined) {
+        validations.push(validateTagNames(themeInput.tagNames));
     }
-    if (data.categoryId !== undefined && data.categoryId !== null) {
-        validations.push(validateUuid(data.categoryId, "categoryId"));
+    if (themeInput.categoryId !== undefined && themeInput.categoryId !== null) {
+        validations.push(validateUuid(themeInput.categoryId, "categoryId"));
     }
     const failed = validations.find((result) => !result.valid);
     if (failed && !failed.valid) return { message: failed.message };
 
-    if (data.categoryId) {
-        const category = await ensureCategoryById(db, data.categoryId);
+    if (themeInput.categoryId) {
+        const category = await ensureCategoryById(db, themeInput.categoryId);
         if (!category) return { message: "Category not found" };
     }
-    return { data };
+    return { input: themeInput };
 }
 
 export const themeController = {
-    async list({ query, db, set }: ThemeContext) {
+    async list({ query, db, set }: ThemeControllerContext) {
         const pagination = parsePagination(query);
         if (!pagination.valid) {
             set.status = 400;
@@ -154,7 +154,7 @@ export const themeController = {
         });
     },
 
-    async listDrafts({ userId, db, set }: ThemeContext) {
+    async listDrafts({ userId, db, set }: ThemeControllerContext) {
         if (!userId) {
             set.status = 401;
             return { error: "Unauthorized", message: "You must be logged in" };
@@ -162,7 +162,7 @@ export const themeController = {
         return listDraftThemes(db, userId);
     },
 
-    async listVersions({ params, userId, db, set }: ThemeContext) {
+    async listVersions({ params, userId, db, set }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         if (!idValidation.valid) {
             set.status = 400;
@@ -176,7 +176,7 @@ export const themeController = {
         return versions;
     },
 
-    async getVersion({ params, userId, db, set }: ThemeContext) {
+    async getVersion({ params, userId, db, set }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         const version = Number(params.version);
         if (!idValidation.valid || !Number.isInteger(version) || version < 1) {
@@ -200,7 +200,7 @@ export const themeController = {
         return snapshot;
     },
 
-    async listReviews({ params, query, db, set }: ThemeContext) {
+    async listReviews({ params, query, db, set }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         const pagination = parsePagination(query, { limit: 20 });
         if (!idValidation.valid || !pagination.valid) {
@@ -220,7 +220,7 @@ export const themeController = {
         return reviews;
     },
 
-    async get({ params, userId, db, set }: ThemeContext) {
+    async get({ params, userId, db, set }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         if (!idValidation.valid) {
             set.status = 400;
@@ -234,11 +234,14 @@ export const themeController = {
         return theme;
     },
 
-    async create({ userId, body, db, set, env }: ThemeContext) {
-        const payload = await validateThemePayload(db, body);
-        if (!payload.data) {
+    async create({ userId, body, db, set, env }: ThemeControllerContext) {
+        const themeInputValidation = await validateThemeInput(db, body);
+        if (!themeInputValidation.input) {
             set.status = 400;
-            return { error: "Invalid theme", message: payload.message };
+            return {
+                error: "Invalid theme",
+                message: themeInputValidation.message,
+            };
         }
         try {
             if (env.THEME_RATE_LIMITER) {
@@ -256,7 +259,12 @@ export const themeController = {
         } catch (error) {
             console.error("Theme rate limiter error", error);
         }
-        const result = await createThemeForOwner(db, env, userId!, payload.data);
+        const result = await createThemeForOwner(
+            db,
+            env,
+            userId!,
+            themeInputValidation.input,
+        );
         if (!result) {
             set.status = 500;
             return { error: "Failed to create theme" };
@@ -265,23 +273,26 @@ export const themeController = {
         return result;
     },
 
-    async update({ userId, params, body, db, set, env }: ThemeContext) {
+    async update({ userId, params, body, db, set, env }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         if (!idValidation.valid) {
             set.status = 400;
             return { error: "Invalid theme ID", message: idValidation.message };
         }
-        const payload = await validateThemePayload(db, body);
-        if (!payload.data) {
+        const themeInputValidation = await validateThemeInput(db, body);
+        if (!themeInputValidation.input) {
             set.status = 400;
-            return { error: "Invalid theme", message: payload.message };
+            return {
+                error: "Invalid theme",
+                message: themeInputValidation.message,
+            };
         }
         const updated = await updateThemeForOwner(
             db,
             env,
             params.id,
             userId!,
-            payload.data,
+            themeInputValidation.input,
         );
         if (!updated) {
             set.status = 403;
@@ -293,7 +304,7 @@ export const themeController = {
         set.status = 204;
     },
 
-    async remove({ userId, params, set, db, env }: ThemeContext) {
+    async remove({ userId, params, set, db, env }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         if (!idValidation.valid) {
             set.status = 400;
@@ -310,7 +321,7 @@ export const themeController = {
         set.status = 204;
     },
 
-    async upsertReview({ userId, params, body, db, set }: ThemeContext) {
+    async upsertReview({ userId, params, body, db, set }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         const data = body as { rating?: unknown; body?: unknown } | null;
         const ratingValidation = validateRating(data?.rating);
@@ -348,7 +359,7 @@ export const themeController = {
         return result.review;
     },
 
-    async removeReview({ userId, params, db, set }: ThemeContext) {
+    async removeReview({ userId, params, db, set }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         if (!idValidation.valid) {
             set.status = 400;

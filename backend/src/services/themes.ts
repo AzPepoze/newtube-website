@@ -1,13 +1,16 @@
 import {
-    createTheme,
-    deleteTheme,
+    createThemeRecord,
+    deleteThemeRecordForOwner,
     getDraftThemesByOwner,
+    getThemeByOwner,
     getThemeForViewer,
     searchThemesPage,
-    updateTheme,
+    updateThemeRecordForOwner,
     type ThemeSort,
 } from "../db/themes";
 import {
+    applyThemeClassification,
+    createThemeVersion,
     getThemeClassification,
     getThemeReviewSummary,
     getThemeVersion as getThemeVersionSnapshot,
@@ -18,8 +21,9 @@ import {
     deleteThemeReview,
 } from "../db/marketplace";
 import type { Database } from "../db";
+import { deleteImageFromR2, uploadImageToR2 } from "./images";
 
-export interface ThemePayload {
+export interface ThemeInput {
     themeName: string;
     description?: string;
     imgs?: string[];
@@ -138,32 +142,146 @@ export async function getThemeReviews(
     };
 }
 
-export function createThemeForOwner(
+export async function createThemeForOwner(
     db: Database,
     env: Env,
     ownerId: string,
-    data: ThemePayload,
+    themeInput: ThemeInput,
 ) {
-    return createTheme(db, env, ownerId, data);
+    const uploadedUrls: string[] = [];
+    if (themeInput.pendingImages && Array.isArray(themeInput.pendingImages)) {
+        for (const image of themeInput.pendingImages) {
+            try {
+                const url = await uploadImageToR2(
+                    env,
+                    image.data,
+                    image.mimeType,
+                );
+                uploadedUrls.push(url);
+            } catch (error) {
+                console.error("Error uploading theme image:", error);
+            }
+        }
+    }
+
+    let finalCoverImage = themeInput.coverImage;
+    if (themeInput.pendingCoverImage) {
+        try {
+            finalCoverImage = await uploadImageToR2(
+                env,
+                themeInput.pendingCoverImage.data,
+                themeInput.pendingCoverImage.mimeType,
+            );
+        } catch (error) {
+            console.error("Error uploading cover image:", error);
+        }
+    }
+
+    const result = await createThemeRecord(db, ownerId, {
+        themeName: themeInput.themeName,
+        description: themeInput.description,
+        images: [...(themeInput.imgs ?? []), ...uploadedUrls],
+        coverImage: finalCoverImage,
+        settings: themeInput.settings,
+        isPublic: themeInput.isPublic ?? true,
+    });
+    if (result) {
+        await applyThemeClassification(db, result.themeId, themeInput);
+        await createThemeVersion(db, result.themeId);
+    }
+    return result;
 }
 
-export function updateThemeForOwner(
+export async function updateThemeForOwner(
     db: Database,
     env: Env,
     themeId: string,
     ownerId: string,
-    data: ThemePayload,
+    themeInput: ThemeInput,
 ) {
-    return updateTheme(db, env, themeId, ownerId, data);
+    const existingTheme = await getThemeByOwner(db, themeId, ownerId);
+    if (!existingTheme) {
+        return false;
+    }
+
+    const uploadedUrls: string[] = [];
+    if (themeInput.pendingImages && Array.isArray(themeInput.pendingImages)) {
+        for (const image of themeInput.pendingImages) {
+            try {
+                const url = await uploadImageToR2(
+                    env,
+                    image.data,
+                    image.mimeType,
+                );
+                uploadedUrls.push(url);
+            } catch (error) {
+                console.error("Error uploading theme image:", error);
+            }
+        }
+    }
+
+    let finalCoverImage = themeInput.coverImage;
+    if (themeInput.pendingCoverImage) {
+        try {
+            finalCoverImage = await uploadImageToR2(
+                env,
+                themeInput.pendingCoverImage.data,
+                themeInput.pendingCoverImage.mimeType,
+            );
+            if (
+                existingTheme.coverImage &&
+                existingTheme.coverImage !== finalCoverImage
+            ) {
+                const r2Prefix = "https://pub-";
+                if (existingTheme.coverImage.includes(r2Prefix)) {
+                    await deleteImageFromR2(env, existingTheme.coverImage);
+                }
+            }
+        } catch (error) {
+            console.error("Error uploading cover image:", error);
+        }
+    } else if (existingTheme.coverImage && themeInput.coverImage === "") {
+        const r2Prefix = "https://pub-";
+        if (existingTheme.coverImage.includes(r2Prefix)) {
+            await deleteImageFromR2(env, existingTheme.coverImage);
+        }
+    }
+
+    const images = [...(themeInput.imgs ?? []), ...uploadedUrls];
+    for (const imageUrl of existingTheme.images || []) {
+        if (!images.includes(imageUrl)) {
+            await deleteImageFromR2(env, imageUrl);
+        }
+    }
+
+    const updated = await updateThemeRecordForOwner(db, themeId, ownerId, {
+        themeName: themeInput.themeName,
+        description: themeInput.description,
+        images,
+        coverImage: finalCoverImage,
+        settings: themeInput.settings,
+        isPublic: themeInput.isPublic ?? existingTheme.isPublic ?? true,
+    });
+    if (updated) {
+        await applyThemeClassification(db, themeId, themeInput);
+        await createThemeVersion(db, themeId);
+    }
+    return updated;
 }
 
-export function deleteThemeForOwner(
+export async function deleteThemeForOwner(
     db: Database,
     env: Env,
     themeId: string,
     ownerId: string,
 ) {
-    return deleteTheme(db, env, themeId, ownerId);
+    const theme = await getThemeByOwner(db, themeId, ownerId);
+    if (theme) {
+        for (const imageUrl of theme.images || []) {
+            await deleteImageFromR2(env, imageUrl);
+        }
+    }
+    return deleteThemeRecordForOwner(db, themeId, ownerId);
 }
 
 export async function createThemeReview(
