@@ -1,5 +1,6 @@
 import { env } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
+import { THEME_CATEGORIES, THEME_TAGS } from "../../constants/marketplace";
 import { createDb } from "../index";
 import { categories, tags, themeCategories, themeTags } from "../schema";
 import { syncThemeTagsAndCategories } from "./theme-classification";
@@ -41,5 +42,39 @@ describe("syncThemeTagsAndCategories", () => {
         await syncThemeTagsAndCategories(db);
         expect(await db.select().from(themeTags).all()).toEqual([]);
         expect(await db.select().from(tags).all()).toHaveLength(12);
+    });
+
+    it("finishes and clears tags when no tags are code-defined", async () => {
+        await syncThemeTagsAndCategories(db);
+        const definedTags = [...THEME_TAGS];
+        const mutableTags =
+            THEME_TAGS as unknown as (typeof THEME_TAGS)[number][];
+        mutableTags.length = 0;
+
+        try {
+            await expect(
+                syncThemeTagsAndCategories(db),
+            ).resolves.toBeUndefined();
+            expect(await db.select().from(tags).all()).toEqual([]);
+        } finally {
+            mutableTags.push(...definedTags);
+        }
+    });
+
+    it("finishes and clears categories when no categories are code-defined", async () => {
+        await syncThemeTagsAndCategories(db);
+        const definedCategories = [...THEME_CATEGORIES];
+        const mutableCategories =
+            THEME_CATEGORIES as unknown as (typeof THEME_CATEGORIES)[number][];
+        mutableCategories.length = 0;
+
+        try {
+            await expect(
+                syncThemeTagsAndCategories(db),
+            ).resolves.toBeUndefined();
+            expect(await db.select().from(categories).all()).toEqual([]);
+        } finally {
+            mutableCategories.push(...definedCategories);
+        }
     });
 });

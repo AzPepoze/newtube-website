@@ -25,14 +25,24 @@ export async function syncThemeTagsAndCategories(db: Database) {
         await db.delete(tags);
     }
 
-    await db.insert(tags).values([...THEME_TAGS]).onConflictDoUpdate({
-        target: tags.id,
-        set: { slug: sql`excluded.slug`, name: sql`excluded.name` },
-    });
-    await db.insert(categories).values([...THEME_CATEGORIES]).onConflictDoUpdate({
-        target: categories.id,
-        set: { slug: sql`excluded.slug`, name: sql`excluded.name` },
-    });
+    if (tagIds.length) {
+        await db
+            .insert(tags)
+            .values([...THEME_TAGS])
+            .onConflictDoUpdate({
+                target: tags.id,
+                set: { slug: sql`excluded.slug`, name: sql`excluded.name` },
+            });
+    }
+    if (categoryIds.length) {
+        await db
+            .insert(categories)
+            .values([...THEME_CATEGORIES])
+            .onConflictDoUpdate({
+                target: categories.id,
+                set: { slug: sql`excluded.slug`, name: sql`excluded.name` },
+            });
+    }
 }
 
 export async function listTags(db: Database) {
