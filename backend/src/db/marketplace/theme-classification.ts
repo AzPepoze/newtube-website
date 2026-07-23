@@ -38,18 +38,18 @@ export async function ensureCategoryById(db: Database, id: string) {
 
 export async function createCategory(
     db: Database,
-    data: { name: string; slug: string },
+    categoryInput: { name: string; slug: string },
 ) {
     const id = crypto.randomUUID();
     await db
         .insert(categories)
-        .values({ id, name: data.name.trim(), slug: data.slug })
+        .values({ id, name: categoryInput.name.trim(), slug: categoryInput.slug })
         .onConflictDoNothing();
 
     return db
         .select()
         .from(categories)
-        .where(eq(categories.slug, data.slug))
+        .where(eq(categories.slug, categoryInput.slug))
         .get();
 }
 
@@ -155,13 +155,13 @@ export async function getThemeClassification(db: Database, themeId: string) {
 export async function applyThemeClassification(
     db: Database,
     themeId: string,
-    data: { tagNames?: string[]; categoryId?: string | null },
+    classificationInput: { tagNames?: string[]; categoryId?: string | null },
 ) {
-    if (data.tagNames !== undefined) {
-        await setThemeTagNames(db, themeId, data.tagNames);
+    if (classificationInput.tagNames !== undefined) {
+        await setThemeTagNames(db, themeId, classificationInput.tagNames);
     }
-    if (data.categoryId !== undefined) {
-        await setThemeCategory(db, themeId, data.categoryId);
+    if (classificationInput.categoryId !== undefined) {
+        await setThemeCategory(db, themeId, classificationInput.categoryId);
     }
     return getThemeClassification(db, themeId);
 }

@@ -4,23 +4,28 @@ import { reviews, themes, users } from "../schema";
 
 export async function upsertThemeReview(
     db: Database,
-    data: { themeId: string; userId: string; rating: number; body?: string },
+    reviewInput: {
+        themeId: string;
+        userId: string;
+        rating: number;
+        body?: string;
+    },
 ) {
     const id = crypto.randomUUID();
     await db
         .insert(reviews)
         .values({
             id,
-            themeId: data.themeId,
-            userId: data.userId,
-            rating: data.rating,
-            body: data.body,
+            themeId: reviewInput.themeId,
+            userId: reviewInput.userId,
+            rating: reviewInput.rating,
+            body: reviewInput.body,
         })
         .onConflictDoUpdate({
             target: [reviews.themeId, reviews.userId],
             set: {
-                rating: data.rating,
-                body: data.body,
+                rating: reviewInput.rating,
+                body: reviewInput.body,
                 updatedAt: sql`CURRENT_TIMESTAMP`,
             },
         });
@@ -30,8 +35,8 @@ export async function upsertThemeReview(
         .from(reviews)
         .where(
             and(
-                eq(reviews.themeId, data.themeId),
-                eq(reviews.userId, data.userId),
+                eq(reviews.themeId, reviewInput.themeId),
+                eq(reviews.userId, reviewInput.userId),
             ),
         )
         .get();

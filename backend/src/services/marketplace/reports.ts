@@ -6,16 +6,16 @@ import type { ReportReason } from "../../types/marketplace";
 export async function createReportForUser(
     db: Database,
     reporterId: string,
-    data: { themeId: string; reason: ReportReason; details?: string },
+    reportInput: { themeId: string; reason: ReportReason; details?: string },
 ) {
-    const theme = await getThemeForViewer(db, data.themeId);
+    const theme = await getThemeForViewer(db, reportInput.themeId);
     if (!theme) return { status: "not-found" as const };
     if (theme.ownerId === reporterId) return { status: "own-theme" as const };
 
     return {
         status: "created" as const,
         report: await createThemeReport(db, {
-            ...data,
+            ...reportInput,
             reporterId,
         }),
     };

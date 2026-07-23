@@ -66,9 +66,9 @@ export async function getSponsors(env: Env): Promise<SponsorsResult> {
         });
 
         if (gqlResponse.ok) {
-            const result: any = await gqlResponse.json();
-            if (result.data?.viewer?.sponsorshipsAsMaintainer?.nodes) {
-                const sponsors = result.data.viewer.sponsorshipsAsMaintainer.nodes.map(
+            const graphqlResult: any = await gqlResponse.json();
+            if (graphqlResult.data?.viewer?.sponsorshipsAsMaintainer?.nodes) {
+                const sponsors = graphqlResult.data.viewer.sponsorshipsAsMaintainer.nodes.map(
                     (node: any) => ({
                         name: node.sponsorEntity.name || node.sponsorEntity.login,
                         avatar: node.sponsorEntity.avatarUrl,

@@ -28,9 +28,9 @@ export async function createThemeVersion(db: Database, themeId: string) {
     ]);
 
     const versionNumber = Number(latestVersion?.latest ?? 0) + 1;
-    const id = crypto.randomUUID();
+    const versionId = crypto.randomUUID();
     await db.insert(themeVersions).values({
-        id,
+        id: versionId,
         themeId,
         versionNumber,
         themeName: theme.themeName,
@@ -46,7 +46,7 @@ export async function createThemeVersion(db: Database, themeId: string) {
     return db
         .select()
         .from(themeVersions)
-        .where(eq(themeVersions.id, id))
+        .where(eq(themeVersions.id, versionId))
         .get();
 }
 

@@ -18,12 +18,12 @@ export async function isMarketplaceAdmin(db: Database, userId?: string) {
 export async function createCategoryForAdmin(
     db: Database,
     userId: string | undefined,
-    data: { name: string; slug: string },
+    categoryInput: { name: string; slug: string },
 ) {
     if (!(await isMarketplaceAdmin(db, userId)))
         return { status: "forbidden" as const };
 
-    const category = await createCategory(db, data);
+    const category = await createCategory(db, categoryInput);
     return category
         ? { status: "created" as const, category }
         : { status: "conflict" as const };
@@ -52,12 +52,12 @@ export async function resolveReportForAdmin(
     if (!(await isMarketplaceAdmin(db, userId)))
         return { status: "forbidden" as const };
 
-    const result = await resolveThemeReport(db, {
+    const resolutionResult = await resolveThemeReport(db, {
         reportId,
         adminId: userId!,
         status,
     });
-    return result.meta.changes === 0
+    return resolutionResult.meta.changes === 0
         ? { status: "not-found" as const }
         : { status: "resolved" as const };
 }
@@ -71,8 +71,8 @@ export async function updateThemeVisibilityForAdmin(
     if (!(await isMarketplaceAdmin(db, userId)))
         return { status: "forbidden" as const };
 
-    const result = await setThemeVisibility(db, themeId, isPublic);
-    return result.meta.changes === 0
+    const visibilityResult = await setThemeVisibility(db, themeId, isPublic);
+    return visibilityResult.meta.changes === 0
         ? { status: "not-found" as const }
         : { status: "updated" as const };
 }

@@ -8,16 +8,20 @@ import type {
 
 export async function createThemeReport(
     db: Database,
-    data: {
+    reportInput: {
         themeId: string;
         reporterId: string;
         reason: string;
         details?: string;
     },
 ) {
-    const id = crypto.randomUUID();
-    await db.insert(themeReports).values({ id, ...data });
-    return db.select().from(themeReports).where(eq(themeReports.id, id)).get();
+    const reportId = crypto.randomUUID();
+    await db.insert(themeReports).values({ id: reportId, ...reportInput });
+    return db
+        .select()
+        .from(themeReports)
+        .where(eq(themeReports.id, reportId))
+        .get();
 }
 
 export function getReportsForReporter(db: Database, reporterId: string) {
@@ -70,7 +74,7 @@ export function listModerationReports(
 
 export function resolveThemeReport(
     db: Database,
-    data: {
+    resolutionInput: {
         reportId: string;
         adminId: string;
         status: ReportResolutionStatus;
@@ -79,12 +83,12 @@ export function resolveThemeReport(
     return db
         .update(themeReports)
         .set({
-            status: data.status,
-            resolvedBy: data.adminId,
+            status: resolutionInput.status,
+            resolvedBy: resolutionInput.adminId,
             resolvedAt: sql`CURRENT_TIMESTAMP`,
             updatedAt: sql`CURRENT_TIMESTAMP`,
         })
-        .where(eq(themeReports.id, data.reportId))
+        .where(eq(themeReports.id, resolutionInput.reportId))
         .run();
 }
 

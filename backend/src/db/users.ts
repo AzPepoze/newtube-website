@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { themes, users } from "./schema";
 import type { Database } from "./index";
 
-export function getUserById(db: Database, id: string) {
+export function getUserById(db: Database, userId: string) {
     return db
         .select({
             id: users.id,
@@ -11,7 +11,7 @@ export function getUserById(db: Database, id: string) {
             createdAt: users.createdAt,
         })
         .from(users)
-        .where(eq(users.id, id))
+        .where(eq(users.id, userId))
         .get();
 }
 
@@ -48,18 +48,18 @@ export function getUserProfile(
 
 export function updateOrInsertUser(
     db: Database,
-    data: { id: string; email: string; name: string; avatarUrl: string },
+    userInput: { id: string; email: string; name: string; avatarUrl: string },
 ) {
     return db
         .insert(users)
         .values({
-            id: data.id,
-            email: data.email,
-            name: data.name,
-            avatarUrl: data.avatarUrl,
+            id: userInput.id,
+            email: userInput.email,
+            name: userInput.name,
+            avatarUrl: userInput.avatarUrl,
         })
         .onConflictDoUpdate({
             target: users.id,
-            set: { name: data.name, avatarUrl: data.avatarUrl },
+            set: { name: userInput.name, avatarUrl: userInput.avatarUrl },
         });
 }
