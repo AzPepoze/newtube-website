@@ -1,5 +1,12 @@
 <script lang="ts">
     import { onMount, tick } from "svelte";
+    import {
+        calculateScrollOffset,
+        getActiveSectionId,
+        handleNavKeydown,
+        scrollToSection,
+    } from "./quickScrollUtils";
+    import QuickScrollMobileMenu from "./QuickScrollMobileMenu.svelte";
 
     export interface QuickScrollItem {
         id: string;
@@ -19,7 +26,7 @@
     let activeId = $state("");
     let menuOpen = $state(false);
     let navElement: HTMLElement;
-    let menuElement: HTMLElement;
+    let menuElement = $state<HTMLElement>();
     let buttonElement: HTMLButtonElement;
     const componentId = $props.id();
     const buttonId = `${componentId}-button`;
@@ -59,40 +66,9 @@
         else void openMenu();
     }
 
-    function appHeaderBottom() {
-        const header = document.querySelector<HTMLElement>(
-            ".app-container > nav",
-        );
-        return header ? header.getBoundingClientRect().bottom : 0;
-    }
-
-    function scrollOffset() {
-        const isInsideAppHeader = !!navElement?.closest(".app-container > nav");
-        const mobileNavHeight =
-            window.matchMedia("(max-width: 900px)").matches &&
-            !isInsideAppHeader
-                ? navElement?.offsetHeight || 0
-                : 0;
-        return appHeaderBottom() + mobileNavHeight + 16;
-    }
-
-    function scrollToSection(id: string, updateHistory = true) {
-        const target = document.getElementById(id);
-        if (!target) return;
-
-        const top =
-            target.getBoundingClientRect().top +
-            window.scrollY -
-            scrollOffset();
-        const reduceMotion = window.matchMedia(
-            "(prefers-reduced-motion: reduce)",
-        ).matches;
-        window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
-        activeId = id;
-
-        if (updateHistory && window.location.hash !== `#${id}`) {
-            history.pushState(null, "", `#${id}`);
-        }
+    function triggerScrollToSection(id: string, updateHistory = true) {
+        const newActive = scrollToSection(id, navElement, updateHistory);
+        if (newActive) activeId = newActive;
     }
 
     function handleClick(event: MouseEvent, id: string) {
@@ -108,30 +84,11 @@
         }
         event.preventDefault();
         closeMenu(true);
-        scrollToSection(id);
+        triggerScrollToSection(id);
     }
 
     function handleMenuKeydown(event: KeyboardEvent) {
-        const links = Array.from(
-            menuElement?.querySelectorAll<HTMLAnchorElement>("a") ?? [],
-        );
-        if (!links.length) return;
-
-        const currentIndex = links.indexOf(
-            document.activeElement as HTMLAnchorElement,
-        );
-        let nextIndex: number | undefined;
-        if (event.key === "ArrowDown")
-            nextIndex = (currentIndex + 1) % links.length;
-        if (event.key === "ArrowUp") {
-            nextIndex = (currentIndex - 1 + links.length) % links.length;
-        }
-        if (event.key === "Home") nextIndex = 0;
-        if (event.key === "End") nextIndex = links.length - 1;
-        if (nextIndex === undefined) return;
-
-        event.preventDefault();
-        links[nextIndex]?.focus();
+        handleNavKeydown(event, menuElement);
     }
 
     onMount(() => {
@@ -157,44 +114,13 @@
         placeNavigation();
 
         const updateActiveSection = () => {
-            const offset = scrollOffset() + 8;
-            const sections = items
-                .map((item) => document.getElementById(item.id))
-                .filter((section): section is HTMLElement => !!section);
-            if (!sections.length) return;
-
-            const atPageBottom =
-                window.scrollY + window.innerHeight >=
-                document.documentElement.scrollHeight - 2;
-            if (atPageBottom) {
-                activeId = sections.at(-1)?.id ?? activeId;
-                return;
-            }
-
-            const passed = sections.filter(
-                (section) => section.getBoundingClientRect().top <= offset,
-            );
-            const visible = sections
-                .map((section) => {
-                    const rect = section.getBoundingClientRect();
-                    const visibleHeight = Math.max(
-                        0,
-                        Math.min(rect.bottom, window.innerHeight) -
-                            Math.max(rect.top, offset),
-                    );
-                    return { id: section.id, visibleHeight };
-                })
-                .sort((a, b) => b.visibleHeight - a.visibleHeight)[0];
-            activeId =
-                (visible?.visibleHeight ? visible.id : passed.at(-1)?.id) ||
-                sections[0]?.id ||
-                activeId;
+            activeId = getActiveSectionId(items, navElement, activeId);
         };
 
         const observeSections = () => {
             observer?.disconnect();
             observer = new IntersectionObserver(updateActiveSection, {
-                rootMargin: `-${Math.ceil(scrollOffset())}px 0px -55% 0px`,
+                rootMargin: `-${Math.ceil(calculateScrollOffset(navElement))}px 0px -55% 0px`,
                 threshold: [0, 0.01, 0.5, 1],
             });
             for (const item of items) {
@@ -219,13 +145,15 @@
 
         const hashId = decodeURIComponent(window.location.hash.slice(1));
         if (items.some((item) => item.id === hashId)) {
-            requestAnimationFrame(() => scrollToSection(hashId, false));
+            requestAnimationFrame(() => triggerScrollToSection(hashId, false));
         }
 
         const handleHashChange = () => {
             const nextId = decodeURIComponent(window.location.hash.slice(1));
             if (items.some((item) => item.id === nextId)) {
-                requestAnimationFrame(() => scrollToSection(nextId, false));
+                requestAnimationFrame(() =>
+                    triggerScrollToSection(nextId, false),
+                );
             }
         };
         window.addEventListener("hashchange", handleHashChange);
@@ -290,28 +218,16 @@
         <span class="chevron" class:open={menuOpen} aria-hidden="true">⌄</span>
     </button>
 
-    <div
-        bind:this={menuElement}
-        id={menuId}
-        class="mobile-menu"
-        class:open={menuOpen}
-        role="menu"
-        tabindex="-1"
-        aria-labelledby={buttonId}
-        onkeydown={handleMenuKeydown}
-    >
-        {#each items as item (item.id)}
-            <a
-                href="#{item.id}"
-                class:active={activeId === item.id}
-                role="menuitem"
-                aria-current={activeId === item.id ? "location" : undefined}
-                onclick={(event) => handleClick(event, item.id)}
-            >
-                {item.label}
-            </a>
-        {/each}
-    </div>
+    <QuickScrollMobileMenu
+        {items}
+        {activeId}
+        {menuOpen}
+        {buttonId}
+        {menuId}
+        {handleClick}
+        {handleMenuKeydown}
+        bind:menuElement
+    />
 </nav>
 
 <style lang="scss">
@@ -331,8 +247,7 @@
         }
     }
 
-    .menu-button,
-    .mobile-menu {
+    .menu-button {
         display: none;
     }
 
@@ -438,60 +353,6 @@
                 transform: rotate(180deg);
             }
         }
-
-        .mobile-menu {
-            position: absolute;
-            top: calc(100% + 0.5rem);
-            right: 0;
-            left: 0;
-            display: flex;
-            visibility: hidden;
-            flex-direction: column;
-            gap: 0.25rem;
-            padding: 0.5rem;
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-md);
-            opacity: 0;
-            background: var(--bg-dark);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-            transform: translateY(-0.35rem);
-            transition:
-                opacity 0.2s ease,
-                transform 0.2s ease,
-                visibility 0.2s;
-            pointer-events: none;
-
-            &.open {
-                visibility: visible;
-                opacity: 1;
-                transform: translateY(0);
-                pointer-events: auto;
-            }
-
-            a {
-                padding: 0.75rem;
-                border-left: 2px solid transparent;
-                border-radius: var(--radius-sm);
-                color: var(--text-secondary);
-                font-weight: 600;
-
-                &:hover,
-                &:focus-visible,
-                &.active {
-                    color: var(--text-primary);
-                    background: rgba(var(--text-primary-rgb), 0.08);
-                }
-
-                &:focus-visible {
-                    outline: 2px solid var(--text-primary);
-                    outline-offset: -2px;
-                }
-
-                &.active {
-                    border-left-color: var(--text-primary);
-                }
-            }
-        }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -499,8 +360,7 @@
             transition: none;
         }
 
-        .chevron,
-        .mobile-menu {
+        .chevron {
             transition: none;
         }
     }

@@ -6,8 +6,17 @@
     import { fade, fly, scale } from "svelte/transition";
     import { page } from "$app/state";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
-    import CustomDropdown from "$lib/components/common/CustomDropdown.svelte";
     import { debounce } from "$lib/utils/debounce";
+    import DiscoverControls from "./DiscoverControls.svelte";
+    import DiscoverPagination from "./DiscoverPagination.svelte";
+    import { PUBLIC_API_URL } from "$lib/constants/index";
+    import {
+        asOffset,
+        buildSearchParams as createParams,
+        matchesLegacyFilters,
+        parseFilterValues,
+        slugify,
+    } from "./discoverUtils";
 
     const PAGE_SIZE = 12;
     let themes = $state<Theme[]>([]);
@@ -33,16 +42,6 @@
         { value: "newest", label: "Recently Added" },
         { value: "alpha", label: "Alphabetical" },
     ];
-
-    import { PUBLIC_API_URL } from "$lib/constants/index";
-
-    function slugify(value: string) {
-        return value
-            .trim()
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
-    }
 
     const tagOptions = $derived(
         (availableTags.length
@@ -71,17 +70,6 @@
         );
     });
 
-    function asOffset(value: string | null) {
-        const parsed = Number.parseInt(value ?? "0", 10);
-        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-    }
-
-    function parseFilterValues(value: string | null) {
-        return value
-            ? [...new Set(value.split(",").map(slugify).filter(Boolean))]
-            : [];
-    }
-
     function syncStateFromUrl(params: URLSearchParams) {
         searchQuery = params.get("q") ?? "";
         sortBy = sortOptions.some(
@@ -94,13 +82,13 @@
     }
 
     function buildSearchParams() {
-        const params = new URLSearchParams();
-        if (searchQuery.trim()) params.set("q", searchQuery.trim());
-        if (sortBy !== "popular") params.set("sort", sortBy);
-        if (selectedTags.length) params.set("tag", selectedTags.join(","));
-        params.set("limit", String(PAGE_SIZE));
-        if (offset > 0) params.set("offset", String(offset));
-        return params;
+        return createParams(
+            searchQuery,
+            sortBy,
+            selectedTags,
+            PAGE_SIZE,
+            offset,
+        );
     }
 
     async function loadTagsAndCategories() {
@@ -110,7 +98,7 @@
             });
             if (tagsResponse.ok) availableTags = await tagsResponse.json();
         } catch {
-            // Existing theme metadata remains a useful fallback for older deployments.
+            // Fallback
         }
     }
 
@@ -123,14 +111,6 @@
             keepFocus: true,
             noScroll: true,
         }).catch(() => localNavigationHrefs.delete(href));
-    }
-
-    function matchesLegacyFilters(theme: Theme) {
-        const tags = new Set(selectedTags);
-        return (
-            !tags.size ||
-            (theme.tags ?? []).some((value) => tags.has(slugify(value)))
-        );
     }
 
     async function fetchThemes() {
@@ -154,11 +134,9 @@
             const data: unknown = await response.json();
             if (thisRequest !== requestId) return;
 
-            // Older deployments return Theme[]; preserve useful pagination and
-            // tag/category filtering locally until the paginated API is deployed.
             if (Array.isArray(data)) {
-                const matchingThemes = (data as Theme[]).filter(
-                    matchesLegacyFilters,
+                const matchingThemes = (data as Theme[]).filter((theme) =>
+                    matchesLegacyFilters(theme, selectedTags),
                 );
                 total = matchingThemes.length;
                 pageLimit = PAGE_SIZE;
@@ -243,7 +221,6 @@
             return;
         }
 
-        // Any navigation not initiated by the filters wins over a queued request.
         localNavigationHrefs.clear();
         filterRequestVersion += 1;
         syncStateFromUrl(page.url.searchParams);
@@ -277,44 +254,16 @@
     in:scale={{ delay: 200, start: 0.98, duration: 300 }}
     out:scale={{ start: 0.98, duration: 200 }}
 >
-    <div class="discover-controls">
-        <div class="controls-left">
-            <div class="search-wrapper glass-panel">
-                <MaterialIcon name="search" size={22} />
-                <input
-                    type="text"
-                    placeholder="Search themes..."
-                    bind:value={searchQuery}
-                    onkeydown={(e) => e.key === "Enter" && applyFilters()}
-                    oninput={queueFilterChange}
-                />
-                {#if searchQuery}
-                    <button class="clear-search" onclick={clearSearch}>
-                        <MaterialIcon name="close" size={14} />
-                    </button>
-                {/if}
-            </div>
-
-            <div class="filter-dropdown">
-                <CustomDropdown
-                    options={tagOptions}
-                    multiple={true}
-                    bind:selectedValues={selectedTags}
-                    placeholder="All tags"
-                    onValuesChange={queueFilterChange}
-                />
-            </div>
-        </div>
-
-        <div class="sort-wrapper">
-            <span>Sort by:</span>
-            <CustomDropdown
-                options={sortOptions}
-                bind:value={sortBy}
-                onChange={applyFilters}
-            />
-        </div>
-    </div>
+    <DiscoverControls
+        bind:searchQuery
+        bind:selectedTags
+        bind:sortBy
+        {tagOptions}
+        {sortOptions}
+        {applyFilters}
+        {queueFilterChange}
+        {clearSearch}
+    />
 
     {#if loading}
         <div class="loading-state">
@@ -361,36 +310,12 @@
             </div>
         {/if}
 
-        {#if totalPages > 1}
-            <nav class="pagination" aria-label="Theme discovery pages">
-                <button
-                    class="pagination-btn"
-                    onclick={() => goToPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    aria-label="Previous page"
-                >
-                    <MaterialIcon name="chevron_left" size={20} />
-                </button>
-                {#each pageNumbers as pageNumber}
-                    <button
-                        class="pagination-btn"
-                        class:active={pageNumber === currentPage}
-                        onclick={() => goToPage(pageNumber)}
-                        aria-current={pageNumber === currentPage
-                            ? "page"
-                            : undefined}>{pageNumber}</button
-                    >
-                {/each}
-                <button
-                    class="pagination-btn"
-                    onclick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    aria-label="Next page"
-                >
-                    <MaterialIcon name="chevron_right" size={20} />
-                </button>
-            </nav>
-        {/if}
+        <DiscoverPagination
+            {currentPage}
+            {totalPages}
+            {pageNumbers}
+            {goToPage}
+        />
     {/if}
 </div>
 
@@ -399,131 +324,14 @@
         padding: 2rem 0;
     }
 
-    .discover-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 3rem;
-        gap: 2rem;
-
-        @media (max-width: 768px) {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .controls-left {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-            flex: 1;
-            min-width: 0;
-            width: 100%;
-
-            @media (max-width: 1050px) {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-
-            .filter-dropdown {
-                width: min(100%, 14rem);
-
-                :global(.dropdown-container),
-                :global(.dropdown-trigger) {
-                    width: 100%;
-                }
-
-                :global(.dropdown-trigger) {
-                    min-height: 2.8rem;
-                    border-radius: var(--radius-lg);
-                }
-            }
-        }
-
-        .search-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.8rem 1.5rem;
-            background: rgba(var(--text-primary-rgb), 0.05);
-            border-radius: var(--radius-lg);
-            flex: 1;
-            min-width: 0;
-            width: 100%;
-            transition: all 0.3s;
-            color: var(--text-secondary);
-            :global(.light) & {
-                background: #ffffff;
-                border-color: rgba(0, 0, 0, 0.1);
-            }
-
-            &:focus-within {
-                background: rgba(var(--text-primary-rgb), 0.08);
-                border-color: rgba(var(--text-primary-rgb), 0.2);
-                color: var(--text-primary);
-
-                :global(.light) & {
-                    background: #ffffff;
-                    border-color: rgba(0, 0, 0, 0.2);
-                }
-            }
-
-            input {
-                min-width: 0;
-                background: transparent;
-                border: none;
-                color: inherit;
-                font-family: inherit;
-                font-size: 1.1rem;
-                width: 100%;
-
-                &::placeholder {
-                    color: var(--text-muted);
-                }
-
-                &:focus {
-                    outline: none;
-                }
-            }
-
-            .clear-search {
-                background: transparent;
-                border: none;
-                color: var(--text-muted);
-                cursor: pointer;
-                display: flex;
-                padding: 4px;
-                border-radius: 50%;
-                transition: all 0.2s;
-
-                &:hover {
-                    background: rgba(var(--text-primary-rgb), 0.1);
-                    color: var(--text-primary);
-                }
-            }
-        }
-    }
-
-    .sort-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        color: var(--text-secondary);
-        font-size: 1.1rem;
-
-        :global(.dropdown-container) {
-            width: 13rem;
-        }
-
-        :global(.dropdown-trigger) {
-            border-radius: var(--radius-lg);
-        }
-    }
-
     .theme-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
         gap: 3rem;
+
+        @media (max-width: 768px) {
+            gap: 1rem;
+        }
     }
 
     .loading-state {
@@ -547,79 +355,6 @@
         color: var(--text-muted);
         font-size: 0.9rem;
         text-align: center;
-    }
-
-    .pagination {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        margin-top: 1.25rem;
-
-        .pagination-btn {
-            min-width: 2.5rem;
-            height: 2.5rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-sm);
-            color: var(--text-primary);
-            background: rgba(var(--text-primary-rgb), 0.05);
-            cursor: pointer;
-
-            &:hover:not(:disabled),
-            &.active {
-                background: var(--text-primary);
-                color: var(--bg-dark);
-            }
-
-            &:disabled {
-                cursor: not-allowed;
-                opacity: 0.4;
-            }
-        }
-    }
-
-    @media (max-width: 768px) {
-        .discover-container {
-            padding-top: 1rem;
-        }
-
-        .discover-controls {
-            gap: 1rem;
-            margin-bottom: 2rem;
-
-            .controls-left {
-                width: 100%;
-
-                .filter-dropdown {
-                    width: 100%;
-                }
-            }
-
-            .search-wrapper {
-                padding: 0.75rem 1rem;
-            }
-        }
-
-        .sort-wrapper {
-            width: 100%;
-            justify-content: space-between;
-
-            :global(.dropdown-container) {
-                width: min(70%, 16rem);
-            }
-        }
-
-        .theme-grid {
-            gap: 1rem;
-        }
-
-        .pagination {
-            gap: 0.25rem;
-            flex-wrap: wrap;
-        }
     }
 
     .empty-state {
@@ -653,6 +388,12 @@
     @keyframes spin {
         to {
             transform: rotate(360deg);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .discover-container {
+            padding-top: 1rem;
         }
     }
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { fade, fly } from "svelte/transition";
+    import { fly } from "svelte/transition";
     import type { Theme } from "$lib/types/index";
     import QuickScrollNav, {
         type QuickScrollItem,
@@ -16,7 +16,10 @@
     import ThemeEditorBasicInfo from "$lib/components/editor/ThemeEditorBasicInfo.svelte";
     import ThemeEditorSettings from "$lib/components/editor/ThemeEditorSettings.svelte";
     import ThemeEditorPreview from "$lib/components/editor/ThemeEditorPreview.svelte";
+    import ThemeEditorBanners from "$lib/components/editor/ThemeEditorBanners.svelte";
+    import ThemeEditorActions from "$lib/components/editor/ThemeEditorActions.svelte";
     import { defaultDescription } from "$lib/core/theme.svelte";
+
     let props: { initialData?: Partial<Theme>; isEdit?: boolean } = $props();
     let isEdit = $derived(props.isEdit ?? false);
     let initialData = $derived(props.initialData);
@@ -55,7 +58,6 @@
     ];
     let hasRestored = false;
 
-    // Initialize form with provided data or draft
     $effect(() => {
         if (hasRestored) return;
         if (initialData) {
@@ -67,8 +69,6 @@
             tagNames = (initialData as any).tags || [];
         }
 
-        // A browser backup is deliberately separate from the server draft. It
-        // restores unsaved typing after a refresh or a dropped connection.
         const savedDraft = localStorage.getItem(draftKey);
         if (savedDraft) {
             try {
@@ -102,7 +102,6 @@
         hasRestored = true;
     });
 
-    // Auto-save draft
     $effect(() => {
         const draft = {
             themeName,
@@ -115,7 +114,6 @@
         localStorage.setItem(draftKey, JSON.stringify(draft));
     });
 
-    // Track validation state for submit button
     $effect(() => {
         const titleValidation = validateTitle(themeName);
         titleError = titleValidation.message || "";
@@ -136,14 +134,12 @@
             return;
         }
 
-        // Validate title
         const titleValidation = validateTitle(themeName);
         if (!titleValidation.valid) {
             errorMessage = titleValidation.message || "Invalid themeName";
             return;
         }
 
-        // Validate description
         const descriptionValidation = validateDescription(description);
         if (!descriptionValidation.valid) {
             errorMessage =
@@ -151,7 +147,6 @@
             return;
         }
 
-        // Validate JSON settings
         const jsonValidation = validateSettingsJSON(settingsCode);
         if (!jsonValidation.valid) {
             errorMessage = jsonValidation.message || "Invalid JSON settings";
@@ -167,7 +162,6 @@
         errorMessage = "";
 
         try {
-            // Compress pending images
             const pendingImagesData = [];
             for (const file of pendingImages) {
                 try {
@@ -180,7 +174,6 @@
                 }
             }
 
-            // Compress pending cover image
             let pendingCoverImageData = null;
             if (coverImagePending) {
                 try {
@@ -267,34 +260,13 @@
         </h1>
     </div>
 
-    {#if success}
-        <div class="status-banner success" in:fade>
-            {isEdit ? "Theme updated!" : "Theme published!"} Redirecting...
-        </div>
-    {/if}
-
-    {#if infoMessage}
-        <div class="status-banner info" in:fade>
-            <div class="message-content">
-                <span>✨ {infoMessage}</span>
-                {#if infoMessage === "Browser backup restored from your last session."}
-                    <button
-                        type="button"
-                        class="action-btn"
-                        onclick={clearDraft}
-                    >
-                        Discard Draft
-                    </button>
-                {/if}
-            </div>
-        </div>
-    {/if}
-
-    {#if errorMessage}
-        <div class="status-banner error" in:fade>
-            ⚠️ {errorMessage}
-        </div>
-    {/if}
+    <ThemeEditorBanners
+        {success}
+        {isEdit}
+        {infoMessage}
+        {errorMessage}
+        {clearDraft}
+    />
 
     <div class="editor-layout">
         <aside>
@@ -332,47 +304,20 @@
                 </div>
             </div>
 
-            <div class="actions">
-                {#if themeName || description !== defaultDescription || images.length > 0 || coverImage}
-                    <button
-                        type="button"
-                        class="clear-btn"
-                        onclick={clearDraft}
-                        disabled={submitting}
-                    >
-                        Clear Draft
-                    </button>
-                {/if}
-                <button
-                    type="submit"
-                    class="submit-btn premium-button"
-                    disabled={submitting ||
-                        !!jsonError ||
-                        !!titleError ||
-                        !!descriptionError}
-                >
-                    {submitting
-                        ? "Saving..."
-                        : isEdit
-                          ? isServerDraft
-                              ? "Publish Theme"
-                              : "Update Theme"
-                          : "Publish Theme"}
-                </button>
-                {#if !isEdit || isServerDraft}
-                    <button
-                        type="button"
-                        class="draft-btn"
-                        onclick={(event) => handleSubmit(event, false)}
-                        disabled={submitting ||
-                            !!jsonError ||
-                            !!titleError ||
-                            !!descriptionError}
-                    >
-                        Save Draft
-                    </button>
-                {/if}
-            </div>
+            <ThemeEditorActions
+                {themeName}
+                {description}
+                {images}
+                {coverImage}
+                {clearDraft}
+                {submitting}
+                {jsonError}
+                {titleError}
+                {descriptionError}
+                {isEdit}
+                {isServerDraft}
+                {handleSubmit}
+            />
         </form>
     </div>
 </div>
@@ -392,54 +337,6 @@
         h1 {
             margin: 0;
             font-size: 3rem;
-        }
-    }
-
-    .status-banner {
-        padding: 1rem;
-        border-radius: var(--radius-md);
-        margin-bottom: 1.5rem;
-        font-weight: 600;
-
-        &.success {
-            background: rgba(0, 255, 150, 0.1);
-            color: #00ff96;
-            border: 1px solid rgba(0, 255, 150, 0.2);
-        }
-        &.error {
-            background: rgba(255, 50, 50, 0.1);
-            color: #ff3232;
-            border: 1px solid rgba(255, 50, 50, 0.2);
-        }
-        &.info {
-            background: rgba(var(--text-primary-rgb), 0.05);
-            color: var(--text-primary);
-            border: 1px solid var(--border-glass);
-            backdrop-filter: blur(10px);
-        }
-
-        .message-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-
-            .action-btn {
-                background: var(--text-primary);
-                color: var(--bg-dark);
-                border: none;
-                padding: 0.4rem 0.8rem;
-                border-radius: var(--radius-sm);
-                font-size: 0.85rem;
-                font-weight: 700;
-                cursor: pointer;
-                transition: all 0.2s;
-
-                &:hover {
-                    transform: translateY(-2px);
-                    filter: brightness(1.1);
-                }
-            }
         }
     }
 
@@ -473,55 +370,6 @@
         gap: 2rem;
     }
 
-    .actions {
-        display: flex;
-        gap: 1rem;
-        margin-top: 2rem;
-
-        .submit-btn {
-            flex: 1;
-            padding: 1.5rem 2rem;
-            font-size: 1.1rem;
-            margin: 0;
-        }
-
-        .clear-btn {
-            padding: 0 2rem;
-            background: transparent;
-            border: 1px solid var(--border-glass);
-            color: var(--text-muted);
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-
-            &:hover {
-                background: rgba(var(--text-primary-rgb), 0.05);
-                color: var(--text-primary);
-            }
-
-            &:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-            }
-        }
-
-        .draft-btn {
-            padding: 0 1.25rem;
-            background: rgba(var(--text-primary-rgb), 0.05);
-            border: 1px solid var(--border-glass);
-            color: var(--text-primary);
-            border-radius: var(--radius-md);
-            font-weight: 700;
-            cursor: pointer;
-
-            &:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-            }
-        }
-    }
-
     :global(.quick-scroll-section) {
         scroll-margin-top: 12rem;
     }
@@ -530,22 +378,18 @@
         .header h1 {
             font-size: clamp(2rem, 10vw, 3rem);
         }
-
         .editor-layout {
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
-
             aside,
             .editor-grid {
                 width: 100%;
             }
-
             aside {
                 display: contents;
             }
         }
-
         :global(.quick-scroll-section) {
             scroll-margin-top: 15rem;
         }

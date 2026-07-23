@@ -1,15 +1,14 @@
 <script lang="ts">
     import PrismEditor from "$lib/components/editor/PrismEditor.svelte";
-    import CustomDropdown from "$lib/components/common/CustomDropdown.svelte";
     import { validateDescription, LIMITS } from "$lib/utils/validation";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
     import MarkdownViewer from "$lib/components/common/MarkdownViewer.svelte";
+    import MarkdownEditorToolbar from "./MarkdownEditorToolbar.svelte";
 
     let { value = $bindable("") }: { value: string } = $props();
     let mode = $state<"split" | "editor" | "preview">("split");
     let editorRef = $state<ReturnType<typeof PrismEditor>>();
     let descriptionError = $state("");
-    let isDescriptionDisabled = $state(false);
     let previewPane = $state<HTMLElement>();
     let lastScrollTop = 0;
 
@@ -28,14 +27,7 @@
     $effect(() => {
         const validation = validateDescription(value);
         descriptionError = validation.message || "";
-        isDescriptionDisabled = value.length >= LIMITS.description;
     });
-
-    const headingOptions = [
-        { label: "H1 - Large", onClick: () => handleAction("h1") },
-        { label: "H2 - Medium", onClick: () => handleAction("h2") },
-        { label: "H3 - Small", onClick: () => handleAction("h3") },
-    ];
 
     function handleAction(action: string) {
         if (!editorRef) return;
@@ -78,340 +70,184 @@
 </script>
 
 <div class="markdown-editor-container">
-    <div class="toolbar">
-        <div class="toolbar-left">
-            <div class="header-title">MARKDOWN</div>
-            {#if mode !== "preview"}
-                <div class="macro-buttons">
-                    <button
-                        class="macro-btn"
-                        onclick={() => handleAction("bold")}
-                        title="Bold"
-                        type="button"
-                        ><MaterialIcon name="format_bold" size={14} /></button
-                    >
-                    <button
-                        class="macro-btn"
-                        onclick={() => handleAction("italic")}
-                        title="Italic"
-                        type="button"
-                        ><MaterialIcon name="format_italic" size={14} /></button
-                    >
-
-                    <CustomDropdown options={headingOptions} mode="menu">
-                        {#snippet trigger(toggle)}
-                            <button
-                                class="macro-btn"
-                                onclick={(e) => {
-                                    e.stopPropagation();
-                                    toggle();
-                                }}
-                                title="Heading"
-                                type="button"
-                            >
-                                <MaterialIcon name="title" size={14} />
-                            </button>
-                        {/snippet}
-                    </CustomDropdown>
-
-                    <div class="divider"></div>
-                    <button
-                        class="macro-btn"
-                        onclick={() => handleAction("link")}
-                        title="Link"
-                        type="button"
-                        ><MaterialIcon name="link" size={14} /></button
-                    >
-                    <button
-                        class="macro-btn"
-                        onclick={() => handleAction("image")}
-                        title="Image"
-                        type="button"
-                        ><MaterialIcon name="image" size={14} /></button
-                    >
-                    <div class="divider"></div>
-                    <button
-                        class="macro-btn"
-                        onclick={() => handleAction("code")}
-                        title="Code"
-                        type="button"
-                        ><MaterialIcon name="code" size={14} /></button
-                    >
-                    <button
-                        class="macro-btn"
-                        onclick={() => handleAction("quote")}
-                        title="Quote"
-                        type="button"
-                        ><MaterialIcon name="format_quote" size={14} /></button
-                    >
-                    <div class="divider"></div>
-                    <button
-                        class="macro-btn"
-                        onclick={() => handleAction("list")}
-                        title="List"
-                        type="button"
-                        ><MaterialIcon name="list" size={14} /></button
-                    >
-                    <button
-                        class="macro-btn"
-                        onclick={() => handleAction("task")}
-                        title="Task"
-                        type="button"
-                        ><MaterialIcon name="checklist" size={14} /></button
-                    >
-                </div>
-            {/if}
-        </div>
-        <div class="tabs">
-            <button
-                class:active={mode === "editor"}
-                onclick={() => (mode = "editor")}
-                type="button">Editor</button
-            >
-            <button
-                class:active={mode === "split"}
-                onclick={() => (mode = "split")}
-                type="button">Split</button
-            >
-            <button
-                class:active={mode === "preview"}
-                onclick={() => (mode = "preview")}
-                type="button">Preview</button
-            >
-        </div>
-    </div>
+    <MarkdownEditorToolbar bind:mode {handleAction} />
 
     <div
-        class="panes"
-        class:mode-split={mode === "split"}
-        class:mode-editor={mode === "editor"}
-        class:mode-preview={mode === "preview"}
+        class="editor-pane-container"
+        class:split={mode === "split"}
+        class:editor-only={mode === "editor"}
+        class:preview-only={mode === "preview"}
     >
-        {#if mode === "editor" || mode === "split"}
+        {#if mode !== "preview"}
             <div class="editor-pane">
                 <PrismEditor
                     bind:this={editorRef}
                     bind:value
                     language="markdown"
-                    height="100%"
                 />
             </div>
         {/if}
 
-        {#if mode === "preview" || mode === "split"}
-            <div class="preview-pane">
-                <div class="preview-content" bind:this={previewPane}>
-                    <MarkdownViewer content={value} />
+        {#if mode !== "editor"}
+            <div class="preview-pane" bind:this={previewPane}>
+                <div class="preview-header">
+                    <MaterialIcon name="visibility" size={14} />
+                    <span>PREVIEW</span>
+                </div>
+                <div class="preview-content">
+                    <MarkdownViewer content={value || "*Nothing to preview*"} />
                 </div>
             </div>
         {/if}
     </div>
 
-    <div class="editor-footer">
+    <div class="footer-info">
+        <div class="validation-info">
+            {#if descriptionError}
+                <span class="error-msg">{descriptionError}</span>
+            {:else}
+                <span class="hint"
+                    >Markdown formatting supported (headings, lists, code, etc.)</span
+                >
+            {/if}
+        </div>
         <div
-            class="counter"
-            class:error={!descriptionError && isDescriptionDisabled}
+            class="char-counter"
+            class:error={value.length > LIMITS.description}
         >
             {value.length} / {LIMITS.description}
         </div>
-        {#if descriptionError}
-            <span class="error-text">{descriptionError}</span>
-        {/if}
     </div>
 </div>
 
 <style lang="scss">
     .markdown-editor-container {
-        display: flex;
-        flex-direction: column;
-        height: 1000px;
-        background: var(--bg-dark);
         border: 1px solid var(--border-glass);
         border-radius: var(--radius-md);
         overflow: hidden;
-
-        @media (max-width: 768px) {
-            height: 600px;
-        }
-    }
-
-    .toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 1rem;
-        background: rgba(var(--text-primary-rgb), 0.02);
-        border-bottom: 1px solid var(--border-glass);
-    }
-
-    .header-title {
-        font-size: 0.7rem;
-        font-weight: 800;
-        color: var(--text-secondary);
-        letter-spacing: 0.1em;
-    }
-
-    .toolbar-left {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .macro-buttons {
-        display: flex;
-        align-items: center;
-        gap: 0.2rem;
-        background: rgba(var(--text-primary-rgb), 0.02);
-        padding: 0.2rem;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border-glass);
-
-        @media (max-width: 768px) {
-            display: none;
-        }
-    }
-
-    .macro-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 24px;
-        height: 24px;
-        border: none;
-        background: transparent;
-        color: var(--text-muted);
-        font-family: inherit;
-        font-size: 0.85rem;
-        cursor: pointer;
-        border-radius: calc(var(--radius-sm) - 2px);
-        transition: all 0.2s;
-
-        &:hover {
-            color: var(--text-primary);
-            background: rgba(var(--text-primary-rgb), 0.1);
-        }
-    }
-
-    .divider {
-        width: 1px;
-        height: 14px;
-        background: var(--border-glass);
-        margin: 0 0.2rem;
-    }
-
-    :global(.dropdown-container) {
-        display: flex;
-    }
-
-    :global(.dropdown-menu) {
-        min-width: 160px !important;
-    }
-
-    .tabs {
-        display: flex;
-        gap: 0.25rem;
-        background: rgba(var(--text-primary-rgb), 0.02);
-        padding: 0.25rem;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border-glass);
-
-        button {
-            padding: 0.25rem 0.75rem;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            font-family: inherit;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: calc(var(--radius-sm) - 2px);
-            transition: all 0.2s;
-
-            &.active {
-                background: var(--text-primary);
-                color: var(--bg-dark);
-            }
-
-            &:hover:not(.active) {
-                color: var(--text-primary);
-                background: rgba(var(--text-primary-rgb), 0.1);
-            }
-        }
-    }
-
-    .panes {
-        display: grid;
-        flex: 1;
-        min-height: 0;
-
-        &.mode-split {
-            grid-template-columns: 1fr 1fr;
-            @media (max-width: 768px) {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        &.mode-editor,
-        &.mode-preview {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .editor-pane,
-    .preview-pane {
+        background: rgba(0, 0, 0, 0.2);
         display: flex;
         flex-direction: column;
-        height: 100%;
-        overflow: hidden;
+
+        :global(.light) & {
+            background: #ffffff;
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+    }
+
+    .editor-pane-container {
+        display: flex;
+        min-height: 250px;
+        position: relative;
+
+        &.split {
+            .editor-pane {
+                width: 50%;
+                border-right: 1px solid var(--border-glass);
+            }
+            .preview-pane {
+                width: 50%;
+            }
+        }
+
+        &.editor-only {
+            .editor-pane {
+                width: 100%;
+            }
+        }
+
+        &.preview-only {
+            .preview-pane {
+                width: 100%;
+            }
+        }
     }
 
     .editor-pane {
-        background: rgba(var(--text-primary-rgb), 0.01);
-    }
+        display: flex;
+        flex-direction: column;
 
-    .panes.mode-split .editor-pane {
-        border-right: 1px solid var(--border-glass);
-
-        @media (max-width: 768px) {
-            border-right: none;
-            border-bottom: 1px solid var(--border-glass);
+        :global(.prism-editor-wrapper) {
+            flex: 1;
+            min-height: 250px;
+            max-height: 500px;
+            overflow-y: auto;
         }
     }
 
     .preview-pane {
-        background: rgba(var(--text-primary-rgb), 0.02);
-    }
-
-    .preview-content {
-        flex: 1;
-        padding: 1rem;
-        overflow-y: auto;
-        color: var(--text-secondary);
-        line-height: 1.6;
-    }
-
-    .editor-footer {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        background: rgba(var(--text-primary-rgb), 0.02);
-        border-top: 1px solid var(--border-glass);
-        font-size: 0.85rem;
-        gap: 1rem;
-    }
+        flex-direction: column;
+        background: rgba(0, 0, 0, 0.1);
+        max-height: 500px;
+        overflow-y: auto;
 
-    .counter {
-        color: var(--text-secondary);
-        font-weight: 600;
+        :global(.light) & {
+            background: rgba(0, 0, 0, 0.02);
+        }
 
-        &.error {
-            color: var(--error, #ff5a5a);
+        .preview-header {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.75rem;
+            background: rgba(0, 0, 0, 0.2);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .preview-content {
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            flex: 1;
         }
     }
 
-    .error-text {
-        color: var(--error, #ff5a5a);
-        font-weight: 500;
+    .footer-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0.75rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-top: 1px solid var(--border-glass);
+        font-size: 0.75rem;
+
+        .hint {
+            color: var(--text-muted);
+        }
+
+        .error-msg {
+            color: #ff4d4d;
+        }
+
+        .char-counter {
+            color: var(--text-muted);
+            font-family: monospace;
+
+            &.error {
+                color: #ff4d4d;
+                font-weight: 700;
+            }
+        }
+    }
+
+    @media (max-width: 768px) {
+        .editor-pane-container.split {
+            flex-direction: column;
+
+            .editor-pane,
+            .preview-pane {
+                width: 100%;
+            }
+
+            .editor-pane {
+                border-right: none;
+                border-bottom: 1px solid var(--border-glass);
+            }
+        }
     }
 </style>

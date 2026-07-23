@@ -2,7 +2,7 @@
     import { fade } from "svelte/transition";
     import type { Theme } from "$lib/types/index";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
-    import UserAvatar from "$lib/components/common/UserAvatar.svelte";
+    import ThemeCardActions from "$lib/components/theme/ThemeCardActions.svelte";
     import { SUPPORTED_DOMAINS } from "$lib/constants/index";
     import {
         extensionState,
@@ -75,7 +75,6 @@
                 theme.themeName,
                 SUPPORTED_DOMAINS[0],
             );
-            // You could add a local "saved" toasted state if you had a toast system
         }
     }
 </script>
@@ -149,45 +148,12 @@
                 </div>
             {/if}
             <p>{theme.description || "No description provided."}</p>
-            <div class="footer">
-                <UserAvatar userId={theme.ownerId} size="sm" />
-                <div class="actions">
-                    <button
-                        class="action-btn icon-btn save-btn"
-                        class:locked={!extensionState.isExtensionReady}
-                        title={extensionState.isExtensionReady
-                            ? "Save Theme"
-                            : "Extension Required"}
-                        disabled={!extensionState.isExtensionReady}
-                        onclick={handleSave}
-                    >
-                        <MaterialIcon name="save" size={18} />
-                    </button>
-
-                    {#if isInstalled}
-                        <div class="installed-badge">
-                            <MaterialIcon name="check" size={14} />
-                            <span>Installed</span>
-                        </div>
-                    {:else}
-                        <button
-                            class="action-btn icon-btn install-btn"
-                            class:locked={!extensionState.isExtensionReady}
-                            title={extensionState.isExtensionReady
-                                ? "Install Theme"
-                                : "Extension Required"}
-                            disabled={!extensionState.isExtensionReady}
-                            onclick={handleInstall}
-                        >
-                            {#if !extensionState.isExtensionReady}
-                                <MaterialIcon name="lock" size={18} />
-                            {:else}
-                                <MaterialIcon name="add" size={18} />
-                            {/if}
-                        </button>
-                    {/if}
-                </div>
-            </div>
+            <ThemeCardActions
+                ownerId={theme.ownerId}
+                {isInstalled}
+                {handleSave}
+                {handleInstall}
+            />
         </div>
     </div>
 </a>
@@ -218,236 +184,159 @@
                 opacity: 1;
             }
 
-            img {
-                transform: scale(1.1);
+            .card-image img {
+                transform: scale(1.05);
             }
         }
+    }
 
-        .card-image {
-            position: relative;
-            aspect-ratio: 16/9;
-            overflow: hidden;
-            background: rgba(0, 0, 0, 0.2);
+    .card-image {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.2);
 
-            img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                transition: transform 0.6s ease;
-            }
-
-            .placeholder {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
-                font-size: 3rem;
-                opacity: 0.5;
-            }
-
-            .overlay {
-                position: absolute;
-                inset: 0;
-                background: rgba(0, 0, 0, 0.6);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-                .view-tag {
-                    color: white;
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    pointer-events: none;
-                }
-            }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
         }
 
-        .card-content {
-            padding: 1.5rem;
-            flex: 1;
+        .placeholder {
+            width: 100%;
+            height: 100%;
             display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(
+                135deg,
+                rgba(var(--text-primary-rgb), 0.05) 0%,
+                rgba(var(--text-primary-rgb), 0.15) 100%
+            );
 
-            .header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-
-                .title-container {
-                    display: flex;
-                    flex: 1;
-                    min-width: 0;
-                    align-items: center;
-                    gap: 0.5rem;
-                    overflow: hidden;
-
-                    h3 {
-                        margin: 0;
-                        font-size: 1.25rem;
-                        font-weight: 700;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                    }
-
-                    .custom-badge {
-                        flex-shrink: 0;
-                        color: #00e5ff;
-                        background: rgba(0, 229, 255, 0.1);
-                        padding: 4px;
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        border: 1px solid rgba(0, 229, 255, 0.2);
-                        box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
-                    }
-                }
-
-                .downloads,
-                .rating {
-                    flex-shrink: 0;
-                    font-size: 0.85rem;
-                    color: var(--text-muted);
-                    white-space: nowrap;
-                    display: flex;
-                    align-items: center;
-                    gap: 0.35rem;
-                }
-
-                .header-divider {
-                    flex-shrink: 0;
-                    width: 1px;
-                    height: 1rem;
-                    margin: 0 0.25rem;
-                    background: var(--border-glass);
-                }
-
-                .rating {
-                    color: #ffd166;
-
-                    .rating-count {
-                        color: var(--text-muted);
-                    }
-                }
+            span {
+                font-size: 4rem;
+                opacity: 0.3;
             }
+        }
 
-            .metadata {
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+
+            .view-tag {
+                padding: 0.6rem 1.2rem;
+                background: var(--text-primary);
+                color: var(--bg-dark);
+                border-radius: var(--radius-lg);
+                font-weight: 700;
+                font-size: 0.9rem;
+                transform: translateY(10px);
+                transition: transform 0.3s ease;
+            }
+        }
+    }
+
+    .card-content {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+
+            .title-container {
                 display: flex;
-                flex-wrap: wrap;
+                align-items: center;
                 gap: 0.4rem;
-                min-height: 1.7rem;
-
-                .tag-chip {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 0.25rem;
-                    padding: 0.25rem 0.5rem;
-                    border: 1px solid var(--border-glass);
-                    border-radius: 999px;
-                    color: var(--text-secondary);
-                    font-size: 0.75rem;
-                    line-height: 1;
-                }
-            }
-
-            p {
-                margin: 0;
-                font-size: 0.95rem;
-                color: var(--text-secondary);
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                line-clamp: 2;
-                -webkit-box-orient: vertical;
-                overflow: hidden;
-                line-height: 1.5;
+                min-width: 0;
                 flex: 1;
+
+                h3 {
+                    margin: 0;
+                    font-size: 1.25rem;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .custom-badge {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--primary-glow);
+                }
             }
 
-            .footer {
+            .downloads,
+            .rating {
                 display: flex;
-                justify-content: space-between;
                 align-items: center;
-                margin-top: 0.5rem;
-                gap: 0.75rem;
-
-                .installed-badge {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.35rem;
-                    color: #00ff96;
-                    font-size: 0.85rem;
-                    font-weight: 700;
-                    background: rgba(0, 255, 150, 0.1);
-                    padding: 6px 12px;
-                    border-radius: var(--radius-sm);
-                    border: 1px solid rgba(0, 255, 150, 0.2);
-                }
-
-                .actions {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                }
-
-                .action-btn {
-                    &.icon-btn {
-                        width: 36px;
-                        height: 36px;
-                        padding: 0;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        border-radius: 50%;
-                        background: rgba(255, 255, 255, 0.05);
-                        color: var(--text-primary);
-                        border: 1px solid var(--border-glass);
-                        box-shadow: none;
-                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-                        &:hover {
-                            background: var(--text-primary);
-                            color: var(--bg-dark);
-                            transform: scale(1.1);
-                            box-shadow: 0 8px 25px
-                                rgba(var(--text-primary-rgb), 0.25);
-                        }
-
-                        &.install-btn:hover {
-                            transform: scale(1.1) rotate(90deg);
-                        }
-
-                        &.save-btn:hover {
-                            background: var(--secondary-glow);
-                            border-color: var(--secondary-glow);
-                        }
-
-                        &:active {
-                            transform: scale(0.95);
-                        }
-
-                        &.locked {
-                            opacity: 0.5;
-                            cursor: not-allowed;
-
-                            &:hover {
-                                background: rgba(255, 255, 255, 0.05);
-                                color: var(--text-primary);
-                                transform: none;
-                                box-shadow: none;
-                                border-color: var(--border-glass);
-                            }
-
-                            &:active {
-                                transform: none;
-                            }
-                        }
-                    }
-                }
+                gap: 0.25rem;
+                font-size: 0.85rem;
+                color: var(--text-muted);
+                white-space: nowrap;
             }
+
+            .rating {
+                color: #f5c451;
+            }
+
+            .rating-count {
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                margin-left: 0.1rem;
+            }
+
+            .header-divider {
+                width: 1px;
+                height: 12px;
+                background: var(--border-glass);
+            }
+        }
+
+        .metadata {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+
+            .tag-chip {
+                font-size: 0.75rem;
+                padding: 0.15rem 0.45rem;
+                border-radius: var(--radius-sm);
+                background: rgba(var(--text-primary-rgb), 0.05);
+                color: var(--text-secondary);
+                border: 1px solid var(--border-glass);
+            }
+        }
+
+        p {
+            margin: 0 0 1.25rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.5;
         }
     }
 </style>

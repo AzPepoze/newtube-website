@@ -11,8 +11,7 @@
     import ThemeDetailCodePreview from "$lib/components/theme/ThemeDetailCodePreview.svelte";
     import ThemeDetailStats from "$lib/components/theme/ThemeDetailStats.svelte";
     import ThemeDetailCommunity from "$lib/components/theme/ThemeDetailCommunity.svelte";
-    import UserAvatar from "$lib/components/common/UserAvatar.svelte";
-    import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+    import ThemeCreatorCard from "$lib/components/theme/ThemeCreatorCard.svelte";
     import MarkdownViewer from "$lib/components/common/MarkdownViewer.svelte";
     import QuickScrollNav, {
         type QuickScrollItem,
@@ -142,52 +141,11 @@
                         </div>
 
                         <div class="info-row">
-                            <div class="creator glass-panel">
-                                <UserAvatar
-                                    userId={theme.ownerId}
-                                    name={theme.creatorName}
-                                    avatarUrl={theme.creatorAvatar}
-                                    size="md"
-                                    showLabel={true}
-                                />
-                                <div class="theme-dates">
-                                    <div class="date-item" title="Created Date">
-                                        <MaterialIcon
-                                            name="calendar_today"
-                                            size={16}
-                                        />
-                                        <span
-                                            >Created: {formatDate(
-                                                theme.createdAt,
-                                            )}</span
-                                        >
-                                    </div>
-                                    <div class="date-item" title="Last Updated">
-                                        <MaterialIcon name="update" size={16} />
-                                        <span
-                                            >Updated: {formatDate(
-                                                theme.updatedAt,
-                                            )}</span
-                                        >
-                                    </div>
-                                </div>
-
-                                {#if currentUser === theme.ownerId}
-                                    <div class="creator-actions">
-                                        <a
-                                            href="/themes/edit/{theme.themeId}"
-                                            class="edit-theme-btn premium-button"
-                                        >
-                                            <MaterialIcon
-                                                name="edit"
-                                                size={16}
-                                            />
-                                            <span>Edit Theme</span>
-                                        </a>
-                                    </div>
-                                {/if}
-                            </div>
-
+                            <ThemeCreatorCard
+                                {theme}
+                                {currentUser}
+                                {formatDate}
+                            />
                             <ThemeDetailStats {theme} />
                         </div>
                     </section>
@@ -218,25 +176,38 @@
 
 <style lang="scss">
     .theme-detail-container {
-        padding: 2rem 0;
-        width: 100%;
+        padding: 1.5rem 0 4rem;
     }
 
-    .back-link {
-        display: inline-block;
-        margin-bottom: 1.5rem;
+    .loading-state {
+        text-align: center;
+        padding: 6rem 0;
         color: var(--text-muted);
-        font-size: 0.9rem;
 
-        &:hover {
-            color: var(--text-primary);
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(var(--text-primary-rgb, 255, 255, 255), 0.1);
+            border-top-color: var(--primary-glow);
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            animation: spin 1s linear infinite;
         }
     }
 
-    .layout-single {
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        margin-bottom: 2rem;
+        transition: all 0.2s;
+
+        &:hover {
+            color: var(--text-primary);
+            transform: translateX(-4px);
+        }
     }
 
     .detail-layout {
@@ -249,157 +220,43 @@
             min-width: 0;
             height: 100%;
         }
-    }
 
-    .overview {
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-    }
-
-    .quick-scroll-section {
-        min-width: 0;
-        scroll-margin-top: 12rem;
-    }
-
-    #settings :global(.section) {
-        margin: 0;
-    }
-
-    .gallery-wrapper {
-        width: 100%;
-        border-radius: var(--radius-md);
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    }
-
-    .info-row {
-        display: flex;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-
-        & > * {
-            flex: 1;
-            min-width: 300px;
-        }
-    }
-
-    .creator {
-        padding: 1.25rem 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 2rem;
-        flex-wrap: wrap;
-
-        .theme-dates {
+        .layout-single {
             display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            padding-left: 2rem;
-            border-left: 1px solid var(--border-glass);
+            flex-direction: column;
+            gap: 3rem;
+            min-width: 0;
+        }
 
-            @media (max-width: 600px) {
-                border-left: none;
-                padding-left: 0;
-                padding-top: 1rem;
-                border-top: 1px solid var(--border-glass);
+        .overview {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+
+            .gallery-wrapper {
                 width: 100%;
-                justify-content: space-between;
             }
 
-            .date-item {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                font-size: 0.85rem;
-                color: var(--text-primary);
-                white-space: nowrap;
+            .info-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
 
-                :global(span.material-icons) {
-                    color: var(--text-primary);
-                    opacity: 0.8;
+                @media (max-width: 900px) {
+                    grid-template-columns: 1fr;
                 }
             }
         }
 
-        .creator-actions {
-            margin-left: auto;
+        .description-panel {
+            padding: 2rem;
+            border-radius: var(--radius-lg);
 
-            .edit-theme-btn {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                padding: 0.6rem 1.25rem;
-                font-size: 0.85rem;
+            h3 {
+                margin: 0 0 1.5rem;
+                font-size: 1.4rem;
                 font-weight: 700;
-                border-radius: var(--radius-sm);
-                background: rgba(var(--text-primary-rgb), 0.05);
-                border: 1px solid var(--border-glass);
-                color: var(--text-primary);
-                transition: all 0.3s ease;
-
-                &:hover {
-                    background: var(--text-primary);
-                    color: var(--bg-dark);
-                    transform: translateY(-2px);
-                    box-shadow: 0 5px 15px rgba(var(--text-primary-rgb), 0.2);
-                }
             }
-
-            @media (max-width: 850px) {
-                margin-left: 0;
-                width: 100%;
-
-                .edit-theme-btn {
-                    justify-content: center;
-                }
-            }
-        }
-    }
-
-    .description-panel {
-        padding: 1.5rem;
-    }
-
-    .section {
-        h3 {
-            margin: 0 0 1rem 0;
-            font-size: 1rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 600;
-        }
-
-        .description-content {
-            margin: 0;
-            color: var(--text-primary);
-            line-height: 1.7;
-
-            :global(p) {
-                margin-top: 0;
-            }
-
-            :global(img) {
-                border-radius: var(--radius-sm);
-            }
-        }
-    }
-
-    .loading-state {
-        text-align: center;
-        padding: 10rem 0;
-        color: var(--text-muted);
-
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 3px solid rgba(var(--primary-glow-rgb), 0.1);
-            border-top-color: var(--primary-glow);
-            border-radius: 50%;
-            margin: 0 auto 1.5rem;
-            animation: spin 1s linear infinite;
         }
     }
 
@@ -413,7 +270,6 @@
         .detail-layout {
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
 
             aside,
             .layout-single {
@@ -423,10 +279,6 @@
             aside {
                 display: contents;
             }
-        }
-
-        .quick-scroll-section {
-            scroll-margin-top: 15rem;
         }
     }
 </style>

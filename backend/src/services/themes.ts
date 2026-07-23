@@ -22,7 +22,11 @@ import {
     deleteThemeReview,
 } from "../db/marketplace";
 import type { Database } from "../db";
-import { deleteImageFromR2, uploadImageToR2 } from "./images";
+import { deleteImageFromR2 } from "./images";
+import {
+    cleanupRemovedThemeImages,
+    processPendingThemeImages,
+} from "./theme-images";
 
 export interface ThemeInput {
     themeName: string;
@@ -148,34 +152,10 @@ export async function createThemeForOwner(
     ownerId: string,
     themeInput: ThemeInput,
 ) {
-    const uploadedUrls: string[] = [];
-    if (themeInput.pendingImages && Array.isArray(themeInput.pendingImages)) {
-        for (const image of themeInput.pendingImages) {
-            try {
-                const url = await uploadImageToR2(
-                    env,
-                    image.data,
-                    image.mimeType,
-                );
-                uploadedUrls.push(url);
-            } catch (error) {
-                console.error("Error uploading theme image:", error);
-            }
-        }
-    }
-
-    let finalCoverImage = themeInput.coverImage;
-    if (themeInput.pendingCoverImage) {
-        try {
-            finalCoverImage = await uploadImageToR2(
-                env,
-                themeInput.pendingCoverImage.data,
-                themeInput.pendingCoverImage.mimeType,
-            );
-        } catch (error) {
-            console.error("Error uploading cover image:", error);
-        }
-    }
+    const { uploadedUrls, finalCoverImage } = await processPendingThemeImages(
+        env,
+        themeInput,
+    );
 
     const createPersistenceInput: ThemePersistenceInput = {
         themeName: themeInput.themeName,
@@ -209,56 +189,17 @@ export async function updateThemeForOwner(
         return false;
     }
 
-    const uploadedUrls: string[] = [];
-    if (themeInput.pendingImages && Array.isArray(themeInput.pendingImages)) {
-        for (const image of themeInput.pendingImages) {
-            try {
-                const url = await uploadImageToR2(
-                    env,
-                    image.data,
-                    image.mimeType,
-                );
-                uploadedUrls.push(url);
-            } catch (error) {
-                console.error("Error uploading theme image:", error);
-            }
-        }
-    }
+    const { uploadedUrls, finalCoverImage } = await processPendingThemeImages(
+        env,
+        themeInput,
+    );
 
-    let finalCoverImage = themeInput.coverImage;
-    if (themeInput.pendingCoverImage) {
-        try {
-            finalCoverImage = await uploadImageToR2(
-                env,
-                themeInput.pendingCoverImage.data,
-                themeInput.pendingCoverImage.mimeType,
-            );
-            if (
-                existingTheme.coverImage &&
-                existingTheme.coverImage !== finalCoverImage
-            ) {
-                const r2Prefix = "https://pub-";
-                if (existingTheme.coverImage.includes(r2Prefix)) {
-                    await deleteImageFromR2(env, existingTheme.coverImage);
-                }
-            }
-        } catch (error) {
-            console.error("Error uploading cover image:", error);
-        }
-    } else if (existingTheme.coverImage && themeInput.coverImage === "") {
-        const r2Prefix = "https://pub-";
-        if (existingTheme.coverImage.includes(r2Prefix)) {
-            await deleteImageFromR2(env, existingTheme.coverImage);
-        }
-    }
+    await cleanupRemovedThemeImages(env, existingTheme, finalCoverImage, [
+        ...(themeInput.imgs ?? []),
+        ...uploadedUrls,
+    ]);
 
     const images = [...(themeInput.imgs ?? []), ...uploadedUrls];
-    for (const imageUrl of existingTheme.images || []) {
-        if (!images.includes(imageUrl)) {
-            await deleteImageFromR2(env, imageUrl);
-        }
-    }
-
     const updatePersistenceInput: ThemePersistenceInput = {
         themeName: themeInput.themeName,
         description: themeInput.description,
