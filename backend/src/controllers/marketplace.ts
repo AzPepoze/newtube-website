@@ -5,7 +5,7 @@ import {
     listThemeTags,
 } from "../services/marketplace";
 
-export type MarketplaceContext = {
+export type MarketplaceControllerContext = {
     db: Database;
     userId?: string;
     set: ResponseStatus;

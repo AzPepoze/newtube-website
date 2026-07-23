@@ -259,18 +259,18 @@ export const themeController = {
         } catch (error) {
             console.error("Theme rate limiter error", error);
         }
-        const result = await createThemeForOwner(
+        const createdTheme = await createThemeForOwner(
             db,
             env,
             userId!,
             themeInputValidation.input,
         );
-        if (!result) {
+        if (!createdTheme) {
             set.status = 500;
             return { error: "Failed to create theme" };
         }
         set.status = 201;
-        return result;
+        return createdTheme;
     },
 
     async update({ userId, params, body, db, set, env }: ThemeControllerContext) {
@@ -287,14 +287,14 @@ export const themeController = {
                 message: themeInputValidation.message,
             };
         }
-        const updated = await updateThemeForOwner(
+        const wasUpdated = await updateThemeForOwner(
             db,
             env,
             params.id,
             userId!,
             themeInputValidation.input,
         );
-        if (!updated) {
+        if (!wasUpdated) {
             set.status = 403;
             return {
                 error: "Unauthorized",
@@ -310,8 +310,8 @@ export const themeController = {
             set.status = 400;
             return { error: "Invalid theme ID", message: idValidation.message };
         }
-        const deleted = await deleteThemeForOwner(db, env, params.id, userId!);
-        if (!deleted) {
+        const wasDeleted = await deleteThemeForOwner(db, env, params.id, userId!);
+        if (!wasDeleted) {
             set.status = 403;
             return {
                 error: "Unauthorized",
@@ -341,22 +341,22 @@ export const themeController = {
                       : invalidMessage(bodyValidation),
             };
         }
-        const result = await createThemeReview(
+        const reviewOutcome = await createThemeReview(
             db,
             params.id,
             userId!,
             data!.rating as number,
             data!.body as string | undefined,
         );
-        if (result.status === "not-found") {
+        if (reviewOutcome.status === "not-found") {
             set.status = 404;
             return { error: "Theme not found" };
         }
-        if (result.status === "own-theme") {
+        if (reviewOutcome.status === "own-theme") {
             set.status = 403;
             return { error: "Cannot review your own theme" };
         }
-        return result.review;
+        return reviewOutcome.review;
     },
 
     async removeReview({ userId, params, db, set }: ThemeControllerContext) {

@@ -6,7 +6,7 @@ import {
 } from "../services/auth";
 import type { ResponseStatus } from "../types/http";
 
-type AuthContext = {
+type AuthControllerContext = {
     db: Database;
     env: Env;
     query: Record<string, unknown>;
@@ -23,7 +23,7 @@ function getRedirectUri(request: Request) {
 }
 
 export const authController = {
-    async google({ query, request, redirect, env }: AuthContext) {
+    async google({ query, request, redirect, env }: AuthControllerContext) {
         const redirectUri = getRedirectUri(request);
         console.log(`[Auth] Starting Google OAuth. Redirect URI: ${redirectUri}`);
         const authUrl = await startGoogleAuthentication(
@@ -34,7 +34,7 @@ export const authController = {
         return redirect(authUrl);
     },
 
-    async callback({ request, query, redirect, set, cookie, env, db }: AuthContext) {
+    async callback({ request, query, redirect, set, cookie, env, db }: AuthControllerContext) {
         const code = query.code as string;
         if (!code) {
             console.error("[Auth Callback] Missing code in query params");
@@ -80,7 +80,7 @@ export const authController = {
         }
     },
 
-    async logout({ cookie, db }: AuthContext) {
+    async logout({ cookie, db }: AuthControllerContext) {
         await logoutUser(db, cookie.sessionId?.value);
         cookie.sessionId.remove();
         cookie.userId.remove();

@@ -8,12 +8,12 @@ type SponsorsControllerContext = {
 
 export const sponsorsController = {
     async list({ env, set }: SponsorsControllerContext) {
-        const result = await getSponsors(env);
-        if (result.status === "failed") {
+        const sponsorsOutcome = await getSponsors(env);
+        if (sponsorsOutcome.status === "failed") {
             set.status = 500;
             return { error: "Failed to fetch sponsors" };
         }
 
-        return result.sponsors;
+        return sponsorsOutcome.sponsors;
     },
 };

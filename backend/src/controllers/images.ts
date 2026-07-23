@@ -51,8 +51,8 @@ export const imageController = {
             return { error: "Invalid request", message: "URL is required" };
         }
 
-        const result = await deleteOwnedImage(db, env, userId!, url);
-        if (result.status === "not-owned") {
+        const deletionOutcome = await deleteOwnedImage(db, env, userId!, url);
+        if (deletionOutcome.status === "not-owned") {
             set.status = 403;
             return {
                 error: "Unauthorized",

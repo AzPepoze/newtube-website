@@ -18,31 +18,35 @@ import {
     validateText,
     validateUuid,
 } from "../../utils/validation";
-import type { MarketplaceContext } from "../marketplace";
+import type { MarketplaceControllerContext } from "../marketplace";
 
 function invalidMessage(result: { valid: boolean; message?: string }) {
     return result.message ?? "Invalid request";
 }
 
-function forbidden(set: MarketplaceContext["set"]) {
+function forbidden(set: MarketplaceControllerContext["set"]) {
     set.status = 403;
     return { error: "Forbidden" };
 }
 
 export const marketplaceAdminController = {
-    async createCategory({ body, userId, db, set }: MarketplaceContext) {
+    async createCategory({ body, userId, db, set }: MarketplaceControllerContext) {
         if (!(await isMarketplaceAdmin(db, userId))) return forbidden(set);
 
-        const data = body as { name?: unknown; slug?: unknown } | null;
-        const nameValidation = validateText(data?.name, "Category name", {
+        const categoryInput = body as { name?: unknown; slug?: unknown } | null;
+        const nameValidation = validateText(categoryInput?.name, "Category name", {
             min: 1,
             max: 48,
             required: true,
         });
         const slug =
-            typeof data?.slug === "string"
-                ? data.slug.trim().toLowerCase()
-                : tagSlug(typeof data?.name === "string" ? data.name : "");
+            typeof categoryInput?.slug === "string"
+                ? categoryInput.slug.trim().toLowerCase()
+                : tagSlug(
+                      typeof categoryInput?.name === "string"
+                          ? categoryInput.name
+                          : "",
+                  );
         if (
             !nameValidation.valid ||
             !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ||
@@ -57,12 +61,12 @@ export const marketplaceAdminController = {
             };
         }
 
-        const result = await createCategoryForAdmin(db, userId, {
-            name: (data?.name as string).trim(),
+        const categoryOutcome = await createCategoryForAdmin(db, userId, {
+            name: (categoryInput?.name as string).trim(),
             slug,
         });
-        if (result.status === "forbidden") return forbidden(set);
-        if (result.status === "conflict") {
+        if (categoryOutcome.status === "forbidden") return forbidden(set);
+        if (categoryOutcome.status === "conflict") {
             set.status = 409;
             return {
                 error: "Category already exists",
@@ -71,10 +75,10 @@ export const marketplaceAdminController = {
             };
         }
         set.status = 201;
-        return result.category;
+        return categoryOutcome.category;
     },
 
-    async listReports({ query, userId, db, set }: MarketplaceContext) {
+    async listReports({ query, userId, db, set }: MarketplaceControllerContext) {
         if (!(await isMarketplaceAdmin(db, userId))) return forbidden(set);
 
         const pagination = parsePagination(query, { limit: 50 });
@@ -92,20 +96,22 @@ export const marketplaceAdminController = {
             };
         }
 
-        const result = await listReportsForAdmin(db, userId, {
+        const reportsOutcome = await listReportsForAdmin(db, userId, {
             ...pagination,
             status: query.status as ReportStatus | undefined,
         });
-        return result.status === "forbidden" ? forbidden(set) : result.reports;
+        return reportsOutcome.status === "forbidden"
+            ? forbidden(set)
+            : reportsOutcome.reports;
     },
 
-    async resolveReport({ params, body, userId, db, set }: MarketplaceContext) {
+    async resolveReport({ params, body, userId, db, set }: MarketplaceControllerContext) {
         if (!(await isMarketplaceAdmin(db, userId))) return forbidden(set);
 
         const idValidation = validateUuid(params.id, "report ID");
-        const data = body as { status?: unknown } | null;
+        const reportResolutionInput = body as { status?: unknown } | null;
         const statusValidation = validateEnum(
-            data?.status,
+            reportResolutionInput?.status,
             REPORT_RESOLUTION_STATUSES,
             "status",
         );
@@ -119,14 +125,14 @@ export const marketplaceAdminController = {
             };
         }
 
-        const result = await resolveReportForAdmin(
+        const reportResolutionOutcome = await resolveReportForAdmin(
             db,
             userId,
             params.id,
-            data!.status as (typeof REPORT_RESOLUTION_STATUSES)[number],
+            reportResolutionInput!.status as (typeof REPORT_RESOLUTION_STATUSES)[number],
         );
-        if (result.status === "forbidden") return forbidden(set);
-        if (result.status === "not-found") {
+        if (reportResolutionOutcome.status === "forbidden") return forbidden(set);
+        if (reportResolutionOutcome.status === "not-found") {
             set.status = 404;
             return { error: "Report not found" };
         }
@@ -139,12 +145,15 @@ export const marketplaceAdminController = {
         userId,
         db,
         set,
-    }: MarketplaceContext) {
+    }: MarketplaceControllerContext) {
         if (!(await isMarketplaceAdmin(db, userId))) return forbidden(set);
 
         const idValidation = validateUuid(params.id, "theme ID");
-        const data = body as { isPublic?: unknown } | null;
-        const visibilityValidation = validateBoolean(data?.isPublic, "isPublic");
+        const visibilityInput = body as { isPublic?: unknown } | null;
+        const visibilityValidation = validateBoolean(
+            visibilityInput?.isPublic,
+            "isPublic",
+        );
         if (!idValidation.valid || !visibilityValidation.valid) {
             set.status = 400;
             return {
@@ -155,14 +164,14 @@ export const marketplaceAdminController = {
             };
         }
 
-        const result = await updateThemeVisibilityForAdmin(
+        const visibilityOutcome = await updateThemeVisibilityForAdmin(
             db,
             userId,
             params.id,
-            data!.isPublic as boolean,
+            visibilityInput!.isPublic as boolean,
         );
-        if (result.status === "forbidden") return forbidden(set);
-        if (result.status === "not-found") {
+        if (visibilityOutcome.status === "forbidden") return forbidden(set);
+        if (visibilityOutcome.status === "not-found") {
             set.status = 404;
             return { error: "Theme not found" };
         }

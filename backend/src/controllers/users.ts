@@ -2,7 +2,7 @@ import type { Database } from "../db";
 import { getCurrentUser, getProfileForViewer } from "../services/users";
 import type { ResponseStatus } from "../types/http";
 
-type UserContext = {
+type UserControllerContext = {
     db: Database;
     query: Record<string, unknown>;
     userId?: string;
@@ -10,7 +10,7 @@ type UserContext = {
 };
 
 export const userController = {
-    async profile({ query, userId, set, db }: UserContext) {
+    async profile({ query, userId, set, db }: UserControllerContext) {
         const targetUserId = query.userId || userId;
         if (
             !targetUserId ||
@@ -29,7 +29,7 @@ export const userController = {
         return profile;
     },
 
-    async me({ userId, set, db }: UserContext) {
+    async me({ userId, set, db }: UserControllerContext) {
         const user = await getCurrentUser(db, userId!);
         if (!user) {
             set.status = 404;
