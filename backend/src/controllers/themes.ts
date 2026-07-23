@@ -3,6 +3,7 @@ import {
     tagSlug,
 } from "../db/marketplace";
 import type { Database } from "../db";
+import type { ResponseStatus } from "../types/http";
 import {
     createThemeForOwner,
     createThemeReview,
@@ -35,7 +36,6 @@ import {
 
 const THEME_SORTS = ["popular", "newest", "alpha"] as const;
 
-type ResponseStatus = { status?: number | string };
 type ThemeContext = {
     db: Database;
     env: Env;
