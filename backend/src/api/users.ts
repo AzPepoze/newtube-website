@@ -30,19 +30,29 @@ export const userRoute = new Elysia({ prefix: "/users" })
             set.status = 404;
             return { error: "User not found" };
         }
-        const [collections, reviews] = await Promise.all([
-            listCollectionsByUser(db, targetUserId),
-            getUserReviewActivity(db, targetUserId),
-        ]);
         const publicThemes = userThemes.filter((theme) => theme.isPublic);
-        return {
+        const profile = {
             user,
             themes: publicThemes,
+        };
+        if (!mayViewDrafts) {
+            return {
+                ...profile,
+                reviews: await getUserReviewActivity(db, targetUserId),
+            };
+        }
+
+        const [collections, reviews] = await Promise.all([
+            listCollectionsByUser(db, targetUserId),
+            getUserReviewActivity(db, targetUserId, {
+                includePrivateThemes: true,
+            }),
+        ]);
+        return {
+            ...profile,
             collections,
             reviews,
-            ...(mayViewDrafts
-                ? { drafts: userThemes.filter((theme) => !theme.isPublic) }
-                : {}),
+            drafts: userThemes.filter((theme) => !theme.isPublic),
         };
     })
     .use(authGuard)
@@ -52,5 +62,5 @@ export const userRoute = new Elysia({ prefix: "/users" })
             set.status = 404;
             return { error: "User not found" };
         }
-        return user;
+        return { ...user, isAdmin: await isUserAdmin(db, userId!) };
     });

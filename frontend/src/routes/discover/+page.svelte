@@ -22,6 +22,8 @@
     let initialized = false;
     let requestId = 0;
     let controller: AbortController | null = null;
+    let taxonomyTags = $state<Array<{ name: string; slug: string }>>([]);
+    let taxonomyCategories = $state<Array<{ name: string; slug: string }>>([]);
 
     const sortOptions = [
         { value: "popular", label: "Most Popular" },
@@ -32,18 +34,23 @@
     import { PUBLIC_API_URL } from "$lib/constants/index";
 
     const availableTags = $derived(
-        [...new Set(themes.flatMap((theme) => theme.tags ?? []))].sort((a, b) =>
+        (taxonomyTags.length
+            ? taxonomyTags.map((tag) => tag.name)
+            : [...new Set(themes.flatMap((theme) => theme.tags ?? []))]
+        ).sort((a, b) =>
             a.localeCompare(b),
         ),
     );
     const availableCategories = $derived(
-        [
+        (taxonomyCategories.length
+            ? taxonomyCategories.map((category) => category.name)
+            : [
             ...new Set(
                 themes
                     .map((theme) => theme.category)
                     .filter((category): category is string => Boolean(category)),
             ),
-        ].sort((a, b) => a.localeCompare(b)),
+        ]).sort((a, b) => a.localeCompare(b)),
     );
     const currentPage = $derived(Math.floor(offset / pageLimit) + 1);
     const totalPages = $derived(Math.max(1, Math.ceil(total / pageLimit)));
@@ -89,13 +96,34 @@
         const params = new URLSearchParams();
         if (searchQuery.trim()) params.set("q", searchQuery.trim());
         if (sortBy !== "popular") params.set("sort", sortBy);
-        if (selectedTag.trim()) params.set("tag", selectedTag.trim());
+        if (selectedTag.trim()) params.set("tag", filterSlug(selectedTag, taxonomyTags));
         if (selectedCategory.trim()) {
-            params.set("category", selectedCategory.trim());
+            params.set("category", filterSlug(selectedCategory, taxonomyCategories));
         }
         params.set("limit", String(PAGE_SIZE));
         if (offset > 0) params.set("offset", String(offset));
         return params;
+    }
+
+    function filterSlug(value: string, options: Array<{ name: string; slug: string }>) {
+        const normalized = value.trim().toLowerCase();
+        const match = options.find(
+            (option) => option.name.toLowerCase() === normalized || option.slug === normalized,
+        );
+        return match?.slug || normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    }
+
+    async function loadTaxonomy() {
+        try {
+            const [tagsResponse, categoriesResponse] = await Promise.all([
+                fetch(`${PUBLIC_API_URL}/tags`, { credentials: "include" }),
+                fetch(`${PUBLIC_API_URL}/categories`, { credentials: "include" }),
+            ]);
+            if (tagsResponse.ok) taxonomyTags = await tagsResponse.json();
+            if (categoriesResponse.ok) taxonomyCategories = await categoriesResponse.json();
+        } catch {
+            // Existing theme metadata remains a useful fallback for older deployments.
+        }
     }
 
     function updateUrl() {
@@ -182,6 +210,7 @@
     onMount(() => {
         syncStateFromUrl(page.url.searchParams);
         initialized = true;
+        loadTaxonomy();
         fetchThemes();
         return () => controller?.abort();
     });

@@ -1,8 +1,7 @@
--- Apply once to an existing D1 database that was bootstrapped before the
--- marketplace schema. Wrangler records successful migrations, so it will not
--- run this ALTER again:
---   cd backend && npx wrangler d1 migrations apply DB --remote
+-- LEGACY BRIDGE: apply this file exactly once, and only after checking that
+-- PRAGMA table_info(Users) does not list `is_admin`. It is intentionally not
+-- idempotent: D1/SQLite cannot conditionally ALTER TABLE ADD COLUMN.
 --
--- New databases should be bootstrapped from ../schema.sql, which already has
--- this column, and should not apply this legacy bridge migration.
+-- Do not apply this file to a fresh database. Fresh databases get this column
+-- from schema.sql. See backend/README.md for the safe operator runbook.
 ALTER TABLE Users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT FALSE;

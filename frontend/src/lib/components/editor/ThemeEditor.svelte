@@ -29,6 +29,8 @@
     let coverImagePending = $state<File | null>(null);
     let pendingImages = $state<File[]>([]);
     let settingsCode = $state("");
+    let tagNames = $state<string[]>([]);
+    let categoryId = $state("");
 
     let submitting = $state(false);
     let success = $state(false);
@@ -63,6 +65,8 @@
             images = initialData.images || [];
             coverImage = initialData.coverImage || "";
             settingsCode = JSON.stringify(initialData.settings ?? {}, null, 2);
+            tagNames = (initialData as any).tags || [];
+            categoryId = (initialData as any).category || "";
         }
 
         // A browser backup is deliberately separate from the server draft. It
@@ -76,6 +80,8 @@
                 images = draft.images || [];
                 coverImage = draft.coverImage || "";
                 settingsCode = draft.settingsCode || "";
+                tagNames = draft.tagNames || [];
+                categoryId = draft.categoryId || "";
                 if (themeName || description || settingsCode) {
                     success = false;
                     infoMessage = "Browser backup restored from your last session.";
@@ -102,6 +108,8 @@
             images,
             coverImage,
             settingsCode,
+            tagNames,
+            categoryId,
         };
         localStorage.setItem(draftKey, JSON.stringify(draft));
     });
@@ -195,6 +203,8 @@
                 pendingCoverImage: pendingCoverImageData,
                 settings: JSON.parse(settingsCode),
                 isPublic: publish,
+                tagNames,
+                categoryId: categoryId || null,
             };
 
             const method = isEdit ? "PUT" : "POST";
@@ -307,6 +317,8 @@
                         bind:coverImagePending
                         bind:pendingImages
                         bind:errorMessage
+                        bind:tagNames
+                        bind:categoryId
                     />
                     <ThemeEditorSettings bind:settingsCode bind:jsonError />
                     <ThemeEditorPreview

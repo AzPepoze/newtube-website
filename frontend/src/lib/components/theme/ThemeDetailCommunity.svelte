@@ -243,7 +243,7 @@
 
     {#if showReport}
         <form class="report-form" onsubmit={(event) => { event.preventDefault(); submitReport(); }}>
-            <label>Reason <select bind:value={reportReason}><option value="broken">Broken or unsafe</option><option value="copyright">Copyright concern</option><option value="spam">Spam</option><option value="other">Other</option></select></label>
+            <label>Reason <select bind:value={reportReason}><option value="broken">Broken or unsafe</option><option value="copyright">Copyright concern</option><option value="inappropriate">Inappropriate content</option><option value="malware">Malware or unsafe link</option><option value="spam">Spam</option><option value="other">Other</option></select></label>
             <label>Details <textarea bind:value={reportDetails} maxlength="2000" placeholder="Help moderators understand the issue"></textarea></label>
             <div class="report-actions"><button type="button" class="quiet-action" onclick={() => showReport = false}>Cancel</button><button class="primary-action" type="submit" disabled={submitting}>Submit report</button></div>
         </form>

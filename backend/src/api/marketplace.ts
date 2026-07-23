@@ -36,6 +36,7 @@ const REPORT_REASONS = [
     "inappropriate",
     "malware",
     "broken",
+    "spam",
     "other",
 ] as const;
 const REPORT_STATUSES = ["open", "resolved", "dismissed"] as const;
@@ -350,6 +351,14 @@ export const marketplaceRoute = new Elysia()
             name: data.name.trim(),
             slug,
         });
+        if (!category) {
+            set.status = 409;
+            return {
+                error: "Category already exists",
+                message:
+                    "A category with that name already exists under a different slug",
+            };
+        }
         set.status = 201;
         return category;
     })

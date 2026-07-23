@@ -216,19 +216,31 @@ export async function createThemeVersion(db: Database, themeId: string) {
         .get();
 }
 
-export function listThemeVersions(db: Database, themeId: string) {
-    return db
+export function listThemeVersions(
+    db: Database,
+    themeId: string,
+    { includeDrafts = false }: { includeDrafts?: boolean } = {},
+) {
+    const query = db
         .select()
         .from(themeVersions)
-        .where(eq(themeVersions.themeId, themeId))
-        .orderBy(desc(themeVersions.versionNumber))
-        .all();
+        .where(
+            includeDrafts
+                ? eq(themeVersions.themeId, themeId)
+                : and(
+                      eq(themeVersions.themeId, themeId),
+                      eq(themeVersions.isPublic, true),
+                  ),
+        )
+        .orderBy(desc(themeVersions.versionNumber));
+    return query.all();
 }
 
 export function getThemeVersion(
     db: Database,
     themeId: string,
     versionNumber: number,
+    { includeDrafts = false }: { includeDrafts?: boolean } = {},
 ) {
     return db
         .select()
@@ -237,6 +249,7 @@ export function getThemeVersion(
             and(
                 eq(themeVersions.themeId, themeId),
                 eq(themeVersions.versionNumber, versionNumber),
+                ...(includeDrafts ? [] : [eq(themeVersions.isPublic, true)]),
             ),
         )
         .get();
@@ -328,7 +341,11 @@ export function listThemeReviews(
         .all();
 }
 
-export function getUserReviewActivity(db: Database, userId: string) {
+export function getUserReviewActivity(
+    db: Database,
+    userId: string,
+    { includePrivateThemes = false }: { includePrivateThemes?: boolean } = {},
+) {
     return db
         .select({
             id: reviews.id,
@@ -344,7 +361,11 @@ export function getUserReviewActivity(db: Database, userId: string) {
         })
         .from(reviews)
         .innerJoin(themes, eq(reviews.themeId, themes.themeId))
-        .where(eq(reviews.userId, userId))
+        .where(
+            includePrivateThemes
+                ? eq(reviews.userId, userId)
+                : and(eq(reviews.userId, userId), eq(themes.isPublic, true)),
+        )
         .orderBy(desc(reviews.updatedAt))
         .all();
 }
@@ -437,7 +458,18 @@ export function isUserAdmin(db: Database, userId: string) {
         .from(users)
         .where(eq(users.id, userId))
         .get()
-        .then((user) => user?.isAdmin === true);
+        .then((user) => user?.isAdmin === true)
+        .catch((error) => {
+            const message =
+                error instanceof Error ? error.message : String(error);
+            if (/no such column/i.test(message) && /is_admin/i.test(message)) {
+                console.warn(
+                    "Users.is_admin is unavailable; treating the session as non-admin until the legacy D1 migration is applied.",
+                );
+                return false;
+            }
+            throw error;
+        });
 }
 
 export function setUserAdmin(db: Database, userId: string, isAdmin: boolean) {

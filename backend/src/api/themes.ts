@@ -16,6 +16,7 @@ import {
     isUserAdmin,
     listThemeReviews,
     listThemeVersions,
+    tagSlug,
     upsertThemeReview,
     deleteThemeReview,
 } from "../db/marketplace";
@@ -115,12 +116,24 @@ export const themeRoute = new Elysia({ prefix: "/themes" })
             }
         }
 
+        const tag =
+            typeof query.tag === "string" ? tagSlug(query.tag) : undefined;
+        const category =
+            typeof query.category === "string"
+                ? tagSlug(query.category)
+                : undefined;
+        if ((query.tag && !tag) || (query.category && !category)) {
+            set.status = 400;
+            return {
+                error: "Invalid discovery filter",
+                message: "tag and category must contain letters or numbers",
+            };
+        }
         const page = await searchThemesPage(db, {
             search: typeof query.q === "string" ? query.q.trim() : "",
             sort: sort as ThemeSort,
-            tag: typeof query.tag === "string" ? query.tag : undefined,
-            category:
-                typeof query.category === "string" ? query.category : undefined,
+            tag,
+            category,
             ...pagination,
         });
         return {
@@ -156,7 +169,9 @@ export const themeRoute = new Elysia({ prefix: "/themes" })
             set.status = 404;
             return { error: "Theme not found" };
         }
-        return listThemeVersions(db, params.id);
+        return listThemeVersions(db, params.id, {
+            includeDrafts: admin || theme.ownerId === userId,
+        });
     })
     .get("/:id/versions/:version", async ({ params, userId, db, set }) => {
         const idValidation = validateUuid(params.id, "theme ID");
@@ -174,7 +189,9 @@ export const themeRoute = new Elysia({ prefix: "/themes" })
             set.status = 404;
             return { error: "Theme not found" };
         }
-        const snapshot = await getThemeVersion(db, params.id, version);
+        const snapshot = await getThemeVersion(db, params.id, version, {
+            includeDrafts: admin || theme.ownerId === userId,
+        });
         if (!snapshot) {
             set.status = 404;
             return { error: "Version not found" };

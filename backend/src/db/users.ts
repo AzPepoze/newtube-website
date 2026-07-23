@@ -8,7 +8,6 @@ export function getUserById(db: Database, id: string) {
             id: users.id,
             name: users.name,
             avatarUrl: users.avatarUrl,
-            isAdmin: users.isAdmin,
             createdAt: users.createdAt,
         })
         .from(users)
