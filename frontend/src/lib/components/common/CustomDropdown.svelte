@@ -20,6 +20,9 @@
         mode = "select", // "select" or "menu"
         trigger = null, // Custom trigger snippet
         onChange = undefined,
+        multiple = false,
+        selectedValues = $bindable<string[]>([]),
+        onValuesChange = undefined,
     } = $props<{
         options: Option[];
         value?: string;
@@ -27,14 +30,21 @@
         mode?: "select" | "menu";
         trigger?: Snippet<[toggle: () => void]>;
         onChange?: (value: string) => void;
+        multiple?: boolean;
+        selectedValues?: string[];
+        onValuesChange?: (values: string[]) => void;
     }>();
 
     let isOpen = $state(false);
     let container: HTMLElement;
 
     const selectedLabel = $derived(
-        options.find((opt: Option) => opt.value === value)?.label ||
-            placeholder,
+        multiple
+            ? selectedValues.length === 0
+                ? placeholder
+                : `${selectedValues.length} selected`
+            : options.find((opt: Option) => opt.value === value)?.label ||
+              placeholder,
     );
 
     function toggle() {
@@ -45,6 +55,13 @@
         if (option.onClick) {
             option.onClick();
         } else if (option.value !== undefined) {
+            if (multiple) {
+                selectedValues = selectedValues.includes(option.value)
+                    ? selectedValues.filter((item) => item !== option.value)
+                    : [...selectedValues, option.value];
+                onValuesChange?.(selectedValues);
+                return;
+            }
             value = option.value;
             onChange?.(option.value);
         }
@@ -84,6 +101,7 @@
             class="dropdown-menu glass-panel"
             transition:slide={{ duration: 250 }}
             role="listbox"
+            aria-multiselectable={multiple || undefined}
         >
             {#each options as option, i}
                 <div
@@ -99,9 +117,11 @@
                         <a
                             href={option.href}
                             class="dropdown-item {option.class || ''}"
-                            class:active={mode === "select" &&
-                                value !== undefined &&
-                                value === option.value}
+                            class:active={multiple
+                                ? selectedValues.includes(option.value ?? "")
+                                : mode === "select" &&
+                                  value !== undefined &&
+                                  value === option.value}
                             style={option.color ? `color: ${option.color}` : ""}
                             onclick={() => select(option)}
                         >
@@ -123,15 +143,19 @@
                         <button
                             type="button"
                             class="dropdown-item {option.class || ''}"
-                            class:active={mode === "select" &&
-                                value !== undefined &&
-                                value === option.value}
+                            class:active={multiple
+                                ? selectedValues.includes(option.value ?? "")
+                                : mode === "select" &&
+                                  value !== undefined &&
+                                  value === option.value}
                             style={option.color ? `color: ${option.color}` : ""}
                             onclick={() => select(option)}
                             role="option"
-                            aria-selected={mode === "select" &&
-                                value !== undefined &&
-                                value === option.value}
+                            aria-selected={multiple
+                                ? selectedValues.includes(option.value ?? "")
+                                : mode === "select" &&
+                                  value !== undefined &&
+                                  value === option.value}
                         >
                             <div
                                 class="item-content"
@@ -153,7 +177,19 @@
                                 {/if}
                                 <span class="text">{option.label}</span>
                             </div>
-                            {#if mode === "select" && value === option.value}
+                            {#if multiple}
+                                <span
+                                    class="checkbox"
+                                    class:checked={selectedValues.includes(
+                                        option.value ?? "",
+                                    )}
+                                    aria-hidden="true"
+                                >
+                                    {#if selectedValues.includes(option.value ?? "")}
+                                        <MaterialIcon name="check" size={14} />
+                                    {/if}
+                                </span>
+                            {:else if mode === "select" && value === option.value}
                                 <span class="check" in:fade>✓</span>
                             {/if}
                         </button>
@@ -215,9 +251,11 @@
         right: 0;
         min-width: 220px;
         width: max-content;
+        max-width: min(320px, calc(100vw - 2rem));
+        max-height: min(360px, calc(100vh - 8rem));
         z-index: 1000;
         padding: 0.5rem;
-        overflow: hidden;
+        overflow: auto;
         border: 1px solid var(--border-glass);
         box-shadow: var(--shadow-glow);
 
@@ -277,6 +315,23 @@
 
         .check {
             font-size: 0.8rem;
+        }
+
+        .checkbox {
+            width: 1.15rem;
+            height: 1.15rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            border: 1px solid var(--border-glass);
+            border-radius: 4px;
+            color: var(--bg-dark);
+
+            &.checked {
+                background: var(--text-primary);
+                border-color: var(--text-primary);
+            }
         }
     }
 </style>

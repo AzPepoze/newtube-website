@@ -13,8 +13,8 @@
     let themes = $state<Theme[]>([]);
     let searchQuery = $state("");
     let sortBy = $state("popular");
-    let selectedTag = $state("");
-    let selectedCategory = $state("");
+    let selectedTags = $state<string[]>([]);
+    let selectedCategories = $state<string[]>([]);
     let offset = $state(0);
     let total = $state(0);
     let pageLimit = $state(PAGE_SIZE);
@@ -34,29 +34,47 @@
 
     import { PUBLIC_API_URL } from "$lib/constants/index";
 
-    const availableTags = $derived(
+    function slugify(value: string) {
+        return value
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+    }
+
+    const tagOptions = $derived(
         (taxonomyTags.length
-            ? taxonomyTags.map((tag) => tag.name)
-            : [...new Set(themes.flatMap((theme) => theme.tags ?? []))]
-        ).sort((a, b) =>
-            a.localeCompare(b),
-        ),
+            ? taxonomyTags
+            : [...new Set(themes.flatMap((theme) => theme.tags ?? []))].map(
+                  (name) => ({ name, slug: slugify(name) }),
+              )
+        )
+            .map(({ name, slug }) => ({ label: name, value: slug }))
+            .sort((a, b) => a.label.localeCompare(b.label)),
     );
-    const availableCategories = $derived(
+    const categoryOptions = $derived(
         (taxonomyCategories.length
-            ? taxonomyCategories.map((category) => category.name)
+            ? taxonomyCategories
             : [
-            ...new Set(
-                themes
-                    .map((theme) => theme.category)
-                    .filter((category): category is string => Boolean(category)),
-            ),
-        ]).sort((a, b) => a.localeCompare(b)),
+                  ...new Set(
+                      themes
+                          .map((theme) => theme.category)
+                          .filter(
+                              (category): category is string =>
+                                  Boolean(category),
+                          ),
+                  ),
+              ].map((name) => ({ name, slug: slugify(name) }))
+        )
+            .map(({ name, slug }) => ({ label: name, value: slug }))
+            .sort((a, b) => a.label.localeCompare(b.label)),
     );
     const currentPage = $derived(Math.floor(offset / pageLimit) + 1);
     const totalPages = $derived(Math.max(1, Math.ceil(total / pageLimit)));
     const hasActiveFilters = $derived(
-        Boolean(searchQuery || selectedTag || selectedCategory),
+        Boolean(
+            searchQuery || selectedTags.length || selectedCategories.length,
+        ),
     );
     const pageNumbers = $derived.by(() => {
         const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
@@ -69,26 +87,38 @@
         return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
     }
 
+    function parseFilterValues(value: string | null) {
+        return value
+            ? [...new Set(value.split(",").map(slugify).filter(Boolean))]
+            : [];
+    }
+
     function syncStateFromUrl(params: URLSearchParams) {
         searchQuery = params.get("q") ?? "";
         sortBy = sortOptions.some((option) => option.value === params.get("sort"))
             ? (params.get("sort") ?? "popular")
             : "popular";
-        selectedTag = params.get("tag") ?? "";
-        selectedCategory = params.get("category") ?? "";
+        selectedTags = parseFilterValues(params.get("tag"));
+        selectedCategories = parseFilterValues(params.get("category"));
         offset = asOffset(params.get("offset"));
     }
 
     function stateSignature() {
-        return [searchQuery, sortBy, selectedTag, selectedCategory, offset].join("\u0000");
+        return [
+            searchQuery,
+            sortBy,
+            selectedTags.join(","),
+            selectedCategories.join(","),
+            offset,
+        ].join("\u0000");
     }
 
     function urlSignature(params: URLSearchParams) {
         return [
             params.get("q") ?? "",
             params.get("sort") ?? "popular",
-            params.get("tag") ?? "",
-            params.get("category") ?? "",
+            parseFilterValues(params.get("tag")).join(","),
+            parseFilterValues(params.get("category")).join(","),
             asOffset(params.get("offset")),
         ].join("\u0000");
     }
@@ -97,21 +127,13 @@
         const params = new URLSearchParams();
         if (searchQuery.trim()) params.set("q", searchQuery.trim());
         if (sortBy !== "popular") params.set("sort", sortBy);
-        if (selectedTag.trim()) params.set("tag", filterSlug(selectedTag, taxonomyTags));
-        if (selectedCategory.trim()) {
-            params.set("category", filterSlug(selectedCategory, taxonomyCategories));
+        if (selectedTags.length) params.set("tag", selectedTags.join(","));
+        if (selectedCategories.length) {
+            params.set("category", selectedCategories.join(","));
         }
         params.set("limit", String(PAGE_SIZE));
         if (offset > 0) params.set("offset", String(offset));
         return params;
-    }
-
-    function filterSlug(value: string, options: Array<{ name: string; slug: string }>) {
-        const normalized = value.trim().toLowerCase();
-        const match = options.find(
-            (option) => option.name.toLowerCase() === normalized || option.slug === normalized,
-        );
-        return match?.slug || normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     }
 
     async function loadTaxonomy() {
@@ -137,11 +159,13 @@
     }
 
     function matchesLegacyFilters(theme: Theme) {
-        const tag = selectedTag.trim().toLowerCase();
-        const category = selectedCategory.trim().toLowerCase();
+        const tags = new Set(selectedTags);
+        const categories = new Set(selectedCategories);
         return (
-            (!tag || (theme.tags ?? []).some((value) => value.toLowerCase() === tag)) &&
-            (!category || theme.category?.toLowerCase() === category)
+            (!tags.size ||
+                (theme.tags ?? []).some((value) => tags.has(slugify(value)))) &&
+            (!categories.size ||
+                (theme.category && categories.has(slugify(theme.category))))
         );
     }
 
@@ -224,6 +248,10 @@
 
     const debouncedFilterChange = debounce(applyFilters, 500);
 
+    function queueFilterChange() {
+        debouncedFilterChange();
+    }
+
     $effect(() => {
         const params = page.url.searchParams;
         if (initialized && urlSignature(params) !== stateSignature()) {
@@ -242,8 +270,8 @@
 
     function clearFilters() {
         searchQuery = "";
-        selectedTag = "";
-        selectedCategory = "";
+        selectedTags = [];
+        selectedCategories = [];
         applyFilters();
     }
 
@@ -267,7 +295,7 @@
                     placeholder="Search themes..."
                     bind:value={searchQuery}
                     onkeydown={(e) => e.key === "Enter" && applyFilters()}
-                    oninput={debouncedFilterChange}
+                    oninput={queueFilterChange}
                 />
                 {#if searchQuery}
                     <button
@@ -279,38 +307,24 @@
                 {/if}
             </div>
 
-            <div class="filter-input glass-panel">
-                <MaterialIcon name="sell" size={18} />
-                <input
-                    list="theme-tags"
-                    placeholder="Filter by tag"
-                    aria-label="Filter themes by tag"
-                    bind:value={selectedTag}
-                    oninput={debouncedFilterChange}
-                    onkeydown={(e) => e.key === "Enter" && applyFilters()}
+            <div class="filter-dropdown">
+                <CustomDropdown
+                    options={tagOptions}
+                    multiple={true}
+                    bind:selectedValues={selectedTags}
+                    placeholder="All tags"
+                    onValuesChange={queueFilterChange}
                 />
-                <datalist id="theme-tags">
-                    {#each availableTags as tag}
-                        <option value={tag}></option>
-                    {/each}
-                </datalist>
             </div>
 
-            <div class="filter-input glass-panel">
-                <MaterialIcon name="category" size={18} />
-                <input
-                    list="theme-categories"
-                    placeholder="Filter by category"
-                    aria-label="Filter themes by category"
-                    bind:value={selectedCategory}
-                    oninput={debouncedFilterChange}
-                    onkeydown={(e) => e.key === "Enter" && applyFilters()}
+            <div class="filter-dropdown">
+                <CustomDropdown
+                    options={categoryOptions}
+                    multiple={true}
+                    bind:selectedValues={selectedCategories}
+                    placeholder="All categories"
+                    onValuesChange={queueFilterChange}
                 />
-                <datalist id="theme-categories">
-                    {#each availableCategories as category}
-                        <option value={category}></option>
-                    {/each}
-                </datalist>
             </div>
         </div>
 
@@ -424,27 +438,17 @@
                 gap: 1rem;
             }
 
-            .filter-input {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                padding: 0.75rem 1rem;
-                min-width: 10.5rem;
-                color: var(--text-secondary);
+            .filter-dropdown {
+                width: min(100%, 14rem);
 
-                input {
+                :global(.dropdown-container),
+                :global(.dropdown-trigger) {
                     width: 100%;
-                    min-width: 0;
-                    border: 0;
-                    outline: 0;
-                    background: transparent;
-                    color: var(--text-primary);
-                    font: inherit;
-                    font-size: 0.9rem;
+                }
 
-                    &::placeholder {
-                        color: var(--text-muted);
-                    }
+                :global(.dropdown-trigger) {
+                    min-height: 2.8rem;
+                    border-radius: var(--radius-lg);
                 }
             }
         }
@@ -455,7 +459,7 @@
             gap: 0.75rem;
             padding: 0.8rem 1.5rem;
             background: rgba(var(--text-primary-rgb), 0.05);
-            border-radius: var(--radius-md);
+            border-radius: var(--radius-lg);
             flex: 1;
             min-width: 0;
             width: 100%;
@@ -519,6 +523,14 @@
         gap: 1rem;
         color: var(--text-secondary);
         font-size: 1.1rem;
+
+        :global(.dropdown-container) {
+            width: 13rem;
+        }
+
+        :global(.dropdown-trigger) {
+            border-radius: var(--radius-lg);
+        }
     }
 
     .theme-grid {
@@ -579,6 +591,47 @@
                 cursor: not-allowed;
                 opacity: 0.4;
             }
+        }
+    }
+
+    @media (max-width: 768px) {
+        .discover-container {
+            padding-top: 1rem;
+        }
+
+        .discover-controls {
+            gap: 1rem;
+            margin-bottom: 2rem;
+
+            .controls-left {
+                width: 100%;
+
+                .filter-dropdown {
+                    width: 100%;
+                }
+            }
+
+            .search-wrapper {
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        .sort-wrapper {
+            width: 100%;
+            justify-content: space-between;
+
+            :global(.dropdown-container) {
+                width: min(70%, 16rem);
+            }
+        }
+
+        .theme-grid {
+            gap: 1rem;
+        }
+
+        .pagination {
+            gap: 0.25rem;
+            flex-wrap: wrap;
         }
     }
 

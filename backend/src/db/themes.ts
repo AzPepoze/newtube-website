@@ -1,4 +1,4 @@
-import { and, countDistinct, eq, like, or, sql } from "drizzle-orm";
+import { and, countDistinct, eq, inArray, like, or, sql } from "drizzle-orm";
 import { deleteImageFromR2, uploadImageToR2 } from "../api/images";
 import type { Database } from "./index";
 import { applyThemeClassification, createThemeVersion } from "./marketplace";
@@ -50,15 +50,15 @@ export async function searchThemesPage(
     {
         search = "",
         sort = "popular",
-        tag,
-        category,
+        tags: selectedTags,
+        categories: selectedCategories,
         limit = 24,
         offset = 0,
     }: {
         search?: string;
         sort?: ThemeSort;
-        tag?: string;
-        category?: string;
+        tags?: string[];
+        categories?: string[];
         limit?: number;
         offset?: number;
     } = {},
@@ -84,8 +84,12 @@ export async function searchThemesPage(
         .leftJoin(themeCategories, eq(themeCategories.themeId, themes.themeId))
         .leftJoin(categories, eq(themeCategories.categoryId, categories.id));
 
-    if (tag) conditions.push(eq(tags.slug, tag));
-    if (category) conditions.push(eq(categories.slug, category));
+    if (selectedTags?.length) {
+        conditions.push(inArray(tags.slug, selectedTags));
+    }
+    if (selectedCategories?.length) {
+        conditions.push(inArray(categories.slug, selectedCategories));
+    }
 
     const where = and(...conditions);
     const [rows, total] = await Promise.all([

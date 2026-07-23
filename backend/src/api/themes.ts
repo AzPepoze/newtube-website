@@ -43,6 +43,35 @@ function invalidMessage(result: { valid: boolean; message?: string }) {
     return result.message ?? "Invalid request";
 }
 
+function parseDiscoverySlugs(value: unknown, label: string) {
+    if (value === undefined || value === "") {
+        return { valid: true as const, values: [] as string[] };
+    }
+    if (typeof value !== "string") {
+        return {
+            valid: false as const,
+            message: `${label} must be a comma-separated list`,
+        };
+    }
+
+    const rawValues = value.split(",").map((item) => item.trim());
+    if (rawValues.length > 10 || rawValues.some((item) => item.length > 64)) {
+        return {
+            valid: false as const,
+            message: `${label} accepts at most 10 values of 64 characters`,
+        };
+    }
+
+    const values = [...new Set(rawValues.map(tagSlug).filter(Boolean))];
+    if (values.length !== rawValues.length) {
+        return {
+            valid: false as const,
+            message: `${label} values must contain letters or numbers`,
+        };
+    }
+    return { valid: true as const, values };
+}
+
 async function enrichTheme(db: any, theme: any) {
     const [classification, rating] = await Promise.all([
         getThemeClassification(db, theme.themeId),
@@ -102,38 +131,31 @@ export const themeRoute = new Elysia({ prefix: "/themes" })
             set.status = 400;
             return { error: "Invalid sort", message: sortValidation.message };
         }
-        for (const [key, value] of [
-            ["q", query.q],
-            ["tag", query.tag],
-            ["category", query.category],
-        ] as const) {
-            const result = validateText(value, key, {
-                max: key === "q" ? 120 : 64,
-            });
-            if (!result.valid) {
-                set.status = 400;
-                return { error: `Invalid ${key}`, message: result.message };
-            }
+        const searchValidation = validateText(query.q, "q", { max: 120 });
+        if (!searchValidation.valid) {
+            set.status = 400;
+            return { error: "Invalid q", message: searchValidation.message };
         }
 
-        const tag =
-            typeof query.tag === "string" ? tagSlug(query.tag) : undefined;
-        const category =
-            typeof query.category === "string"
-                ? tagSlug(query.category)
-                : undefined;
-        if ((query.tag && !tag) || (query.category && !category)) {
+        const tagFilters = parseDiscoverySlugs(query.tag, "tag");
+        const categoryFilters = parseDiscoverySlugs(
+            query.category,
+            "category",
+        );
+        if (!tagFilters.valid || !categoryFilters.valid) {
             set.status = 400;
             return {
                 error: "Invalid discovery filter",
-                message: "tag and category must contain letters or numbers",
+                message: !tagFilters.valid
+                    ? tagFilters.message
+                    : categoryFilters.message,
             };
         }
         const page = await searchThemesPage(db, {
             search: typeof query.q === "string" ? query.q.trim() : "",
             sort: sort as ThemeSort,
-            tag,
-            category,
+            tags: tagFilters.values,
+            categories: categoryFilters.values,
             ...pagination,
         });
         return {
