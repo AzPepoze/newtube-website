@@ -1,12 +1,8 @@
 export {
     applyThemeClassification,
-    ensureCategoryById,
     findThemeTagsByNames,
-    getCategoryById,
     getThemeClassification,
-    listCategories,
     listTags,
-    setThemeCategory,
     setThemeTagNames,
     syncThemeTagsAndCategories,
 } from "./marketplace/theme-classification";

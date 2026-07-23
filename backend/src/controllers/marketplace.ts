@@ -1,6 +1,6 @@
 import type { Database } from "../db";
 import type { ResponseStatus } from "../types/http";
-import { listThemeCategories, listThemeTags } from "../services/marketplace";
+import { listThemeTags } from "../services/marketplace";
 
 export type MarketplaceControllerContext = {
     db: Database;
@@ -13,6 +13,4 @@ export type MarketplaceControllerContext = {
 
 export const marketplaceController = {
     listTags: ({ db }: MarketplaceControllerContext) => listThemeTags(db),
-    listCategories: ({ db }: MarketplaceControllerContext) =>
-        listThemeCategories(db),
 };

@@ -8,6 +8,13 @@
             "when": 1784829776551,
             "tag": "0000_early_avengers",
             "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "6",
+            "when": 1784839791980,
+            "tag": "0001_zippy_micromax",
+            "breakpoints": true
         }
     ]
 }

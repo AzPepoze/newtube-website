@@ -1,6 +1,6 @@
 import { and, countDistinct, eq, inArray, like, or, sql } from "drizzle-orm";
 import type { Database } from "./index";
-import { categories, tags, themeCategories, themeTags, themes } from "./schema";
+import { tags, themeTags, themes } from "./schema";
 
 export type ThemeSort = "popular" | "newest" | "alpha";
 
@@ -58,14 +58,12 @@ export async function searchThemesPage(
         search = "",
         sort = "popular",
         tags: selectedTags,
-        categories: selectedCategories,
         limit = 24,
         offset = 0,
     }: {
         search?: string;
         sort?: ThemeSort;
         tags?: string[];
-        categories?: string[];
         limit?: number;
         offset?: number;
     } = {},
@@ -80,22 +78,15 @@ export async function searchThemesPage(
         .select({ theme: themes })
         .from(themes)
         .leftJoin(themeTags, eq(themeTags.themeId, themes.themeId))
-        .leftJoin(tags, eq(themeTags.tagId, tags.id))
-        .leftJoin(themeCategories, eq(themeCategories.themeId, themes.themeId))
-        .leftJoin(categories, eq(themeCategories.categoryId, categories.id));
+        .leftJoin(tags, eq(themeTags.tagId, tags.id));
     const countFrom = db
         .select({ total: countDistinct(themes.themeId) })
         .from(themes)
         .leftJoin(themeTags, eq(themeTags.themeId, themes.themeId))
-        .leftJoin(tags, eq(themeTags.tagId, tags.id))
-        .leftJoin(themeCategories, eq(themeCategories.themeId, themes.themeId))
-        .leftJoin(categories, eq(themeCategories.categoryId, categories.id));
+        .leftJoin(tags, eq(themeTags.tagId, tags.id));
 
     if (selectedTags?.length) {
         conditions.push(inArray(tags.slug, selectedTags));
-    }
-    if (selectedCategories?.length) {
-        conditions.push(inArray(categories.slug, selectedCategories));
     }
 
     const where = and(...conditions);

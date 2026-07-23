@@ -7,6 +7,5 @@ import { marketplaceReportsRoute } from "./marketplace/reports";
 export const marketplaceRoute = new Elysia()
     .use(contextPlugin)
     .get("/tags", marketplaceController.listTags)
-    .get("/categories", marketplaceController.listCategories)
     .use(marketplaceReportsRoute)
     .use(marketplaceAdminRoute);

@@ -6,6 +6,7 @@
     interface Option {
         value?: string;
         label: string;
+        group?: string;
         icon?: any;
         href?: string;
         onClick?: () => void;
@@ -46,6 +47,20 @@
             : options.find((opt: Option) => opt.value === value)?.label ||
                   placeholder,
     );
+
+    const groupedOptions = $derived.by(() => {
+        const groups: Record<string, Option[]> = {};
+        for (const opt of options) {
+            const grp = opt.group || "";
+            if (!groups[grp]) {
+                groups[grp] = [];
+            }
+            groups[grp].push(opt);
+        }
+        return groups;
+    });
+
+    const hasGroups = $derived(options.some((opt: Option) => Boolean(opt.group)));
 
     function toggle() {
         isOpen = !isOpen;
@@ -105,65 +120,127 @@
             role="listbox"
             aria-multiselectable={multiple || undefined}
         >
-            {#each options as option, i}
-                <div
-                    in:fly={{
-                        x: -15,
-                        duration: 300,
-                        delay: i * 50,
-                        opacity: 0,
-                    }}
-                    class="option-row"
-                >
-                    {#if option.href}
-                        <a
-                            href={option.href}
-                            class="dropdown-item {option.class || ''}"
-                            class:active={multiple
-                                ? selectedValues.includes(option.value ?? "")
-                                : mode === "select" &&
-                                  value !== undefined &&
-                                  value === option.value}
-                            style={option.color ? `color: ${option.color}` : ""}
-                            onclick={() => select(option)}
+            {#if hasGroups}
+                {#each Object.entries(groupedOptions) as [groupName, groupOpts]}
+                    {#if groupName}
+                        <div class="dropdown-group-header">{groupName}</div>
+                    {/if}
+                    {#each groupOpts as option, i}
+                        <div
+                            in:fly={{
+                                x: -15,
+                                duration: 300,
+                                delay: i * 30,
+                                opacity: 0,
+                            }}
+                            class="option-row"
                         >
-                            {#if option.icon}
-                                <span class="icon">
-                                    {#if typeof option.icon === "string"}
-                                        <MaterialIcon
-                                            name={option.icon}
-                                            size={18}
-                                        />
-                                    {:else}
-                                        <option.icon size={18} />
+                            {#if option.href}
+                                <a
+                                    href={option.href}
+                                    class="dropdown-item {option.class || ''}"
+                                    class:active={multiple
+                                        ? selectedValues.includes(option.value ?? "")
+                                        : mode === "select" &&
+                                          value !== undefined &&
+                                          value === option.value}
+                                    style={option.color ? `color: ${option.color}` : ""}
+                                    onclick={() => select(option)}
+                                >
+                                    {#if option.icon}
+                                        <span class="icon">
+                                            {#if typeof option.icon === "string"}
+                                                <MaterialIcon
+                                                    name={option.icon}
+                                                    size={18}
+                                                />
+                                            {:else}
+                                                <option.icon size={18} />
+                                            {/if}
+                                        </span>
                                     {/if}
-                                </span>
+                                    <span class="text">{option.label}</span>
+                                </a>
+                            {:else}
+                                <button
+                                    type="button"
+                                    class="dropdown-item {option.class || ''}"
+                                    class:active={multiple
+                                        ? selectedValues.includes(option.value ?? "")
+                                        : mode === "select" &&
+                                          value !== undefined &&
+                                          value === option.value}
+                                    style={option.color ? `color: ${option.color}` : ""}
+                                    onclick={() => select(option)}
+                                    role="option"
+                                    aria-selected={multiple
+                                        ? selectedValues.includes(option.value ?? "")
+                                        : mode === "select" &&
+                                          value !== undefined &&
+                                          value === option.value}
+                                >
+                                    <div
+                                        class="item-content"
+                                        style={option.color
+                                            ? `color: ${option.color}`
+                                            : ""}
+                                    >
+                                        {#if option.icon}
+                                            <span class="icon">
+                                                {#if typeof option.icon === "string"}
+                                                    <MaterialIcon
+                                                        name={option.icon}
+                                                        size={18}
+                                                    />
+                                                {:else}
+                                                    <option.icon size={18} />
+                                                {/if}
+                                            </span>
+                                        {/if}
+                                        <span class="text">{option.label}</span>
+                                    </div>
+                                    {#if multiple}
+                                        <span
+                                            class="checkbox"
+                                            class:checked={selectedValues.includes(
+                                                option.value ?? "",
+                                            )}
+                                            aria-hidden="true"
+                                        >
+                                            {#if selectedValues.includes(option.value ?? "")}
+                                                <MaterialIcon name="check" size={14} />
+                                            {/if}
+                                        </span>
+                                    {:else if mode === "select" && value === option.value}
+                                        <span class="check" in:fade>✓</span>
+                                    {/if}
+                                </button>
                             {/if}
-                            <span class="text">{option.label}</span>
-                        </a>
-                    {:else}
-                        <button
-                            type="button"
-                            class="dropdown-item {option.class || ''}"
-                            class:active={multiple
-                                ? selectedValues.includes(option.value ?? "")
-                                : mode === "select" &&
-                                  value !== undefined &&
-                                  value === option.value}
-                            style={option.color ? `color: ${option.color}` : ""}
-                            onclick={() => select(option)}
-                            role="option"
-                            aria-selected={multiple
-                                ? selectedValues.includes(option.value ?? "")
-                                : mode === "select" &&
-                                  value !== undefined &&
-                                  value === option.value}
-                        >
-                            <div
-                                class="item-content"
-                                style={option.color
-                                    ? `color: ${option.color}`
-                                    : ""}
+                        </div>
+                    {/each}
+                {/each}
+            {:else}
+                {#each options as option, i}
+                    <div
+                        in:fly={{
+                            x: -15,
+                            duration: 300,
+                            delay: i * 50,
+                            opacity: 0,
+                        }}
+                        class="option-row"
+                    >
+                        {#if option.href}
+                            <a
+                                href={option.href}
+                                class="dropdown-item {option.class || ''}"
+                                class:active={multiple
+                                    ? selectedValues.includes(option.value ?? "")
+                                    : mode === "select" &&
+                                      value !== undefined &&
+                                      value === option.value}
+                                style={option.color ? `color: ${option.color}` : ""}
+                                onclick={() => select(option)}
                             >
                                 {#if option.icon}
                                     <span class="icon">
@@ -178,26 +255,65 @@
                                     </span>
                                 {/if}
                                 <span class="text">{option.label}</span>
-                            </div>
-                            {#if multiple}
-                                <span
-                                    class="checkbox"
-                                    class:checked={selectedValues.includes(
-                                        option.value ?? "",
-                                    )}
-                                    aria-hidden="true"
+                            </a>
+                        {:else}
+                            <button
+                                type="button"
+                                class="dropdown-item {option.class || ''}"
+                                class:active={multiple
+                                    ? selectedValues.includes(option.value ?? "")
+                                    : mode === "select" &&
+                                      value !== undefined &&
+                                      value === option.value}
+                                style={option.color ? `color: ${option.color}` : ""}
+                                onclick={() => select(option)}
+                                role="option"
+                                aria-selected={multiple
+                                    ? selectedValues.includes(option.value ?? "")
+                                    : mode === "select" &&
+                                      value !== undefined &&
+                                      value === option.value}
+                            >
+                                <div
+                                    class="item-content"
+                                    style={option.color
+                                        ? `color: ${option.color}`
+                                        : ""}
                                 >
-                                    {#if selectedValues.includes(option.value ?? "")}
-                                        <MaterialIcon name="check" size={14} />
+                                    {#if option.icon}
+                                        <span class="icon">
+                                            {#if typeof option.icon === "string"}
+                                                <MaterialIcon
+                                                    name={option.icon}
+                                                    size={18}
+                                                />
+                                            {:else}
+                                                <option.icon size={18} />
+                                            {/if}
+                                        </span>
                                     {/if}
-                                </span>
-                            {:else if mode === "select" && value === option.value}
-                                <span class="check" in:fade>✓</span>
-                            {/if}
-                        </button>
-                    {/if}
-                </div>
-            {/each}
+                                    <span class="text">{option.label}</span>
+                                </div>
+                                {#if multiple}
+                                    <span
+                                        class="checkbox"
+                                        class:checked={selectedValues.includes(
+                                            option.value ?? "",
+                                        )}
+                                        aria-hidden="true"
+                                    >
+                                        {#if selectedValues.includes(option.value ?? "")}
+                                            <MaterialIcon name="check" size={14} />
+                                        {/if}
+                                    </span>
+                                {:else if mode === "select" && value === option.value}
+                                    <span class="check" in:fade>✓</span>
+                                {/if}
+                            </button>
+                        {/if}
+                    </div>
+                {/each}
+            {/if}
         </div>
     {/if}
 </div>
@@ -265,6 +381,21 @@
             background: #ffffff;
             border-color: rgba(0, 0, 0, 0.1);
             backdrop-filter: none;
+        }
+    }
+
+    .dropdown-group-header {
+        padding: 0.6rem 1rem 0.3rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+
+        &:not(:first-child) {
+            margin-top: 0.5rem;
+            border-top: 1px solid var(--border-glass);
+            padding-top: 0.75rem;
         }
     }
 

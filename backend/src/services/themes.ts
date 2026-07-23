@@ -20,7 +20,6 @@ import {
     listThemeVersions,
     upsertThemeReview,
     deleteThemeReview,
-    ensureCategoryById,
 } from "../db/marketplace";
 import type { Database } from "../db";
 import { deleteImageFromR2, uploadImageToR2 } from "./images";
@@ -34,7 +33,6 @@ export interface ThemeInput {
     pendingCoverImage?: { data: string; mimeType: string };
     settings?: unknown;
     tagNames?: string[];
-    categoryId?: string | null;
     isPublic?: boolean;
 }
 
@@ -46,7 +44,6 @@ async function enrichTheme(db: Database, theme: any) {
     return {
         ...theme,
         tags: classification.tags.map((tag) => tag.name),
-        category: classification.category?.name ?? null,
         rating:
             rating?.averageRating == null ? null : Number(rating.averageRating),
         ratingCount: Number(rating?.count ?? 0),
@@ -62,17 +59,12 @@ async function findThemeForViewer(
     return getThemeForViewer(db, themeId, { userId, isAdmin });
 }
 
-export function ensureThemeCategoryById(db: Database, categoryId: string) {
-    return ensureCategoryById(db, categoryId);
-}
-
 export async function listThemes(
     db: Database,
     options: {
         search: string;
         sort: ThemeSort;
         tags: string[];
-        categories: string[];
         limit: number;
         offset: number;
     },

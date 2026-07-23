@@ -8,7 +8,6 @@ export interface Theme {
     settings: any;
     downloads: number;
     /** Marketplace metadata is optional while older API deployments are active. */
-    category?: string | null;
     tags?: string[];
     rating?: number | null;
     ratingCount?: number;

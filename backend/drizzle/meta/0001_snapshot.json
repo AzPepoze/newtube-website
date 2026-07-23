@@ -1,0 +1,791 @@
+{
+    "version": "6",
+    "dialect": "sqlite",
+    "id": "2d0e4c84-4886-4d8d-a12e-8690f9968bbe",
+    "prevId": "fc9763e8-72b5-4cfc-95cc-37155e130d02",
+    "tables": {
+        "Reviews": {
+            "name": "Reviews",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "theme_id": {
+                    "name": "theme_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "user_id": {
+                    "name": "user_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "rating": {
+                    "name": "rating",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "body": {
+                    "name": "body",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            },
+            "indexes": {
+                "idx_reviews_theme": {
+                    "name": "idx_reviews_theme",
+                    "columns": ["theme_id", "\"created_at\" desc"],
+                    "isUnique": false
+                },
+                "idx_reviews_user": {
+                    "name": "idx_reviews_user",
+                    "columns": ["user_id", "\"created_at\" desc"],
+                    "isUnique": false
+                },
+                "reviews_theme_user_unique": {
+                    "name": "reviews_theme_user_unique",
+                    "columns": ["theme_id", "user_id"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "Reviews_theme_id_Themes_theme_id_fk": {
+                    "name": "Reviews_theme_id_Themes_theme_id_fk",
+                    "tableFrom": "Reviews",
+                    "tableTo": "Themes",
+                    "columnsFrom": ["theme_id"],
+                    "columnsTo": ["theme_id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "Reviews_user_id_Users_id_fk": {
+                    "name": "Reviews_user_id_Users_id_fk",
+                    "tableFrom": "Reviews",
+                    "tableTo": "Users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "reviews_rating_range": {
+                    "name": "reviews_rating_range",
+                    "value": "\"Reviews\".\"rating\" BETWEEN 1 AND 5"
+                }
+            }
+        },
+        "Sessions": {
+            "name": "Sessions",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "user_id": {
+                    "name": "user_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "expires_at": {
+                    "name": "expires_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            },
+            "indexes": {
+                "idx_sessions_user": {
+                    "name": "idx_sessions_user",
+                    "columns": ["user_id"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "Sessions_user_id_Users_id_fk": {
+                    "name": "Sessions_user_id_Users_id_fk",
+                    "tableFrom": "Sessions",
+                    "tableTo": "Users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "Tags": {
+            "name": "Tags",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "slug": {
+                    "name": "slug",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "group_name": {
+                    "name": "group_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'General'"
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            },
+            "indexes": {
+                "Tags_slug_unique": {
+                    "name": "Tags_slug_unique",
+                    "columns": ["slug"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "ThemeReports": {
+            "name": "ThemeReports",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "theme_id": {
+                    "name": "theme_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "reporter_id": {
+                    "name": "reporter_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "reason": {
+                    "name": "reason",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "details": {
+                    "name": "details",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "status": {
+                    "name": "status",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'open'"
+                },
+                "resolved_by": {
+                    "name": "resolved_by",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "resolved_at": {
+                    "name": "resolved_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            },
+            "indexes": {
+                "idx_theme_reports_reporter": {
+                    "name": "idx_theme_reports_reporter",
+                    "columns": ["reporter_id", "\"created_at\" desc"],
+                    "isUnique": false
+                },
+                "idx_theme_reports_moderation": {
+                    "name": "idx_theme_reports_moderation",
+                    "columns": ["status", "\"created_at\" desc"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "ThemeReports_theme_id_Themes_theme_id_fk": {
+                    "name": "ThemeReports_theme_id_Themes_theme_id_fk",
+                    "tableFrom": "ThemeReports",
+                    "tableTo": "Themes",
+                    "columnsFrom": ["theme_id"],
+                    "columnsTo": ["theme_id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "ThemeReports_reporter_id_Users_id_fk": {
+                    "name": "ThemeReports_reporter_id_Users_id_fk",
+                    "tableFrom": "ThemeReports",
+                    "tableTo": "Users",
+                    "columnsFrom": ["reporter_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "ThemeReports_resolved_by_Users_id_fk": {
+                    "name": "ThemeReports_resolved_by_Users_id_fk",
+                    "tableFrom": "ThemeReports",
+                    "tableTo": "Users",
+                    "columnsFrom": ["resolved_by"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "theme_reports_status": {
+                    "name": "theme_reports_status",
+                    "value": "\"ThemeReports\".\"status\" IN ('open', 'resolved', 'dismissed')"
+                }
+            }
+        },
+        "ThemeTags": {
+            "name": "ThemeTags",
+            "columns": {
+                "theme_id": {
+                    "name": "theme_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "tag_id": {
+                    "name": "tag_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            },
+            "indexes": {
+                "idx_theme_tags_tag": {
+                    "name": "idx_theme_tags_tag",
+                    "columns": ["tag_id"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "ThemeTags_theme_id_Themes_theme_id_fk": {
+                    "name": "ThemeTags_theme_id_Themes_theme_id_fk",
+                    "tableFrom": "ThemeTags",
+                    "tableTo": "Themes",
+                    "columnsFrom": ["theme_id"],
+                    "columnsTo": ["theme_id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "ThemeTags_tag_id_Tags_id_fk": {
+                    "name": "ThemeTags_tag_id_Tags_id_fk",
+                    "tableFrom": "ThemeTags",
+                    "tableTo": "Tags",
+                    "columnsFrom": ["tag_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "ThemeTags_theme_id_tag_id_pk": {
+                    "columns": ["theme_id", "tag_id"],
+                    "name": "ThemeTags_theme_id_tag_id_pk"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "ThemeVersions": {
+            "name": "ThemeVersions",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "theme_id": {
+                    "name": "theme_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "version_number": {
+                    "name": "version_number",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "theme_name": {
+                    "name": "theme_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "images": {
+                    "name": "images",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "cover_image": {
+                    "name": "cover_image",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "settings": {
+                    "name": "settings",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "is_public": {
+                    "name": "is_public",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "tags": {
+                    "name": "tags",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'[]'"
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            },
+            "indexes": {
+                "idx_theme_versions_theme": {
+                    "name": "idx_theme_versions_theme",
+                    "columns": ["theme_id", "\"version_number\" desc"],
+                    "isUnique": false
+                },
+                "theme_versions_theme_version_unique": {
+                    "name": "theme_versions_theme_version_unique",
+                    "columns": ["theme_id", "version_number"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "ThemeVersions_theme_id_Themes_theme_id_fk": {
+                    "name": "ThemeVersions_theme_id_Themes_theme_id_fk",
+                    "tableFrom": "ThemeVersions",
+                    "tableTo": "Themes",
+                    "columnsFrom": ["theme_id"],
+                    "columnsTo": ["theme_id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "Themes": {
+            "name": "Themes",
+            "columns": {
+                "theme_id": {
+                    "name": "theme_id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "owner_id": {
+                    "name": "owner_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "theme_name": {
+                    "name": "theme_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "images": {
+                    "name": "images",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "'[]'"
+                },
+                "cover_image": {
+                    "name": "cover_image",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "settings": {
+                    "name": "settings",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'{}'"
+                },
+                "is_public": {
+                    "name": "is_public",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": true
+                },
+                "downloads": {
+                    "name": "downloads",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            },
+            "indexes": {
+                "idx_themes_owner": {
+                    "name": "idx_themes_owner",
+                    "columns": ["owner_id"],
+                    "isUnique": false
+                },
+                "idx_themes_public": {
+                    "name": "idx_themes_public",
+                    "columns": ["is_public"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "Themes_owner_id_Users_id_fk": {
+                    "name": "Themes_owner_id_Users_id_fk",
+                    "tableFrom": "Themes",
+                    "tableTo": "Users",
+                    "columnsFrom": ["owner_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "Uploads": {
+            "name": "Uploads",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "user_id": {
+                    "name": "user_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "url": {
+                    "name": "url",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            },
+            "indexes": {
+                "idx_uploads_user": {
+                    "name": "idx_uploads_user",
+                    "columns": ["user_id"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "Uploads_user_id_Users_id_fk": {
+                    "name": "Uploads_user_id_Users_id_fk",
+                    "tableFrom": "Uploads",
+                    "tableTo": "Users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "Users": {
+            "name": "Users",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "email": {
+                    "name": "email",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "avatar_url": {
+                    "name": "avatar_url",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "is_admin": {
+                    "name": "is_admin",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            },
+            "indexes": {
+                "Users_email_unique": {
+                    "name": "Users_email_unique",
+                    "columns": ["email"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        }
+    },
+    "views": {},
+    "enums": {},
+    "_meta": {
+        "schemas": {},
+        "tables": {},
+        "columns": {}
+    },
+    "internal": {
+        "indexes": {
+            "idx_reviews_theme": {
+                "columns": {
+                    "\"created_at\" desc": {
+                        "isExpression": true
+                    }
+                }
+            },
+            "idx_reviews_user": {
+                "columns": {
+                    "\"created_at\" desc": {
+                        "isExpression": true
+                    }
+                }
+            },
+            "idx_theme_reports_reporter": {
+                "columns": {
+                    "\"created_at\" desc": {
+                        "isExpression": true
+                    }
+                }
+            },
+            "idx_theme_reports_moderation": {
+                "columns": {
+                    "\"created_at\" desc": {
+                        "isExpression": true
+                    }
+                }
+            },
+            "idx_theme_versions_theme": {
+                "columns": {
+                    "\"version_number\" desc": {
+                        "isExpression": true
+                    }
+                }
+            }
+        }
+    }
+}

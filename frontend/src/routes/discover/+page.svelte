@@ -14,7 +14,6 @@
     let searchQuery = $state("");
     let sortBy = $state("popular");
     let selectedTags = $state<string[]>([]);
-    let selectedCategories = $state<string[]>([]);
     let offset = $state(0);
     let total = $state(0);
     let pageLimit = $state(PAGE_SIZE);
@@ -25,8 +24,9 @@
     let controller: AbortController | null = null;
     let filterRequestVersion = 0;
     const localNavigationHrefs = new Set<string>();
-    let availableTags = $state<Array<{ name: string; slug: string }>>([]);
-    let availableCategories = $state<Array<{ name: string; slug: string }>>([]);
+    let availableTags = $state<
+        Array<{ name: string; slug: string; groupName?: string }>
+    >([]);
 
     const sortOptions = [
         { value: "popular", label: "Most Popular" },
@@ -48,34 +48,19 @@
         (availableTags.length
             ? availableTags
             : [...new Set(themes.flatMap((theme) => theme.tags ?? []))].map(
-                  (name) => ({ name, slug: slugify(name) }),
+                  (name) => ({ name, slug: slugify(name), groupName: "" }),
               )
-        )
-            .map(({ name, slug }) => ({ label: name, value: slug }))
-            .sort((a, b) => a.label.localeCompare(b.label)),
+        ).map(({ name, slug, groupName }) => ({
+            label: name,
+            value: slug,
+            group: groupName || "",
+        })),
     );
-    const categoryOptions = $derived(
-        (availableCategories.length
-            ? availableCategories
-            : [
-                  ...new Set(
-                      themes
-                          .map((theme) => theme.category)
-                          .filter((category): category is string =>
-                              Boolean(category),
-                          ),
-                  ),
-              ].map((name) => ({ name, slug: slugify(name) }))
-        )
-            .map(({ name, slug }) => ({ label: name, value: slug }))
-            .sort((a, b) => a.label.localeCompare(b.label)),
-    );
+
     const currentPage = $derived(Math.floor(offset / pageLimit) + 1);
     const totalPages = $derived(Math.max(1, Math.ceil(total / pageLimit)));
     const hasActiveFilters = $derived(
-        Boolean(
-            searchQuery || selectedTags.length || selectedCategories.length,
-        ),
+        Boolean(searchQuery || selectedTags.length),
     );
     const pageNumbers = $derived.by(() => {
         const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
@@ -105,7 +90,6 @@
             ? (params.get("sort") ?? "popular")
             : "popular";
         selectedTags = parseFilterValues(params.get("tag"));
-        selectedCategories = parseFilterValues(params.get("category"));
         offset = asOffset(params.get("offset"));
     }
 
@@ -114,9 +98,6 @@
         if (searchQuery.trim()) params.set("q", searchQuery.trim());
         if (sortBy !== "popular") params.set("sort", sortBy);
         if (selectedTags.length) params.set("tag", selectedTags.join(","));
-        if (selectedCategories.length) {
-            params.set("category", selectedCategories.join(","));
-        }
         params.set("limit", String(PAGE_SIZE));
         if (offset > 0) params.set("offset", String(offset));
         return params;
@@ -124,15 +105,10 @@
 
     async function loadTagsAndCategories() {
         try {
-            const [tagsResponse, categoriesResponse] = await Promise.all([
-                fetch(`${PUBLIC_API_URL}/tags`, { credentials: "include" }),
-                fetch(`${PUBLIC_API_URL}/categories`, {
-                    credentials: "include",
-                }),
-            ]);
+            const tagsResponse = await fetch(`${PUBLIC_API_URL}/tags`, {
+                credentials: "include",
+            });
             if (tagsResponse.ok) availableTags = await tagsResponse.json();
-            if (categoriesResponse.ok)
-                availableCategories = await categoriesResponse.json();
         } catch {
             // Existing theme metadata remains a useful fallback for older deployments.
         }
@@ -151,12 +127,9 @@
 
     function matchesLegacyFilters(theme: Theme) {
         const tags = new Set(selectedTags);
-        const categories = new Set(selectedCategories);
         return (
-            (!tags.size ||
-                (theme.tags ?? []).some((value) => tags.has(slugify(value)))) &&
-            (!categories.size ||
-                (theme.category && categories.has(slugify(theme.category))))
+            !tags.size ||
+            (theme.tags ?? []).some((value) => tags.has(slugify(value)))
         );
     }
 
@@ -290,7 +263,6 @@
     function clearFilters() {
         searchQuery = "";
         selectedTags = [];
-        selectedCategories = [];
         applyFilters();
     }
 
@@ -329,16 +301,6 @@
                     multiple={true}
                     bind:selectedValues={selectedTags}
                     placeholder="All tags"
-                    onValuesChange={queueFilterChange}
-                />
-            </div>
-
-            <div class="filter-dropdown">
-                <CustomDropdown
-                    options={categoryOptions}
-                    multiple={true}
-                    bind:selectedValues={selectedCategories}
-                    placeholder="All categories"
                     onValuesChange={queueFilterChange}
                 />
             </div>

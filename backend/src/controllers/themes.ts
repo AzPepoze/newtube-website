@@ -4,7 +4,6 @@ import {
     createThemeForOwner,
     createThemeReview,
     deleteThemeForOwner,
-    ensureThemeCategoryById,
     getTheme,
     getThemeReviews,
     getThemeVersion,
@@ -101,15 +100,6 @@ async function validateThemeInput(
     if (themeInput.tagNames !== undefined) {
         validations.push(validateTagNames(themeInput.tagNames));
     }
-    if (themeInput.categoryId !== undefined && themeInput.categoryId !== null) {
-        validations.push(
-            validateText(themeInput.categoryId, "categoryId", {
-                min: 1,
-                max: 64,
-                required: true,
-            }),
-        );
-    }
     const failed = validations.find((result) => !result.valid);
     if (failed && !failed.valid) return { message: failed.message };
 
@@ -123,13 +113,6 @@ async function validateThemeInput(
         }
     }
 
-    if (themeInput.categoryId) {
-        const category = await ensureThemeCategoryById(
-            db,
-            themeInput.categoryId,
-        );
-        if (!category) return { message: "Category not found" };
-    }
     return { input: themeInput };
 }
 
@@ -152,21 +135,17 @@ export const themeController = {
             return { error: "Invalid q", message: searchValidation.message };
         }
         const tagFilters = parseDiscoverySlugs(query.tag, "tag");
-        const categoryFilters = parseDiscoverySlugs(query.category, "category");
-        if (!tagFilters.valid || !categoryFilters.valid) {
+        if (!tagFilters.valid) {
             set.status = 400;
             return {
                 error: "Invalid discovery filter",
-                message: !tagFilters.valid
-                    ? tagFilters.message
-                    : categoryFilters.message,
+                message: tagFilters.message,
             };
         }
         return listThemes(db, {
             search: typeof query.q === "string" ? query.q.trim() : "",
             sort: sort as ThemeSort,
             tags: tagFilters.values,
-            categories: categoryFilters.values,
             ...pagination,
         });
     },

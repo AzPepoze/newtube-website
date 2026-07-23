@@ -1,13 +1,14 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import MarkdownEditor from "$lib/components/editor/MarkdownEditor.svelte";
     import FormField from "$lib/components/common/FormField.svelte";
-    import ImageDropZone from "$lib/components/editor/ImageDropZone.svelte";
-    import ImageUrlInput from "$lib/components/editor/ImageUrlInput.svelte";
-    import ImageGrid from "$lib/components/editor/ImageGrid.svelte";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
-    import { validateTitle, LIMITS } from "$lib/utils/validation";
+    import GroupedTagSelector from "$lib/components/editor/GroupedTagSelector.svelte";
+    import ImageDropZone from "$lib/components/editor/ImageDropZone.svelte";
+    import ImageGrid from "$lib/components/editor/ImageGrid.svelte";
+    import ImageUrlInput from "$lib/components/editor/ImageUrlInput.svelte";
+    import MarkdownEditor from "$lib/components/editor/MarkdownEditor.svelte";
     import { PUBLIC_API_URL } from "$lib/constants/index";
+    import { LIMITS, validateTitle } from "$lib/utils/validation";
+    import { onMount } from "svelte";
 
     let {
         themeName = $bindable(""),
@@ -18,7 +19,6 @@
         errorMessage = $bindable(""),
         coverImagePending = $bindable(null),
         tagNames = $bindable<string[]>([]),
-        categoryId = $bindable(""),
     }: {
         themeName: string;
         description: string;
@@ -28,19 +28,14 @@
         errorMessage: string;
         coverImagePending: File | null;
         tagNames: string[];
-        categoryId: string;
     } = $props();
 
     let titleError = $state("");
     let isNameDisabled = $state(false);
-    let tagInput = $state("");
     let availableTags = $state<
-        Array<{ id: string; name: string; slug: string }>
+        Array<{ id: string; name: string; slug: string; groupName: string }>
     >([]);
-    let categories = $state<Array<{ id: string; name: string; slug: string }>>(
-        [],
-    );
-    let tagsAndCategoriesError = $state("");
+    let tagsError = $state("");
 
     $effect(() => {
         const validation = validateTitle(themeName);
@@ -67,59 +62,14 @@
         }
     }
 
-    function normalizeTag(value: string) {
-        return value.trim().replace(/\s+/g, " ").toLowerCase();
-    }
-
-    function addTag() {
-        const tag = normalizeTag(tagInput);
-        if (!tag) return;
-        if (
-            !availableTags.some(
-                (availableTag) => normalizeTag(availableTag.name) === tag,
-            )
-        ) {
-            tagsAndCategoriesError = "Select a tag from the available tags.";
-            return;
-        }
-        if (tagNames.includes(tag)) {
-            tagInput = "";
-            return;
-        }
-        if (tagNames.length >= 10) {
-            tagsAndCategoriesError = "A theme can have at most 10 tags.";
-            return;
-        }
-        tagNames = [...tagNames, tag];
-        tagInput = "";
-        tagsAndCategoriesError = "";
-    }
-
-    function removeTag(tag: string) {
-        tagNames = tagNames.filter((value) => value !== tag);
-    }
-
     async function loadTagsAndCategories() {
         try {
-            const [tagsResponse, categoriesResponse] = await Promise.all([
-                fetch(`${PUBLIC_API_URL}/tags`, { credentials: "include" }),
-                fetch(`${PUBLIC_API_URL}/categories`, {
-                    credentials: "include",
-                }),
-            ]);
+            const tagsResponse = await fetch(`${PUBLIC_API_URL}/tags`, {
+                credentials: "include",
+            });
             if (tagsResponse.ok) availableTags = await tagsResponse.json();
-            if (categoriesResponse.ok) {
-                categories = await categoriesResponse.json();
-                const existing = categories.find(
-                    (category) =>
-                        category.name === categoryId ||
-                        category.slug === categoryId,
-                );
-                if (existing) categoryId = existing.id;
-            }
         } catch {
-            tagsAndCategoriesError =
-                "Tags and categories could not be loaded. Please try again.";
+            tagsError = "Tags could not be loaded. Please try again.";
         }
     }
 
@@ -157,49 +107,21 @@
         </div>
     </FormField>
 
-    <div class="tags-and-categories">
-        <div class="tags-and-categories-heading">
+    <div class="tags-section">
+        <div class="tags-heading">
             <label for="theme-tags">Tags</label><span>{tagNames.length}/10</span
             >
         </div>
-        <div class="tag-entry">
-            <select id="theme-tags" bind:value={tagInput}>
-                <option value="">Select a tag</option>
-                {#each availableTags as tag (tag.id)}<option
-                        value={tag.name}
-                        disabled={tagNames.includes(normalizeTag(tag.name))}
-                        >{tag.name}</option
-                    >{/each}
-            </select>
-            <button
-                type="button"
-                onclick={addTag}
-                disabled={!tagInput || tagNames.length >= 10}>Add</button
-            >
-        </div>
-        {#if tagNames.length}<div class="tag-list">
-                {#each tagNames as tag (tag)}<button
-                        type="button"
-                        class="tag"
-                        onclick={() => removeTag(tag)}
-                        >{tag}<span aria-hidden="true">×</span><span
-                            class="sr-only">Remove {tag}</span
-                        ></button
-                    >{/each}
-            </div>{/if}
-        <label class="category-label" for="theme-category">Category</label>
-        <select id="theme-category" bind:value={categoryId}>
-            <option value="">No category</option>
-            {#each categories as category (category.id)}<option
-                    value={category.id}>{category.name}</option
-                >{/each}
-        </select>
-        {#if tagsAndCategoriesError}<p
-                class="tags-and-categories-error"
-                role="status"
-            >
-                {tagsAndCategoriesError}
-            </p>{/if}
+        <GroupedTagSelector
+            {availableTags}
+            bind:selectedTags={tagNames}
+            bind:errorMessage={tagsError}
+        />
+        {#if tagsError}
+            <p class="tags-error" role="status">
+                {tagsError}
+            </p>
+        {/if}
     </div>
 </div>
 
@@ -325,80 +247,21 @@
         }
     }
 
-    .tags-and-categories {
+    .tags-section {
         display: grid;
         gap: 0.65rem;
         padding-top: 0.25rem;
     }
-    .tags-and-categories-heading {
+    .tags-heading {
         display: flex;
         justify-content: space-between;
         color: var(--text-secondary);
         font-size: 0.9rem;
+        margin-bottom: 0.5rem;
     }
-    .tag-entry {
-        display: flex;
-        gap: 0.6rem;
-    }
-    .tag-entry button,
-    .tag {
-        border: 1px solid var(--border-glass);
-        border-radius: var(--radius-sm);
-        background: rgba(var(--text-primary-rgb), 0.06);
-        color: var(--text-primary);
-        cursor: pointer;
-        font: inherit;
-        font-weight: 600;
-    }
-    .tag-entry button {
-        padding: 0 0.9rem;
-    }
-    .tag-entry button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-    .tag-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.45rem;
-    }
-    .tag {
-        padding: 0.35rem 0.55rem;
-        display: flex;
-        gap: 0.35rem;
-        align-items: center;
-    }
-    .tag span:first-child {
-        font-size: 1rem;
-        line-height: 1;
-    }
-    .category-label {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        margin-top: 0.25rem;
-    }
-    select {
-        background: rgba(var(--text-primary-rgb), 0.03);
-        border: 1px solid var(--border-glass);
-        padding: 0.8rem 1rem;
-        border-radius: var(--radius-md);
-        color: var(--text-primary);
-        font: inherit;
-    }
-    select option {
-        color: #111;
-    }
-    .tags-and-categories-error {
+    .tags-error {
         margin: 0;
         color: #ff9696;
         font-size: 0.85rem;
-    }
-    .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
     }
 </style>

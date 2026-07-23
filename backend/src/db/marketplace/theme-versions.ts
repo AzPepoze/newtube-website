@@ -1,11 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../index";
-import {
-    themes,
-    themeVersions,
-    type CategorySnapshot,
-    type TagSnapshot,
-} from "../schema";
+import { themes, themeVersions, type TagSnapshot } from "../schema";
 import { getThemeClassification } from "./theme-classification";
 
 export async function createThemeVersion(db: Database, themeId: string) {
@@ -40,7 +35,6 @@ export async function createThemeVersion(db: Database, themeId: string) {
         settings: theme.settings ?? {},
         isPublic: theme.isPublic ?? true,
         tags: classification.tags satisfies TagSnapshot[],
-        category: classification.category satisfies CategorySnapshot | null,
     });
 
     return db

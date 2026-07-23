@@ -138,14 +138,8 @@
                     {/if}
                 </span>
             </div>
-            {#if theme.category || visibleTags.length > 0}
-                <div class="metadata" aria-label="Theme category and tags">
-                    {#if theme.category}
-                        <span class="category-chip">
-                            <MaterialIcon name="category" size={13} />
-                            {theme.category}
-                        </span>
-                    {/if}
+            {#if visibleTags.length > 0}
+                <div class="metadata" aria-label="Theme tags">
                     {#each visibleTags as tag}
                         <span class="tag-chip">#{tag}</span>
                     {/each}
@@ -347,7 +341,6 @@
                 gap: 0.4rem;
                 min-height: 1.7rem;
 
-                .category-chip,
                 .tag-chip {
                     display: inline-flex;
                     align-items: center;
@@ -358,11 +351,6 @@
                     color: var(--text-secondary);
                     font-size: 0.75rem;
                     line-height: 1;
-                }
-
-                .category-chip {
-                    color: var(--primary-glow);
-                    background: rgba(var(--text-primary-rgb), 0.06);
                 }
             }
 

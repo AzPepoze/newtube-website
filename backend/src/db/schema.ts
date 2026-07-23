@@ -10,7 +10,6 @@ import {
 } from "drizzle-orm/sqlite-core";
 
 export type TagSnapshot = { id: string; slug: string; name: string };
-export type CategorySnapshot = { id: string; slug: string; name: string };
 
 export const users = sqliteTable("Users", {
     id: text("id").primaryKey(),
@@ -75,17 +74,11 @@ export const uploads = sqliteTable(
     (table) => [index("idx_uploads_user").on(table.userId)],
 );
 
-export const categories = sqliteTable("Categories", {
-    id: text("id").primaryKey(),
-    slug: text("slug").notNull().unique(),
-    name: text("name").notNull().unique(),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-});
-
 export const tags = sqliteTable("Tags", {
     id: text("id").primaryKey(),
     slug: text("slug").notNull().unique(),
     name: text("name").notNull(),
+    groupName: text("group_name").notNull().default("General"),
     createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -106,20 +99,6 @@ export const themeTags = sqliteTable(
     ],
 );
 
-export const themeCategories = sqliteTable(
-    "ThemeCategories",
-    {
-        themeId: text("theme_id")
-            .primaryKey()
-            .references(() => themes.themeId, { onDelete: "cascade" }),
-        categoryId: text("category_id")
-            .notNull()
-            .references(() => categories.id, { onDelete: "restrict" }),
-        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-    },
-    (table) => [index("idx_theme_categories_category").on(table.categoryId)],
-);
-
 export const themeVersions = sqliteTable(
     "ThemeVersions",
     {
@@ -134,13 +113,12 @@ export const themeVersions = sqliteTable(
         coverImage: text("cover_image"),
         settings: text("settings", { mode: "json" }).$type<unknown>().notNull(),
         isPublic: integer("is_public", { mode: "boolean" }).notNull(),
-        tags: text("tags", { mode: "json" })
+        tags: text("tags", {
+            mode: "json",
+        })
             .$type<TagSnapshot[]>()
             .notNull()
             .default(sql`'[]'`),
-        category: text("category", {
-            mode: "json",
-        }).$type<CategorySnapshot | null>(),
         createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
     },
     (table) => [
@@ -247,7 +225,6 @@ export const themesRelations = relations(themes, ({ one, many }) => ({
         references: [users.id],
     }),
     tagLinks: many(themeTags),
-    categoryLink: one(themeCategories),
     versions: many(themeVersions),
     reviews: many(reviews),
     reports: many(themeReports),
@@ -255,10 +232,6 @@ export const themesRelations = relations(themes, ({ one, many }) => ({
 
 export const tagsRelations = relations(tags, ({ many }) => ({
     themeLinks: many(themeTags),
-}));
-
-export const categoriesRelations = relations(categories, ({ many }) => ({
-    themeLinks: many(themeCategories),
 }));
 
 export const themeTagsRelations = relations(themeTags, ({ one }) => ({
@@ -271,20 +244,6 @@ export const themeTagsRelations = relations(themeTags, ({ one }) => ({
         references: [tags.id],
     }),
 }));
-
-export const themeCategoriesRelations = relations(
-    themeCategories,
-    ({ one }) => ({
-        theme: one(themes, {
-            fields: [themeCategories.themeId],
-            references: [themes.themeId],
-        }),
-        category: one(categories, {
-            fields: [themeCategories.categoryId],
-            references: [categories.id],
-        }),
-    }),
-);
 
 export const themeVersionsRelations = relations(themeVersions, ({ one }) => ({
     theme: one(themes, {

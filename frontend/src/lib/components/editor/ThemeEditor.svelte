@@ -30,7 +30,6 @@
     let pendingImages = $state<File[]>([]);
     let settingsCode = $state("");
     let tagNames = $state<string[]>([]);
-    let categoryId = $state("");
 
     let submitting = $state(false);
     let success = $state(false);
@@ -66,7 +65,6 @@
             coverImage = initialData.coverImage || "";
             settingsCode = JSON.stringify(initialData.settings ?? {}, null, 2);
             tagNames = (initialData as any).tags || [];
-            categoryId = (initialData as any).category || "";
         }
 
         // A browser backup is deliberately separate from the server draft. It
@@ -81,7 +79,6 @@
                 coverImage = draft.coverImage || "";
                 settingsCode = draft.settingsCode || "";
                 tagNames = draft.tagNames || [];
-                categoryId = draft.categoryId || "";
                 if (themeName || description || settingsCode) {
                     success = false;
                     infoMessage =
@@ -114,7 +111,6 @@
             coverImage,
             settingsCode,
             tagNames,
-            categoryId,
         };
         localStorage.setItem(draftKey, JSON.stringify(draft));
     });
@@ -209,7 +205,6 @@
                 settings: JSON.parse(settingsCode),
                 isPublic: publish,
                 tagNames,
-                categoryId: categoryId || null,
             };
 
             const method = isEdit ? "PUT" : "POST";
@@ -324,7 +319,6 @@
                         bind:pendingImages
                         bind:errorMessage
                         bind:tagNames
-                        bind:categoryId
                     />
                     <ThemeEditorSettings bind:settingsCode bind:jsonError />
                     <ThemeEditorPreview
