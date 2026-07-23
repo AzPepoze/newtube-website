@@ -11,6 +11,124 @@ export interface ValidationSuccess {
 
 export type ValidationResult = ValidationSuccess | ValidationError;
 
+const UUID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function validateUuid(value: unknown, label = "ID"): ValidationResult {
+    if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
+        return { valid: false, message: `${label} must be a valid ID` };
+    }
+    return { valid: true };
+}
+
+export function validateText(
+    value: unknown,
+    label: string,
+    {
+        min = 0,
+        max,
+        required = false,
+    }: { min?: number; max: number; required?: boolean },
+): ValidationResult {
+    if (value === undefined || value === null) {
+        return required
+            ? { valid: false, message: `${label} is required` }
+            : { valid: true };
+    }
+    if (typeof value !== "string") {
+        return { valid: false, message: `${label} must be text` };
+    }
+    const trimmed = value.trim();
+    if ((required && !trimmed) || trimmed.length < min) {
+        return { valid: false, message: `${label} is too short` };
+    }
+    if (trimmed.length > max) {
+        return { valid: false, message: `${label} exceeds ${max} characters` };
+    }
+    return { valid: true };
+}
+
+export function validateBoolean(
+    value: unknown,
+    label: string,
+): ValidationResult {
+    return typeof value === "boolean"
+        ? { valid: true }
+        : { valid: false, message: `${label} must be true or false` };
+}
+
+export function validateEnum<T extends string>(
+    value: unknown,
+    allowed: readonly T[],
+    label: string,
+): ValidationResult {
+    return typeof value === "string" && allowed.includes(value as T)
+        ? { valid: true }
+        : { valid: false, message: `${label} is invalid` };
+}
+
+export function validateRating(value: unknown): ValidationResult {
+    return typeof value === "number" &&
+        Number.isInteger(value) &&
+        value >= 1 &&
+        value <= 5
+        ? { valid: true }
+        : { valid: false, message: "Rating must be an integer from 1 to 5" };
+}
+
+export function validateTagNames(value: unknown): ValidationResult {
+    if (!Array.isArray(value) || value.length > 10) {
+        return { valid: false, message: "Provide at most 10 tags" };
+    }
+    const normalized = new Set<string>();
+    for (const tag of value) {
+        if (typeof tag !== "string") {
+            return { valid: false, message: "Tags must be text" };
+        }
+        const normalizedTag = tag.trim().replace(/\s+/g, " ").toLowerCase();
+        if (
+            !normalizedTag ||
+            normalizedTag.length > 32 ||
+            !/[a-z0-9]/i.test(normalizedTag)
+        ) {
+            return {
+                valid: false,
+                message: "Each tag must be 1–32 letters or numbers",
+            };
+        }
+        if (normalized.has(normalizedTag)) {
+            return { valid: false, message: "Tags must be unique" };
+        }
+        normalized.add(normalizedTag);
+    }
+    return { valid: true };
+}
+
+export function parsePagination(
+    value: { limit?: unknown; offset?: unknown },
+    defaults: { limit?: number; maxLimit?: number } = {},
+): { valid: true; limit: number; offset: number } | ValidationError {
+    const limit =
+        value.limit === undefined
+            ? (defaults.limit ?? 24)
+            : Number(value.limit);
+    const offset = value.offset === undefined ? 0 : Number(value.offset);
+    const maxLimit = defaults.maxLimit ?? 100;
+    if (!Number.isInteger(limit) || limit < 1 || limit > maxLimit) {
+        return {
+            valid: false,
+            message: `limit must be an integer from 1 to ${maxLimit}`,
+        };
+    }
+    if (!Number.isInteger(offset) || offset < 0 || offset > 100_000) {
+        return {
+            valid: false,
+            message: "offset must be an integer from 0 to 100000",
+        };
+    }
+    return { valid: true, limit, offset };
+}
+
 export function validateThemeTitle(title: string): ValidationResult {
     const trimmed = title?.trim() ?? "";
 

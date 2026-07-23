@@ -7,6 +7,7 @@ import { themeRoute } from "./api/themes";
 import { userRoute } from "./api/users";
 import { imageRoute } from "./api/images";
 import { sponsorsRoute } from "./api/sponsors";
+import { marketplaceRoute } from "./api/marketplace";
 
 const app = new Elysia({ adapter: CloudflareAdapter })
     .use(
@@ -59,6 +60,7 @@ const app = new Elysia({ adapter: CloudflareAdapter })
     .use(userRoute)
     .use(imageRoute)
     .use(sponsorsRoute)
+    .use(marketplaceRoute)
     .onError(({ code, error, set }) => {
         console.error(`Error (${code}):`, error);
 

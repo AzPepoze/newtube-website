@@ -1,106 +1,248 @@
 import { Elysia } from "elysia";
 import {
-    searchThemes,
-    getThemeById,
     createTheme,
-    updateTheme,
     deleteTheme,
+    getDraftThemesByOwner,
+    getThemeForViewer,
+    searchThemesPage,
+    updateTheme,
+    type ThemeSort,
 } from "../db/themes";
-import { contextPlugin } from "../plugins/context";
-import { authGuard } from "../plugins/auth-guard";
 import {
-    validateThemeTitle,
-    validateThemeDescription,
-    validateSettingsJSON,
-    validatePendingImages,
+    getCategoryById,
+    getThemeClassification,
+    getThemeReviewSummary,
+    getThemeVersion,
+    isUserAdmin,
+    listThemeReviews,
+    listThemeVersions,
+    upsertThemeReview,
+    deleteThemeReview,
+} from "../db/marketplace";
+import { authGuard } from "../plugins/auth-guard";
+import { contextPlugin } from "../plugins/context";
+import {
+    parsePagination,
+    validateBoolean,
+    validateEnum,
     validatePendingCoverImage,
+    validatePendingImages,
+    validateRating,
+    validateSettingsJSON,
+    validateTagNames,
+    validateText,
+    validateThemeDescription,
+    validateThemeTitle,
+    validateUuid,
 } from "../utils/validation";
+
+const THEME_SORTS = ["popular", "newest", "alpha"] as const;
+
+function invalidMessage(result: { valid: boolean; message?: string }) {
+    return result.message ?? "Invalid request";
+}
+
+async function enrichTheme(db: any, theme: any) {
+    const [classification, rating] = await Promise.all([
+        getThemeClassification(db, theme.themeId),
+        getThemeReviewSummary(db, theme.themeId),
+    ]);
+    return {
+        ...theme,
+        tags: classification.tags.map((tag) => tag.name),
+        category: classification.category?.name ?? null,
+        rating:
+            rating?.averageRating == null ? null : Number(rating.averageRating),
+        ratingCount: Number(rating?.count ?? 0),
+    };
+}
+
+async function validateThemePayload(db: any, data: any) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+        return "Request body must be an object";
+    }
+    const validations = [
+        validateThemeTitle(data.themeName),
+        validateThemeDescription(data.description),
+        validatePendingImages(data.pendingImages),
+        validatePendingCoverImage(data.pendingCoverImage),
+        validateSettingsJSON(data.settings),
+    ];
+    if (data.isPublic !== undefined) {
+        validations.push(validateBoolean(data.isPublic, "isPublic"));
+    }
+    if (data.tagNames !== undefined) {
+        validations.push(validateTagNames(data.tagNames));
+    }
+    if (data.categoryId !== undefined && data.categoryId !== null) {
+        validations.push(validateUuid(data.categoryId, "categoryId"));
+    }
+    const failed = validations.find((result) => !result.valid);
+    if (failed && !failed.valid) return failed.message;
+
+    if (data.categoryId) {
+        const category = await getCategoryById(db, data.categoryId);
+        if (!category) return "Category not found";
+    }
+    return null;
+}
 
 export const themeRoute = new Elysia({ prefix: "/themes" })
     .use(contextPlugin)
-    .get("/", async ({ query, db }) => {
-        return searchThemes(
-            db,
-            query.q || "",
-            (query.sort as any) || "popular",
+    .get("/", async ({ query, db, set }) => {
+        const pagination = parsePagination(query);
+        if (!pagination.valid) {
+            set.status = 400;
+            return { error: "Invalid pagination", message: pagination.message };
+        }
+        const sort = query.sort ?? "popular";
+        const sortValidation = validateEnum(sort, THEME_SORTS, "sort");
+        if (!sortValidation.valid) {
+            set.status = 400;
+            return { error: "Invalid sort", message: sortValidation.message };
+        }
+        for (const [key, value] of [
+            ["q", query.q],
+            ["tag", query.tag],
+            ["category", query.category],
+        ] as const) {
+            const result = validateText(value, key, {
+                max: key === "q" ? 120 : 64,
+            });
+            if (!result.valid) {
+                set.status = 400;
+                return { error: `Invalid ${key}`, message: result.message };
+            }
+        }
+
+        const page = await searchThemesPage(db, {
+            search: typeof query.q === "string" ? query.q.trim() : "",
+            sort: sort as ThemeSort,
+            tag: typeof query.tag === "string" ? query.tag : undefined,
+            category:
+                typeof query.category === "string" ? query.category : undefined,
+            ...pagination,
+        });
+        return {
+            ...page,
+            items: await Promise.all(
+                page.items.map((theme) => enrichTheme(db, theme)),
+            ),
+        };
+    })
+    .get("/drafts", async ({ userId, db, set }) => {
+        if (!userId) {
+            set.status = 401;
+            return { error: "Unauthorized", message: "You must be logged in" };
+        }
+        return Promise.all(
+            (await getDraftThemesByOwner(db, userId)).map((theme) =>
+                enrichTheme(db, theme),
+            ),
         );
     })
-    .get("/:id", async ({ params, set, db }) => {
-        const theme = await getThemeById(db, params.id);
+    .get("/:id/versions", async ({ params, userId, db, set }) => {
+        const idValidation = validateUuid(params.id, "theme ID");
+        if (!idValidation.valid) {
+            set.status = 400;
+            return { error: "Invalid theme ID", message: idValidation.message };
+        }
+        const admin = userId ? await isUserAdmin(db, userId) : false;
+        const theme = await getThemeForViewer(db, params.id, {
+            userId,
+            isAdmin: admin,
+        });
         if (!theme) {
             set.status = 404;
             return { error: "Theme not found" };
         }
-        return theme;
+        return listThemeVersions(db, params.id);
+    })
+    .get("/:id/versions/:version", async ({ params, userId, db, set }) => {
+        const idValidation = validateUuid(params.id, "theme ID");
+        const version = Number(params.version);
+        if (!idValidation.valid || !Number.isInteger(version) || version < 1) {
+            set.status = 400;
+            return { error: "Invalid version" };
+        }
+        const admin = userId ? await isUserAdmin(db, userId) : false;
+        const theme = await getThemeForViewer(db, params.id, {
+            userId,
+            isAdmin: admin,
+        });
+        if (!theme) {
+            set.status = 404;
+            return { error: "Theme not found" };
+        }
+        const snapshot = await getThemeVersion(db, params.id, version);
+        if (!snapshot) {
+            set.status = 404;
+            return { error: "Version not found" };
+        }
+        return snapshot;
+    })
+    .get("/:id/reviews", async ({ params, query, db, set }) => {
+        const idValidation = validateUuid(params.id, "theme ID");
+        const pagination = parsePagination(query, { limit: 20 });
+        if (!idValidation.valid || !pagination.valid) {
+            set.status = 400;
+            return {
+                error: "Invalid request",
+                message: !idValidation.valid
+                    ? invalidMessage(idValidation)
+                    : invalidMessage(pagination),
+            };
+        }
+        const theme = await getThemeForViewer(db, params.id);
+        if (!theme) {
+            set.status = 404;
+            return { error: "Theme not found" };
+        }
+        const [items, rating] = await Promise.all([
+            listThemeReviews(db, params.id, pagination),
+            getThemeReviewSummary(db, params.id),
+        ]);
+        return {
+            items,
+            total: Number(rating?.count ?? 0),
+            rating:
+                rating?.averageRating == null
+                    ? null
+                    : Number(rating.averageRating),
+            ...pagination,
+        };
+    })
+    .get("/:id", async ({ params, userId, db, set }) => {
+        const idValidation = validateUuid(params.id, "theme ID");
+        if (!idValidation.valid) {
+            set.status = 400;
+            return { error: "Invalid theme ID", message: idValidation.message };
+        }
+        const admin = userId ? await isUserAdmin(db, userId) : false;
+        const theme = await getThemeForViewer(db, params.id, {
+            userId,
+            isAdmin: admin,
+        });
+        if (!theme) {
+            set.status = 404;
+            return { error: "Theme not found" };
+        }
+        return enrichTheme(db, theme);
     })
     .use(authGuard)
     .post("/", async ({ userId, body, db, set, env }) => {
-        console.log("[Theme Route] Creating theme for user:", userId);
-
-        // Validate request data
         const data = body as any;
-        const themeName = data.themeName;
-        const titleValidation = validateThemeTitle(themeName);
-        if (!titleValidation.valid) {
+        const message = await validateThemePayload(db, data);
+        if (message) {
             set.status = 400;
-            return {
-                error: "Invalid themeName",
-                message: titleValidation.message,
-            };
+            return { error: "Invalid theme", message };
         }
-
-        const descriptionValidation = validateThemeDescription(
-            data.description,
-        );
-        if (!descriptionValidation.valid) {
-            set.status = 400;
-            return {
-                error: "Invalid description",
-                message: descriptionValidation.message,
-            };
-        }
-
-        const pendingImagesValidation = validatePendingImages(
-            data.pendingImages,
-        );
-        if (!pendingImagesValidation.valid) {
-            set.status = 400;
-            return {
-                error: "Invalid image",
-                message: pendingImagesValidation.message,
-            };
-        }
-
-        const pendingCoverImageValidation = validatePendingCoverImage(
-            data.pendingCoverImage,
-        );
-        if (!pendingCoverImageValidation.valid) {
-            set.status = 400;
-            return {
-                error: "Invalid cover image",
-                message: pendingCoverImageValidation.message,
-            };
-        }
-
-        const settingsValidation = validateSettingsJSON(data.settings);
-        if (!settingsValidation.valid) {
-            set.status = 400;
-            return {
-                error: "Invalid settings",
-                message: settingsValidation.message,
-            };
-        }
-
         try {
             if (env.THEME_RATE_LIMITER) {
                 const { success } = await env.THEME_RATE_LIMITER.limit({
                     key: userId!,
                 });
                 if (!success) {
-                    console.warn(
-                        "[Theme Route] Rate limit exceeded for user:",
-                        userId,
-                    );
                     set.status = 429;
                     return {
                         error: "Rate limit exceeded",
@@ -109,109 +251,102 @@ export const themeRoute = new Elysia({ prefix: "/themes" })
                 }
             }
         } catch (error) {
-            console.error("[Theme Route] Rate limiter error:", error);
+            console.error("Theme rate limiter error", error);
         }
-
-        try {
-            const result = await createTheme(db, env, userId!, data);
-            if (!result) {
-                console.error(
-                    "[Theme Route] createTheme returned null/undefined",
-                );
-                set.status = 500;
-                return {
-                    error: "Failed to create theme",
-                    message: "Database returned no result",
-                };
-            }
-            console.log(
-                "[Theme Route] Theme created successfully:",
-                result.themeId,
-            );
-            return result;
-        } catch (error) {
-            console.error(
-                "[Theme Route] Database error in createTheme:",
-                error,
-            );
-            throw error;
+        const result = await createTheme(db, env, userId!, data);
+        if (!result) {
+            set.status = 500;
+            return { error: "Failed to create theme" };
         }
+        set.status = 201;
+        return result;
     })
-    .put("/:id", async ({ userId, params, body, set, db, env }) => {
-        // Validate request data
+    .put("/:id", async ({ userId, params, body, db, set, env }) => {
+        const idValidation = validateUuid(params.id, "theme ID");
+        if (!idValidation.valid) {
+            set.status = 400;
+            return { error: "Invalid theme ID", message: idValidation.message };
+        }
         const data = body as any;
-        const themeName = data.themeName;
-        const titleValidation = validateThemeTitle(themeName);
-        if (!titleValidation.valid) {
+        const message = await validateThemePayload(db, data);
+        if (message) {
             set.status = 400;
-            return {
-                error: "Invalid themeName",
-                message: titleValidation.message,
-            };
+            return { error: "Invalid theme", message };
         }
-
-        const descriptionValidation = validateThemeDescription(
-            data.description,
-        );
-        if (!descriptionValidation.valid) {
-            set.status = 400;
-            return {
-                error: "Invalid description",
-                message: descriptionValidation.message,
-            };
-        }
-
-        const pendingImagesValidation = validatePendingImages(
-            data.pendingImages,
-        );
-        if (!pendingImagesValidation.valid) {
-            set.status = 400;
-            return {
-                error: "Invalid image",
-                message: pendingImagesValidation.message,
-            };
-        }
-
-        const pendingCoverImageValidation = validatePendingCoverImage(
-            data.pendingCoverImage,
-        );
-        if (!pendingCoverImageValidation.valid) {
-            set.status = 400;
-            return {
-                error: "Invalid cover image",
-                message: pendingCoverImageValidation.message,
-            };
-        }
-
-        const settingsValidation = validateSettingsJSON(data.settings);
-        if (!settingsValidation.valid) {
-            set.status = 400;
-            return {
-                error: "Invalid settings",
-                message: settingsValidation.message,
-            };
-        }
-
         const updated = await updateTheme(db, env, params.id, userId!, data);
         if (!updated) {
             set.status = 403;
             return {
                 error: "Unauthorized",
-                message:
-                    "Theme not found or you do not have permission to edit it",
+                message: "Theme not found or you do not own it",
             };
         }
         set.status = 204;
     })
     .delete("/:id", async ({ userId, params, set, db, env }) => {
+        const idValidation = validateUuid(params.id, "theme ID");
+        if (!idValidation.valid) {
+            set.status = 400;
+            return { error: "Invalid theme ID", message: idValidation.message };
+        }
         const deleted = await deleteTheme(db, env, params.id, userId!);
         if (!deleted) {
             set.status = 403;
             return {
                 error: "Unauthorized",
-                message:
-                    "Theme not found or you do not have permission to delete it",
+                message: "Theme not found or you do not own it",
             };
+        }
+        set.status = 204;
+    })
+    .put("/:id/review", async ({ userId, params, body, db, set }) => {
+        const idValidation = validateUuid(params.id, "theme ID");
+        const data = body as any;
+        const ratingValidation = validateRating(data?.rating);
+        const bodyValidation = validateText(data?.body, "Review", {
+            max: 2_000,
+        });
+        if (
+            !idValidation.valid ||
+            !ratingValidation.valid ||
+            !bodyValidation.valid
+        ) {
+            set.status = 400;
+            return {
+                error: "Invalid review",
+                message: !idValidation.valid
+                    ? invalidMessage(idValidation)
+                    : !ratingValidation.valid
+                      ? invalidMessage(ratingValidation)
+                      : invalidMessage(bodyValidation),
+            };
+        }
+        const theme = await getThemeForViewer(db, params.id);
+        if (!theme) {
+            set.status = 404;
+            return { error: "Theme not found" };
+        }
+        if (theme.ownerId === userId) {
+            set.status = 403;
+            return { error: "Cannot review your own theme" };
+        }
+        return upsertThemeReview(db, {
+            themeId: params.id,
+            userId: userId!,
+            rating: data.rating,
+            body: data.body?.trim() || undefined,
+        });
+    })
+    .delete("/:id/review", async ({ userId, params, db, set }) => {
+        const idValidation = validateUuid(params.id, "theme ID");
+        if (!idValidation.valid) {
+            set.status = 400;
+            return { error: "Invalid theme ID", message: idValidation.message };
+        }
+        const result = await deleteThemeReview(db, params.id, userId!);
+        if (result.meta.changes === 0) {
+            set.status = 404;
+            return { error: "Review not found" };
         }
         set.status = 204;
     });

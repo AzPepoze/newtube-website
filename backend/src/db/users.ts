@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { themes, users } from "./schema";
 import type { Database } from "./index";
 
@@ -8,6 +8,7 @@ export function getUserById(db: Database, id: string) {
             id: users.id,
             name: users.name,
             avatarUrl: users.avatarUrl,
+            isAdmin: users.isAdmin,
             createdAt: users.createdAt,
         })
         .from(users)
@@ -15,7 +16,11 @@ export function getUserById(db: Database, id: string) {
         .get();
 }
 
-export function getUserProfile(db: Database, userId: string) {
+export function getUserProfile(
+    db: Database,
+    userId: string,
+    { includeDrafts = false }: { includeDrafts?: boolean } = {},
+) {
     return Promise.all([
         db
             .select({
@@ -27,7 +32,18 @@ export function getUserProfile(db: Database, userId: string) {
             .from(users)
             .where(eq(users.id, userId))
             .get(),
-        db.select().from(themes).where(eq(themes.ownerId, userId)).all(),
+        db
+            .select()
+            .from(themes)
+            .where(
+                includeDrafts
+                    ? eq(themes.ownerId, userId)
+                    : and(
+                          eq(themes.ownerId, userId),
+                          eq(themes.isPublic, true),
+                      ),
+            )
+            .all(),
     ]);
 }
 
