@@ -153,7 +153,10 @@
             title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen"}
             type="button"
         >
-            <MaterialIcon name={isFullscreen ? "fullscreen_exit" : "fullscreen"} size={14} />
+            <MaterialIcon
+                name={isFullscreen ? "fullscreen_exit" : "fullscreen"}
+                size={14}
+            />
             <span>{isFullscreen ? "Exit" : "Fullscreen"}</span>
         </button>
     </div>

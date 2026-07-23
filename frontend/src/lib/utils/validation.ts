@@ -89,10 +89,16 @@ export function validateTagNames(
 
     for (const tag of tagNames) {
         if (typeof tag !== "string" || !tag.trim()) {
-            return { valid: false, message: "Tag names must be non-empty strings" };
+            return {
+                valid: false,
+                message: "Tag names must be non-empty strings",
+            };
         }
         if (tag.length > 64) {
-            return { valid: false, message: "Tag names cannot exceed 64 characters" };
+            return {
+                valid: false,
+                message: "Tag names cannot exceed 64 characters",
+            };
         }
     }
 

@@ -60,13 +60,18 @@
 
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.message || errData.error || "Theme not found");
+                throw new Error(
+                    errData.message || errData.error || "Theme not found",
+                );
             }
 
             theme = await response.json();
             currentUser = viewer?.id ?? "";
         } catch (error) {
-            fetchError = error instanceof Error ? error.message : "Failed to fetch theme details.";
+            fetchError =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to fetch theme details.";
             theme = null;
         } finally {
             loading = false;
@@ -182,7 +187,9 @@
             <h2>Theme Not Found</h2>
             <p>{fetchError || "Failed to fetch theme details."}</p>
             <div class="error-actions">
-                <a href="/discover" class="action-btn primary">Back to Discover</a>
+                <a href="/discover" class="action-btn primary"
+                    >Back to Discover</a
+                >
                 <a href="/" class="action-btn secondary">Back to Home</a>
             </div>
         </div>

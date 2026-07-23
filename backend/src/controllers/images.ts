@@ -42,7 +42,8 @@ export const imageController = {
             set.status = 400;
             return {
                 error: "Invalid file",
-                message: "Unsupported file format. Allowed formats: WebP, PNG, JPEG, GIF.",
+                message:
+                    "Unsupported file format. Allowed formats: WebP, PNG, JPEG, GIF.",
             };
         }
 

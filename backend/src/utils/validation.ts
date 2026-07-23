@@ -248,7 +248,10 @@ export function validatePendingImages(
     for (let i = 0; i < images.length; i++) {
         const item = images[i];
         if (!item || typeof item.data !== "string") {
-            return { valid: false, message: `Screenshot ${i + 1}: Invalid image data` };
+            return {
+                valid: false,
+                message: `Screenshot ${i + 1}: Invalid image data`,
+            };
         }
         const result = validateImageSize(item.data, item.mimeType);
         if (!result.valid) {

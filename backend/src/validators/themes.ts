@@ -69,7 +69,8 @@ export async function validateThemeInput(
         validations.push(validateTagNames(themeInput.tagNames));
     }
     const totalScreenshots =
-        (themeInput.imgs?.length ?? 0) + (themeInput.pendingImages?.length ?? 0);
+        (themeInput.imgs?.length ?? 0) +
+        (themeInput.pendingImages?.length ?? 0);
     if (totalScreenshots > 5) {
         return { message: "Theme can have at most 5 screenshots" };
     }

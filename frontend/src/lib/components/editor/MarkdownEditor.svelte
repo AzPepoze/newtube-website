@@ -279,8 +279,6 @@
             user-select: none;
         }
 
-
-
         &.editor-only {
             .editor-pane {
                 width: 100%;

@@ -2,7 +2,7 @@ export const VALIDATION_LIMITS = {
     TITLE_MAX: 100,
     DESCRIPTION_MAX: 10000,
     SETTINGS_JSON_MAX: 1000 * 1024,
-    IMAGE_MAX_BYTES: 100 * 1024,
+    IMAGE_MAX_BYTES: 5 * 1024 * 1024,
 };
 
 export function formatBytes(bytes: number): string {

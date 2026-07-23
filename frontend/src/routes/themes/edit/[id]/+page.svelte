@@ -54,7 +54,9 @@
             <h2>Theme Not Found</h2>
             <p>{error}</p>
             <div class="error-actions">
-                <a href="/discover" class="action-btn primary">Back to Discover</a>
+                <a href="/discover" class="action-btn primary"
+                    >Back to Discover</a
+                >
                 <a href="/" class="action-btn secondary">Back to Home</a>
             </div>
         </div>
