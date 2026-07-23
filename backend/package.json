@@ -9,11 +9,9 @@
         "start": "bun run db:migrate:local && wrangler dev",
         "test": "vitest",
         "cf-typegen": "wrangler types",
-        "db:migrate": "node scripts/ensure-d1-schema.mjs",
-        "db:migrate:local": "bun run db:migrate -- --local",
-        "db:migrate:remote": "bun run db:migrate -- --remote",
-        "db:reset": "wrangler d1 execute DB --local --command \"DROP TABLE IF EXISTS Uploads; DROP TABLE IF EXISTS Themes; DROP TABLE IF EXISTS Users;\" && wrangler d1 execute DB --local --file=schema.sql",
-        "db:reset:remote": "wrangler d1 execute DB --remote --command \"DROP TABLE IF EXISTS Uploads; DROP TABLE IF EXISTS Themes; DROP TABLE IF EXISTS Users;\" && wrangler d1 execute DB --remote --file=schema.sql"
+        "db:generate": "drizzle-kit generate",
+        "db:migrate:local": "wrangler d1 migrations apply DB --local",
+        "db:migrate:remote": "wrangler d1 migrations apply DB --remote"
     },
     "devDependencies": {
         "@cloudflare/vitest-pool-workers": "^0.8.71",

@@ -1,58 +1,104 @@
-import { relations, sql } from "drizzle-orm";
-import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { desc, relations, sql } from "drizzle-orm";
+import {
+    check,
+    index,
+    integer,
+    primaryKey,
+    sqliteTable,
+    text,
+    unique,
+} from "drizzle-orm/sqlite-core";
 
 export type TagSnapshot = { id: string; slug: string; name: string };
 export type CategorySnapshot = { id: string; slug: string; name: string };
 
-export const users = sqliteTable("Users", {
-    id: text("id").primaryKey(),
-    email: text("email").notNull(),
-    name: text("name").notNull(),
-    avatarUrl: text("avatar_url"),
-    isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const users = sqliteTable(
+    "Users",
+    {
+        id: text("id").primaryKey(),
+        email: text("email").notNull().unique(),
+        name: text("name").notNull(),
+        avatarUrl: text("avatar_url"),
+        isAdmin: integer("is_admin", { mode: "boolean" })
+            .notNull()
+            .default(false),
+        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    },
+);
 
-export const sessions = sqliteTable("Sessions", {
-    id: text("id").primaryKey(),
-    userId: text("user_id")
-        .notNull()
-        .references(() => users.id, { onDelete: "cascade" }),
-    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const sessions = sqliteTable(
+    "Sessions",
+    {
+        id: text("id").primaryKey(),
+        userId: text("user_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    },
+    (table) => [index("idx_sessions_user").on(table.userId)],
+);
 
-export const themes = sqliteTable("Themes", {
-    themeId: text("theme_id").primaryKey(),
-    ownerId: text("owner_id").references(() => users.id),
-    themeName: text("theme_name").notNull(),
-    description: text("description"),
-    images: text("images", { mode: "json" })
-        .$type<string[]>()
-        .default(sql`'[]'`),
-    coverImage: text("cover_image"),
-    settings: text("settings", { mode: "json" })
-        .$type<any>()
-        .default(sql`'{}'`),
-    isPublic: integer("is_public", { mode: "boolean" }).default(true),
-    downloads: integer("downloads").default(0),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const themes = sqliteTable(
+    "Themes",
+    {
+        themeId: text("theme_id").primaryKey(),
+        ownerId: text("owner_id")
+            .notNull()
+            .references(() => users.id),
+        themeName: text("theme_name").notNull(),
+        description: text("description"),
+        images: text("images", { mode: "json" })
+            .$type<string[]>()
+            .default(sql`'[]'`),
+        coverImage: text("cover_image"),
+        settings: text("settings", { mode: "json" })
+            .$type<any>()
+            .notNull()
+            .default(sql`'{}'`),
+        isPublic: integer("is_public", { mode: "boolean" }).default(true),
+        downloads: integer("downloads").default(0),
+        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+    },
+    (table) => [
+        index("idx_themes_owner").on(table.ownerId),
+        index("idx_themes_public").on(table.isPublic),
+    ],
+);
 
-export const categories = sqliteTable("Categories", {
-    id: text("id").primaryKey(),
-    slug: text("slug").notNull(),
-    name: text("name").notNull(),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const uploads = sqliteTable(
+    "Uploads",
+    {
+        id: text("id").primaryKey(),
+        userId: text("user_id")
+            .notNull()
+            .references(() => users.id),
+        url: text("url").notNull(),
+        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    },
+    (table) => [index("idx_uploads_user").on(table.userId)],
+);
 
-export const tags = sqliteTable("Tags", {
-    id: text("id").primaryKey(),
-    slug: text("slug").notNull(),
-    name: text("name").notNull(),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const categories = sqliteTable(
+    "Categories",
+    {
+        id: text("id").primaryKey(),
+        slug: text("slug").notNull().unique(),
+        name: text("name").notNull().unique(),
+        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    },
+);
+
+export const tags = sqliteTable(
+    "Tags",
+    {
+        id: text("id").primaryKey(),
+        slug: text("slug").notNull().unique(),
+        name: text("name").notNull(),
+        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    },
+);
 
 export const themeTags = sqliteTable(
     "ThemeTags",
@@ -65,110 +111,143 @@ export const themeTags = sqliteTable(
             .references(() => tags.id, { onDelete: "cascade" }),
         createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
     },
-    (table) => [primaryKey({ columns: [table.themeId, table.tagId] })],
+    (table) => [
+        primaryKey({ columns: [table.themeId, table.tagId] }),
+        index("idx_theme_tags_tag").on(table.tagId),
+    ],
 );
 
-export const themeCategories = sqliteTable("ThemeCategories", {
-    themeId: text("theme_id")
-        .primaryKey()
-        .references(() => themes.themeId, { onDelete: "cascade" }),
-    categoryId: text("category_id")
-        .notNull()
-        .references(() => categories.id, { onDelete: "restrict" }),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-});
-
-export const themeVersions = sqliteTable("ThemeVersions", {
-    id: text("id").primaryKey(),
-    themeId: text("theme_id")
-        .notNull()
-        .references(() => themes.themeId, { onDelete: "cascade" }),
-    versionNumber: integer("version_number").notNull(),
-    themeName: text("theme_name").notNull(),
-    description: text("description"),
-    images: text("images", { mode: "json" }).$type<string[]>(),
-    coverImage: text("cover_image"),
-    settings: text("settings", { mode: "json" }).$type<unknown>().notNull(),
-    isPublic: integer("is_public", { mode: "boolean" }).notNull(),
-    tags: text("tags", { mode: "json" }).$type<TagSnapshot[]>().notNull(),
-    category: text("category", { mode: "json" }).$type<CategorySnapshot | null>(),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-});
-
-export const reviews = sqliteTable("Reviews", {
-    id: text("id").primaryKey(),
-    themeId: text("theme_id")
-        .notNull()
-        .references(() => themes.themeId, { onDelete: "cascade" }),
-    userId: text("user_id")
-        .notNull()
-        .references(() => users.id, { onDelete: "cascade" }),
-    rating: integer("rating").notNull(),
-    body: text("body"),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
-
-export const themeReports = sqliteTable("ThemeReports", {
-    id: text("id").primaryKey(),
-    themeId: text("theme_id")
-        .notNull()
-        .references(() => themes.themeId, { onDelete: "cascade" }),
-    reporterId: text("reporter_id")
-        .notNull()
-        .references(() => users.id, { onDelete: "cascade" }),
-    reason: text("reason").notNull(),
-    details: text("details"),
-    status: text("status", {
-        enum: ["open", "resolved", "dismissed"],
-    })
-        .notNull()
-        .default("open"),
-    resolvedBy: text("resolved_by").references(() => users.id, {
-        onDelete: "set null",
-    }),
-    resolvedAt: text("resolved_at"),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
-
-export const collections = sqliteTable("Collections", {
-    id: text("id").primaryKey(),
-    userId: text("user_id")
-        .notNull()
-        .references(() => users.id, { onDelete: "cascade" }),
-    name: text("name").notNull(),
-    description: text("description"),
-    createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
-
-export const collectionItems = sqliteTable(
-    "CollectionItems",
+export const themeCategories = sqliteTable(
+    "ThemeCategories",
     {
-        collectionId: text("collection_id")
+        themeId: text("theme_id")
+            .primaryKey()
+            .references(() => themes.themeId, { onDelete: "cascade" }),
+        categoryId: text("category_id")
             .notNull()
-            .references(() => collections.id, { onDelete: "cascade" }),
+            .references(() => categories.id, { onDelete: "restrict" }),
+        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    },
+    (table) => [index("idx_theme_categories_category").on(table.categoryId)],
+);
+
+export const themeVersions = sqliteTable(
+    "ThemeVersions",
+    {
+        id: text("id").primaryKey(),
         themeId: text("theme_id")
             .notNull()
             .references(() => themes.themeId, { onDelete: "cascade" }),
+        versionNumber: integer("version_number").notNull(),
+        themeName: text("theme_name").notNull(),
+        description: text("description"),
+        images: text("images", { mode: "json" }).$type<string[]>(),
+        coverImage: text("cover_image"),
+        settings: text("settings", { mode: "json" }).$type<unknown>().notNull(),
+        isPublic: integer("is_public", { mode: "boolean" }).notNull(),
+        tags: text("tags", { mode: "json" })
+            .$type<TagSnapshot[]>()
+            .notNull()
+            .default(sql`'[]'`),
+        category: text("category", {
+            mode: "json",
+        }).$type<CategorySnapshot | null>(),
         createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
     },
-    (table) => [primaryKey({ columns: [table.collectionId, table.themeId] })],
+    (table) => [
+        unique("theme_versions_theme_version_unique").on(
+            table.themeId,
+            table.versionNumber,
+        ),
+        index("idx_theme_versions_theme").on(
+            table.themeId,
+            desc(table.versionNumber),
+        ),
+    ],
+);
+
+export const reviews = sqliteTable(
+    "Reviews",
+    {
+        id: text("id").primaryKey(),
+        themeId: text("theme_id")
+            .notNull()
+            .references(() => themes.themeId, { onDelete: "cascade" }),
+        userId: text("user_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        rating: integer("rating").notNull(),
+        body: text("body"),
+        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+    },
+    (table) => [
+        check("reviews_rating_range", sql`${table.rating} BETWEEN 1 AND 5`),
+        unique("reviews_theme_user_unique").on(table.themeId, table.userId),
+        index("idx_reviews_theme").on(table.themeId, desc(table.createdAt)),
+        index("idx_reviews_user").on(table.userId, desc(table.createdAt)),
+    ],
+);
+
+export const themeReports = sqliteTable(
+    "ThemeReports",
+    {
+        id: text("id").primaryKey(),
+        themeId: text("theme_id")
+            .notNull()
+            .references(() => themes.themeId, { onDelete: "cascade" }),
+        reporterId: text("reporter_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        reason: text("reason").notNull(),
+        details: text("details"),
+        status: text("status", {
+            enum: ["open", "resolved", "dismissed"],
+        })
+            .notNull()
+            .default("open"),
+        resolvedBy: text("resolved_by").references(() => users.id, {
+            onDelete: "set null",
+        }),
+        resolvedAt: text("resolved_at"),
+        createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+    },
+    (table) => [
+        check(
+            "theme_reports_status",
+            sql`${table.status} IN ('open', 'resolved', 'dismissed')`,
+        ),
+        index("idx_theme_reports_reporter").on(
+            table.reporterId,
+            desc(table.createdAt),
+        ),
+        index("idx_theme_reports_moderation").on(
+            table.status,
+            desc(table.createdAt),
+        ),
+    ],
 );
 
 export const usersRelations = relations(users, ({ many }) => ({
     themes: many(themes),
     sessions: many(sessions),
+    uploads: many(uploads),
     reviews: many(reviews),
     reports: many(themeReports, { relationName: "reporter" }),
     resolvedReports: many(themeReports, { relationName: "resolver" }),
-    collections: many(collections),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
     user: one(users, {
         fields: [sessions.userId],
+        references: [users.id],
+    }),
+}));
+
+export const uploadsRelations = relations(uploads, ({ one }) => ({
+    user: one(users, {
+        fields: [uploads.userId],
         references: [users.id],
     }),
 }));
@@ -183,7 +262,6 @@ export const themesRelations = relations(themes, ({ one, many }) => ({
     versions: many(themeVersions),
     reviews: many(reviews),
     reports: many(themeReports),
-    collectionItems: many(collectionItems),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({
@@ -248,25 +326,6 @@ export const themeReportsRelations = relations(themeReports, ({ one }) => ({
         relationName: "resolver",
         fields: [themeReports.resolvedBy],
         references: [users.id],
-    }),
-}));
-
-export const collectionsRelations = relations(collections, ({ one, many }) => ({
-    user: one(users, {
-        fields: [collections.userId],
-        references: [users.id],
-    }),
-    items: many(collectionItems),
-}));
-
-export const collectionItemsRelations = relations(collectionItems, ({ one }) => ({
-    collection: one(collections, {
-        fields: [collectionItems.collectionId],
-        references: [collections.id],
-    }),
-    theme: one(themes, {
-        fields: [collectionItems.themeId],
-        references: [themes.themeId],
     }),
 }));
 

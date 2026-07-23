@@ -1,33 +1,37 @@
 # Backend database operations
 
-## Marketplace migration for an existing D1 database
+`src/db/schema.ts` is the schema source of truth. Drizzle generates versioned
+SQL files in `drizzle/`; Wrangler applies those files and records their state
+in D1's `d1_migrations` table.
 
-The backend has a schema-aware migration command. It inspects `Users`, adds
-the legacy `is_admin` column only when it is missing, then runs the rerunnable
-bootstrap schema for tables and indexes.
-
-Run this before local development:
+## Create and apply migrations
 
 ```bash
+# Generate a migration after changing src/db/schema.ts.
+bun run db:generate
+
+# Apply unapplied migrations to the local D1 database before development.
 bun run db:migrate:local
-```
 
-Production deployment runs the remote migration automatically before the
-Worker deploy. It can also be run on its own:
-
-```bash
+# Apply unapplied migrations to production before deployment.
 bun run db:migrate:remote
 ```
 
-The command is safe to rerun. It does not grant administrator access.
+`dev`, `start`, and `deploy` run the appropriate apply command
+automatically. Never edit an already-applied migration; create a new one.
 
-## Manual verification
+## Clean-slate production setup
 
-From `backend/`, first inspect the remote database:
+After resetting an empty production D1 database, apply the initial migration:
 
 ```bash
-npx wrangler d1 execute DB --remote --command "PRAGMA table_info(Users);"
+bun run db:migrate:remote
+npx wrangler d1 migrations list DB --remote
 ```
+
+The migration creates the application schema and starter taxonomy. This is
+destructive only when paired with a database reset, so never reset production
+after it contains data.
 
 ## Administrator bootstrap
 
