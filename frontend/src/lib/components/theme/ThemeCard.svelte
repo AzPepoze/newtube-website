@@ -46,8 +46,10 @@
     );
     const visibleTags = $derived(theme.tags?.slice(0, 3) ?? []);
     const remainingTagCount = $derived((theme.tags?.length ?? 0) - visibleTags.length);
-    const hasRating = $derived(
-        typeof theme.rating === "number" && Number.isFinite(theme.rating),
+    const rating = $derived(
+        typeof theme.rating === "number" && Number.isFinite(theme.rating)
+            ? theme.rating
+            : null,
     );
 
     function handleInstall(e: Event) {
@@ -120,15 +122,18 @@
                     <MaterialIcon name="download" size={14} />
                     {theme.downloads}
                 </span>
-                {#if hasRating}
-                    <span class="rating" title={`${theme.rating!.toFixed(1)} out of 5 stars`}>
-                        <MaterialIcon name="star" size={14} />
-                        {theme.rating!.toFixed(1)}
-                        {#if theme.ratingCount}
-                            <span class="rating-count">({theme.ratingCount})</span>
-                        {/if}
-                    </span>
-                {/if}
+                <span
+                    class="rating"
+                    title={rating === null
+                        ? "No ratings yet"
+                        : `${rating.toFixed(1)} out of 5 stars`}
+                >
+                    <MaterialIcon name="star" size={14} />
+                    {rating === null ? "New" : rating.toFixed(1)}
+                    {#if theme.ratingCount}
+                        <span class="rating-count">({theme.ratingCount})</span>
+                    {/if}
+                </span>
             </div>
             {#if theme.category || visibleTags.length > 0}
                 <div class="metadata" aria-label="Theme category and tags">
@@ -276,6 +281,8 @@
 
                 .title-container {
                     display: flex;
+                    flex: 1;
+                    min-width: 0;
                     align-items: center;
                     gap: 0.5rem;
                     overflow: hidden;
@@ -305,6 +312,7 @@
 
                 .downloads,
                 .rating {
+                    flex-shrink: 0;
                     font-size: 0.85rem;
                     color: var(--text-muted);
                     white-space: nowrap;

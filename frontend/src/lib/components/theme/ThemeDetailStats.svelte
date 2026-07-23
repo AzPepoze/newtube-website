@@ -9,10 +9,27 @@
         if (!theme.settings) return 0;
         return new Blob([JSON.stringify(theme.settings)]).size;
     });
+    const rating = $derived(
+        typeof theme.rating === "number" && Number.isFinite(theme.rating)
+            ? theme.rating
+            : null,
+    );
 </script>
 
 <div class="stats-container glass-panel">
     <div class="stat-group">
+        <div class="stat-item">
+            <div class="stat-icon-wrapper rating">
+                <MaterialIcon name="star" size={24} />
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{rating === null ? "New" : rating.toFixed(1)}</span>
+                <span class="stat-label">Rating</span>
+            </div>
+        </div>
+
+        <div class="stat-divider"></div>
+
         <div class="stat-item">
             <div class="stat-icon-wrapper downloads">
                 <MaterialIcon name="download" size={24} />
@@ -110,6 +127,10 @@
                 &.downloads {
                     color: #60a5fa;
                     background: rgba(96, 165, 250, 0.1);
+                }
+                &.rating {
+                    color: #f5c451;
+                    background: rgba(245, 196, 81, 0.1);
                 }
                 &.screenshots {
                     color: #f472b6;
