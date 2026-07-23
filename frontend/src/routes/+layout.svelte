@@ -1,7 +1,7 @@
 <script lang="ts">
     import "../app.scss";
-    import { onMount } from "svelte";
-    import { fade, fly } from "svelte/transition";
+    import { onMount, tick } from "svelte";
+    import { fade, fly, slide } from "svelte/transition";
     import { page } from "$app/state";
     import {
         getSessionId,
@@ -32,6 +32,9 @@
     let currentUser = $state<User | null>(null);
     let isLightMode = $state(false);
     let isClient = $state(false);
+    let isMobileMenuOpen = $state(false);
+    let mobileMenuButton = $state<HTMLButtonElement>();
+    let mobileMenu = $state<HTMLElement>();
 
     onMount(async () => {
         isClient = true;
@@ -93,6 +96,57 @@
         currentUser = null;
         window.location.href = "/";
     }
+
+    async function openMobileMenu() {
+        isMobileMenuOpen = true;
+        await tick();
+        mobileMenu?.querySelector<HTMLAnchorElement>("a")?.focus();
+    }
+
+    function closeMobileMenu(restoreFocus = false) {
+        if (!isMobileMenuOpen) return;
+        isMobileMenuOpen = false;
+        if (restoreFocus) {
+            void tick().then(() => mobileMenuButton?.focus());
+        }
+    }
+
+    function toggleMobileMenu() {
+        if (isMobileMenuOpen) closeMobileMenu(true);
+        else void openMobileMenu();
+    }
+
+    onMount(() => {
+        const handlePointerDown = (event: PointerEvent) => {
+            if (
+                isMobileMenuOpen &&
+                !mobileMenu?.contains(event.target as Node) &&
+                !mobileMenuButton?.contains(event.target as Node)
+            ) {
+                closeMobileMenu();
+            }
+        };
+        const handleResize = () => {
+            if (!window.matchMedia("(max-width: 900px)").matches) {
+                closeMobileMenu();
+            }
+        };
+        const handleKeydown = (event: KeyboardEvent) => {
+            if (event.key === "Escape" && isMobileMenuOpen) {
+                event.preventDefault();
+                closeMobileMenu(true);
+            }
+        };
+
+        document.addEventListener("pointerdown", handlePointerDown);
+        document.addEventListener("keydown", handleKeydown);
+        window.addEventListener("resize", handleResize);
+        return () => {
+            document.removeEventListener("pointerdown", handlePointerDown);
+            document.removeEventListener("keydown", handleKeydown);
+            window.removeEventListener("resize", handleResize);
+        };
+    });
 </script>
 
 <svelte:head>
@@ -209,7 +263,52 @@
                         >
                     {/if}
                 </div>
+
+                <button
+                    type="button"
+                    class="mobile-menu-toggle"
+                    bind:this={mobileMenuButton}
+                    onclick={toggleMobileMenu}
+                    aria-label={isMobileMenuOpen
+                        ? "Close navigation menu"
+                        : "Open navigation menu"}
+                    aria-controls="mobile-primary-navigation"
+                    aria-expanded={isMobileMenuOpen}
+                >
+                    <MaterialIcon
+                        name={isMobileMenuOpen ? "close" : "menu"}
+                        size={26}
+                    />
+                </button>
             </div>
+
+            {#if isMobileMenuOpen}
+                <div
+                    id="mobile-primary-navigation"
+                    class="mobile-menu glass-panel"
+                    bind:this={mobileMenu}
+                    transition:slide={{ duration: 180 }}
+                    role="navigation"
+                    aria-label="Primary navigation"
+                >
+                    <a href="/" onclick={() => closeMobileMenu()}>
+                        <MaterialIcon name="home" size={22} />
+                        <span>Home</span>
+                    </a>
+                    <a href="/discover" onclick={() => closeMobileMenu()}>
+                        <MaterialIcon name="explore" size={22} />
+                        <span>Discover</span>
+                    </a>
+                    <a href="/terms" onclick={() => closeMobileMenu()}>
+                        <MaterialIcon name="balance" size={22} />
+                        <span>Terms</span>
+                    </a>
+                    <a href="/privacy" onclick={() => closeMobileMenu()}>
+                        <MaterialIcon name="shield" size={22} />
+                        <span>Privacy</span>
+                    </a>
+                </div>
+            {/if}
 
             <div class="mobile-page-navigation"></div>
         </nav>
@@ -256,6 +355,11 @@
             display: flex;
             align-items: center;
             gap: 2.5rem;
+        }
+
+        .mobile-menu-toggle,
+        .mobile-menu {
+            display: none;
         }
 
         .mobile-page-navigation {
@@ -349,6 +453,10 @@
                     padding: 10px 22px;
                     font-size: 1rem;
                 }
+            }
+
+            .mobile-menu-toggle {
+                display: none;
             }
         }
     }
@@ -458,6 +566,52 @@
                     padding: 8px 14px;
                     font-size: 0.9rem;
                 }
+
+                .mobile-menu-toggle {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0.4rem;
+                    border: 0;
+                    border-radius: var(--radius-sm);
+                    background: transparent;
+                    color: var(--text-primary);
+                    cursor: pointer;
+
+                    &:hover,
+                    &:focus-visible {
+                        background: rgba(var(--text-primary-rgb), 0.08);
+                    }
+                }
+            }
+
+            .mobile-menu {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.5rem;
+                flex: 0 0 100%;
+                order: 3;
+                margin-top: 0.5rem;
+                padding: 0.5rem;
+                background: var(--bg-dark);
+                border-radius: var(--radius-sm);
+
+                a {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.65rem;
+                    min-height: 44px;
+                    padding: 0.65rem 0.75rem;
+                    border-radius: var(--radius-sm);
+                    color: var(--text-primary);
+                    font-weight: 600;
+
+                    &:hover,
+                    &:focus-visible {
+                        background: rgba(var(--text-primary-rgb), 0.08);
+                        opacity: 1;
+                    }
+                }
             }
 
             .mobile-page-navigation:not(:empty) {
@@ -496,7 +650,8 @@
                 gap: 0.25rem;
 
                 .github-link,
-                .theme-toggle {
+                .theme-toggle,
+                .mobile-menu-toggle {
                     padding: 0.3rem;
                 }
 
