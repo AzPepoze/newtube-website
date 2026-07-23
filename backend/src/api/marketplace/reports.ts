@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { REPORT_REASONS } from "../../constants/marketplace";
 import {
     createThemeReport,
     getReportsForReporter,
@@ -11,15 +12,6 @@ import {
     validateText,
     validateUuid,
 } from "../../utils/validation";
-
-const REPORT_REASONS = [
-    "copyright",
-    "inappropriate",
-    "malware",
-    "broken",
-    "spam",
-    "other",
-] as const;
 
 function invalidMessage(result: { valid: boolean; message?: string }) {
     return result.message ?? "Invalid request";

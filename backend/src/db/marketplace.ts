@@ -30,7 +30,6 @@ export {
     resolveThemeReport,
     setThemeVisibility,
     setUserAdmin,
-    type ReportStatus,
 } from "./marketplace/moderation";
 export {
     addThemeToCollection,

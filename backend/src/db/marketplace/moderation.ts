@@ -1,8 +1,10 @@
 import { desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../index";
 import { themeReports, themes, users } from "../schema";
-
-export type ReportStatus = "open" | "resolved" | "dismissed";
+import type {
+    ReportResolutionStatus,
+    ReportStatus,
+} from "../../types/marketplace";
 
 export async function createThemeReport(
     db: Database,
@@ -71,7 +73,7 @@ export function resolveThemeReport(
     data: {
         reportId: string;
         adminId: string;
-        status: Exclude<ReportStatus, "open">;
+        status: ReportResolutionStatus;
     },
 ) {
     return db

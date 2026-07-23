@@ -1,12 +1,15 @@
 import { Elysia } from "elysia";
 import {
+    REPORT_RESOLUTION_STATUSES,
+    REPORT_STATUSES,
+} from "../../constants/marketplace";
+import {
     createCategory,
     isUserAdmin,
     listModerationReports,
     resolveThemeReport,
     setThemeVisibility,
     tagSlug,
-    type ReportStatus,
 } from "../../db/marketplace";
 import { authGuard } from "../../plugins/auth-guard";
 import { contextPlugin } from "../../plugins/context";
@@ -17,9 +20,7 @@ import {
     validateText,
     validateUuid,
 } from "../../utils/validation";
-
-const REPORT_STATUSES = ["open", "resolved", "dismissed"] as const;
-const RESOLUTION_STATUSES = ["resolved", "dismissed"] as const;
+import type { ReportStatus } from "../../types/marketplace";
 
 async function requireAdmin(db: any, userId: string | undefined, set: any) {
     if (!userId || !(await isUserAdmin(db, userId))) {
@@ -106,7 +107,7 @@ export const marketplaceAdminRoute = new Elysia()
         const data = body as any;
         const statusValidation = validateEnum(
             data?.status,
-            RESOLUTION_STATUSES,
+            REPORT_RESOLUTION_STATUSES,
             "status",
         );
         if (!idValidation.valid || !statusValidation.valid) {
