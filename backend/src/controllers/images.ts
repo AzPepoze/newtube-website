@@ -31,9 +31,19 @@ export const imageController = {
         const formData = await request.formData();
         const file = formData.get("file") as File | null;
 
-        if (!file || !file.type.startsWith("image/")) {
+        const ALLOWED_MIMES = [
+            "image/webp",
+            "image/png",
+            "image/jpeg",
+            "image/jpg",
+            "image/gif",
+        ];
+        if (!file || !ALLOWED_MIMES.includes(file.type.toLowerCase())) {
             set.status = 400;
-            return { error: "Invalid file", message: "Must be an image file." };
+            return {
+                error: "Invalid file",
+                message: "Unsupported file format. Allowed formats: WebP, PNG, JPEG, GIF.",
+            };
         }
 
         if (file.size > MAX_IMAGE_FILE_SIZE) {

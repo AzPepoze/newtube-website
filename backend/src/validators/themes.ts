@@ -68,6 +68,12 @@ export async function validateThemeInput(
     if (themeInput.tagNames !== undefined) {
         validations.push(validateTagNames(themeInput.tagNames));
     }
+    const totalScreenshots =
+        (themeInput.imgs?.length ?? 0) + (themeInput.pendingImages?.length ?? 0);
+    if (totalScreenshots > 5) {
+        return { message: "Theme can have at most 5 screenshots" };
+    }
+
     const failed = validations.find((result) => !result.valid);
     if (failed && !failed.valid) return { message: failed.message };
 

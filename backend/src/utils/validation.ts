@@ -188,13 +188,34 @@ export function validateSettingsJSON(settings: unknown): ValidationResult {
     return { valid: true };
 }
 
-export function validateImageSize(dataUrl: string): ValidationResult {
-    // Data URL format: "data:image/webp;base64,<base64_data>"
-    const base64Data = dataUrl.split(",")[1];
-    if (!base64Data) {
+const ALLOWED_IMAGE_MIMES = [
+    "image/webp",
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/gif",
+];
+
+export function validateImageSize(
+    dataUrl: string,
+    mimeType?: string,
+): ValidationResult {
+    if (!dataUrl || typeof dataUrl !== "string") {
+        return { valid: false, message: "Image data is required" };
+    }
+
+    if (mimeType && !ALLOWED_IMAGE_MIMES.includes(mimeType.toLowerCase())) {
         return {
             valid: false,
-            message: "Invalid image data format",
+            message: `Unsupported image type (${mimeType}). Allowed: WebP, PNG, JPEG, GIF`,
+        };
+    }
+
+    const base64Data = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+    if (!base64Data || !base64Data.trim()) {
+        return {
+            valid: false,
+            message: "Invalid image base64 encoding",
         };
     }
 
@@ -217,12 +238,23 @@ export function validatePendingImages(
         return { valid: true };
     }
 
+    if (images.length > 5) {
+        return {
+            valid: false,
+            message: "A theme can have at most 5 screenshot images",
+        };
+    }
+
     for (let i = 0; i < images.length; i++) {
-        const result = validateImageSize(images[i].data);
+        const item = images[i];
+        if (!item || typeof item.data !== "string") {
+            return { valid: false, message: `Screenshot ${i + 1}: Invalid image data` };
+        }
+        const result = validateImageSize(item.data, item.mimeType);
         if (!result.valid) {
             return {
                 valid: false,
-                message: `Image ${i + 1}: ${result.message}`,
+                message: `Screenshot ${i + 1}: ${result.message}`,
             };
         }
     }
@@ -237,5 +269,17 @@ export function validatePendingCoverImage(
         return { valid: true };
     }
 
-    return validateImageSize(image.data);
+    if (!image.data || typeof image.data !== "string") {
+        return { valid: false, message: "Cover image: Invalid image data" };
+    }
+
+    const result = validateImageSize(image.data, image.mimeType);
+    if (!result.valid) {
+        return {
+            valid: false,
+            message: `Cover image: ${result.message}`,
+        };
+    }
+
+    return { valid: true };
 }

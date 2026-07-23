@@ -53,9 +53,14 @@
         files: File[],
         target: "cover" | "screenshots",
     ) {
+        const MAX_RAW_FILE_SIZE = 10 * 1024 * 1024;
         const validFiles = files.filter((file) => {
             if (!file.type.startsWith("image/")) {
                 errorMessage = "Please upload only image files.";
+                return false;
+            }
+            if (file.size > MAX_RAW_FILE_SIZE) {
+                errorMessage = "Image file size must be smaller than 10MB.";
                 return false;
             }
             return true;
@@ -64,6 +69,15 @@
         if (target === "cover") {
             if (validFiles.length > 0) coverImagePending = validFiles[0];
         } else {
+            const currentCount = images.length + pendingImages.length;
+            if (currentCount + validFiles.length > 5) {
+                errorMessage = "You can upload up to 5 screenshots in total.";
+                const allowed = Math.max(0, 5 - currentCount);
+                if (allowed > 0) {
+                    pendingImages = [...pendingImages, ...validFiles.slice(0, allowed)];
+                }
+                return;
+            }
             pendingImages = [...pendingImages, ...validFiles];
         }
     }
