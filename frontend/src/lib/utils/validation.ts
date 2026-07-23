@@ -75,6 +75,44 @@ export function validateSettingsJSON(jsonString: string): JsonValidationResult {
     };
 }
 
+export function validateTagNames(
+    tagNames: string[],
+    availableTags?: Array<{ name: string; slug: string }>,
+): ValidationResult {
+    if (!Array.isArray(tagNames)) {
+        return { valid: false, message: "Tags must be an array" };
+    }
+
+    if (tagNames.length > 10) {
+        return { valid: false, message: "A theme can have at most 10 tags." };
+    }
+
+    for (const tag of tagNames) {
+        if (typeof tag !== "string" || !tag.trim()) {
+            return { valid: false, message: "Tag names must be non-empty strings" };
+        }
+        if (tag.length > 64) {
+            return { valid: false, message: "Tag names cannot exceed 64 characters" };
+        }
+    }
+
+    if (availableTags && availableTags.length > 0) {
+        const norm = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
+        const availableSet = new Set(
+            availableTags.flatMap((t) => [norm(t.name), norm(t.slug)]),
+        );
+        const hasInvalid = tagNames.some((tag) => !availableSet.has(norm(tag)));
+        if (hasInvalid) {
+            return {
+                valid: false,
+                message: "Tags must be selected from the available tags",
+            };
+        }
+    }
+
+    return { valid: true };
+}
+
 export const LIMITS = {
     title: TITLE_MAX,
     description: DESCRIPTION_MAX,

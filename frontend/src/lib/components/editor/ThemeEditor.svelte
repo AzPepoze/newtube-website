@@ -12,6 +12,7 @@
         validateTitle,
         validateDescription,
         validateSettingsJSON,
+        validateTagNames,
     } from "$lib/utils/validation";
     import ThemeEditorBasicInfo from "$lib/components/editor/ThemeEditorBasicInfo.svelte";
     import ThemeEditorSettings from "$lib/components/editor/ThemeEditorSettings.svelte";
@@ -33,6 +34,9 @@
     let pendingImages = $state<File[]>([]);
     let settingsCode = $state("");
     let tagNames = $state<string[]>([]);
+    let availableTags = $state<
+        Array<{ id: string; name: string; slug: string; groupName: string }>
+    >([]);
 
     let submitting = $state(false);
     let success = $state(false);
@@ -158,6 +162,12 @@
             return;
         }
 
+        const tagValidation = validateTagNames(tagNames, availableTags);
+        if (!tagValidation.valid) {
+            errorMessage = tagValidation.message || "Invalid tag selection";
+            return;
+        }
+
         submitting = true;
         errorMessage = "";
 
@@ -212,16 +222,15 @@
                 body: JSON.stringify(payload),
             });
 
+            const data = await response.json().catch(() => ({}));
+
             if (!response.ok) {
-                const errorBody = await response.text().catch(() => "");
                 throw new Error(
-                    `[${response.status}] ${errorBody || response.statusText}`,
+                    data.message ||
+                        data.error ||
+                        `Operation failed (HTTP ${response.status})`,
                 );
             }
-
-            const data = await response
-                .json()
-                .catch(() => ({ themeId: props.initialData?.themeId }));
 
             if (!publish) {
                 localStorage.removeItem(draftKey);
@@ -291,6 +300,7 @@
                         bind:pendingImages
                         bind:errorMessage
                         bind:tagNames
+                        bind:availableTags
                     />
                     <ThemeEditorSettings bind:settingsCode bind:jsonError />
                     <ThemeEditorPreview

@@ -35,18 +35,44 @@
         return value.trim().replace(/\s+/g, " ").toLowerCase();
     }
 
+    $effect(() => {
+        if (selectedTags.length > 10) {
+            errorMessage = "A theme can have at most 10 tags.";
+            return;
+        }
+        if (availableTags.length > 0 && selectedTags.length > 0) {
+            const availableSet = new Set(
+                availableTags.flatMap((t: Tag) => [
+                    normalizeTag(t.name),
+                    normalizeTag(t.slug),
+                ]),
+            );
+            const hasInvalid = selectedTags.some(
+                (t: string) => !availableSet.has(normalizeTag(t)),
+            );
+            if (hasInvalid) {
+                errorMessage = "Tags must be selected from the available tags";
+                return;
+            }
+        }
+        if (
+            errorMessage === "Tags must be selected from the available tags" ||
+            errorMessage === "A theme can have at most 10 tags."
+        ) {
+            errorMessage = "";
+        }
+    });
+
     function toggleTag(tag: Tag) {
         const normalized = normalizeTag(tag.name);
         if (selectedTags.includes(normalized)) {
             selectedTags = selectedTags.filter((t: string) => t !== normalized);
-            errorMessage = "";
         } else {
             if (selectedTags.length >= 10) {
                 errorMessage = "A theme can have at most 10 tags.";
                 return;
             }
             selectedTags = [...selectedTags, normalized];
-            errorMessage = "";
         }
     }
 </script>

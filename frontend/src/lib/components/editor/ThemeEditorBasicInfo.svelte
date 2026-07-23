@@ -19,6 +19,9 @@
         errorMessage = $bindable(""),
         coverImagePending = $bindable(null),
         tagNames = $bindable<string[]>([]),
+        availableTags = $bindable<
+            Array<{ id: string; name: string; slug: string; groupName: string }>
+        >([]),
     }: {
         themeName: string;
         description: string;
@@ -28,13 +31,16 @@
         errorMessage: string;
         coverImagePending: File | null;
         tagNames: string[];
+        availableTags?: Array<{
+            id: string;
+            name: string;
+            slug: string;
+            groupName: string;
+        }>;
     } = $props();
 
     let titleError = $state("");
     let isNameDisabled = $state(false);
-    let availableTags = $state<
-        Array<{ id: string; name: string; slug: string; groupName: string }>
-    >([]);
     let tagsError = $state("");
 
     $effect(() => {
