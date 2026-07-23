@@ -1,7 +1,7 @@
 <script lang="ts">
     import ThemeCard from "$lib/components/theme/ThemeCard.svelte";
-    import { getCurrentUser } from "$lib/utils/auth";
     import type { Theme } from "$lib/types/index";
+    import { getCurrentUser } from "$lib/utils/auth";
 
     let {
         themeName,
@@ -61,23 +61,6 @@
             <ThemeCard theme={mockTheme} />
         </div>
     </div>
-
-    <div class="data-preview glass-panel">
-        <h3>Raw Data</h3>
-        <pre><code
-                >{JSON.stringify(
-                    {
-                        themeName,
-                        description,
-                        images,
-                        coverImage,
-                        settings: parsedSettings,
-                    },
-                    null,
-                    2,
-                )}</code
-            ></pre>
-    </div>
 </div>
 
 <style lang="scss">
@@ -87,8 +70,7 @@
         gap: 2rem;
     }
 
-    .card-preview,
-    .data-preview {
+    .card-preview {
         padding: 2rem;
         border: 1px solid var(--border-glass);
         border-radius: var(--radius-md);
@@ -112,23 +94,6 @@
         :global(a) {
             pointer-events: none;
             cursor: default;
-        }
-    }
-
-    .data-preview {
-        pre {
-            background: rgba(var(--text-primary-rgb), 0.05);
-            padding: 1.5rem;
-            border-radius: var(--radius-sm);
-            overflow-x: auto;
-            margin: 0;
-            border: 1px solid var(--border-glass);
-
-            code {
-                font-family: monospace;
-                font-size: 0.85rem;
-                color: var(--text-primary);
-            }
         }
     }
 </style>
