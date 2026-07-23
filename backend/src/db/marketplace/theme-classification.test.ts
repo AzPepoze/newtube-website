@@ -1,6 +1,7 @@
 import { env } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { THEME_CATEGORIES, THEME_TAGS } from "../../constants/marketplace";
+import { themeController } from "../../controllers/themes";
 import { createDb } from "../index";
 import { categories, tags, themeCategories, themeTags } from "../schema";
 import {
@@ -56,6 +57,33 @@ describe("syncThemeTagsAndCategories", () => {
         await setThemeTagNames(db, "theme-3", ["not-defined-in-code"]);
         expect(await db.select().from(tags).all()).toHaveLength(12);
         expect(await db.select().from(themeTags).all()).toEqual([]);
+    });
+
+    it("accepts a code-defined category ID when creating a theme", async () => {
+        await env.DB.exec(
+            "INSERT INTO Users (id, email, name) VALUES ('owner-4', 'owner-4@example.test', 'Owner');",
+        );
+        const set = { status: 200 };
+
+        const result = await themeController.create({
+            db,
+            env: {} as Env,
+            userId: "owner-4",
+            set,
+            params: {},
+            query: {},
+            body: {
+                themeName: "Category ID test",
+                description: "",
+                imgs: [],
+                settings: {},
+                isPublic: false,
+                categoryId: "category-gaming",
+            },
+        });
+
+        expect(set.status).toBe(201);
+        expect(result).toMatchObject({ themeId: expect.any(String) });
     });
 
     it("finishes and clears tags when no tags are code-defined", async () => {

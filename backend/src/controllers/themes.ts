@@ -102,7 +102,13 @@ async function validateThemeInput(
         validations.push(validateTagNames(themeInput.tagNames));
     }
     if (themeInput.categoryId !== undefined && themeInput.categoryId !== null) {
-        validations.push(validateUuid(themeInput.categoryId, "categoryId"));
+        validations.push(
+            validateText(themeInput.categoryId, "categoryId", {
+                min: 1,
+                max: 64,
+                required: true,
+            }),
+        );
     }
     const failed = validations.find((result) => !result.valid);
     if (failed && !failed.valid) return { message: failed.message };
