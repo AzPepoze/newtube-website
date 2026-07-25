@@ -233,3 +233,13 @@ export async function deleteThemeRecordForOwner(
 
     return deleteOutcome.meta.changes > 0;
 }
+
+export async function incrementThemeDownloads(db: Database, themeId: string) {
+    const outcome = await db
+        .update(themes)
+        .set({ downloads: sql`${themes.downloads} + 1` })
+        .where(eq(themes.themeId, themeId))
+        .run();
+
+    return outcome.meta.changes > 0;
+}

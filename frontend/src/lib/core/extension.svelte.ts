@@ -1,4 +1,4 @@
-import { EXTENSION_EVENTS } from "$lib/constants/index";
+import { EXTENSION_EVENTS, PUBLIC_API_URL } from "$lib/constants/index";
 
 export const extensionState = $state({
     isExtensionReady: false,
@@ -48,6 +48,10 @@ export function dispatchThemeInstallation(
     window.dispatchEvent(event);
 
     extensionState.installedThemeId = themeId;
+
+    void fetch(`${PUBLIC_API_URL}/themes/${themeId}/download`, {
+        method: "POST",
+    }).catch(() => {});
 }
 
 export function dispatchThemeSave(

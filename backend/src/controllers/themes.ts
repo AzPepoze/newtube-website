@@ -10,6 +10,7 @@ import {
     getThemeVersions,
     listDraftThemes,
     listThemes,
+    recordThemeDownload,
     removeThemeReview,
     updateThemeForOwner,
 } from "../services/themes";
@@ -310,5 +311,19 @@ export const themeController = {
             return { error: "Review not found" };
         }
         set.status = 204;
+    },
+
+    async download({ params, db, set }: ThemeControllerContext) {
+        const idValidation = validateUuid(params.id, "theme ID");
+        if (!idValidation.valid) {
+            set.status = 400;
+            return { error: "Invalid theme ID", message: idValidation.message };
+        }
+        const result = await recordThemeDownload(db, params.id);
+        if (!result) {
+            set.status = 404;
+            return { error: "Theme not found" };
+        }
+        return result;
     },
 };

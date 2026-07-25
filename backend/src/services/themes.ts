@@ -2,8 +2,10 @@ import {
     createThemeRecord,
     deleteThemeRecordForOwner,
     getDraftThemesByOwner,
+    getThemeById,
     getThemeByOwner,
     getThemeForViewer,
+    incrementThemeDownloads,
     searchThemesPage,
     updateThemeRecordForOwner,
     type ThemePersistenceInput,
@@ -264,4 +266,14 @@ export function removeThemeReview(
     userId: string,
 ) {
     return deleteThemeReview(db, themeId, userId);
+}
+
+export async function recordThemeDownload(db: Database, themeId: string) {
+    const theme = await getThemeById(db, themeId);
+    if (!theme || !theme.isPublic) return null;
+
+    const success = await incrementThemeDownloads(db, themeId);
+    if (!success) return null;
+
+    return { success: true, downloads: (theme.downloads ?? 0) + 1 };
 }
