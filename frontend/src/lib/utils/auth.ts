@@ -51,7 +51,8 @@ export function clearSessionId() {
 
 export function isAuthenticated(): boolean {
     const sessionId = getSessionId();
-    return !!sessionId;
+    const userId = getUserId();
+    return !!(sessionId || userId);
 }
 
 export function requireAuth(customPath?: string): string {

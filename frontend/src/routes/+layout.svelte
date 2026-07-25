@@ -1,19 +1,15 @@
 <script lang="ts">
-    import "../app.scss";
-    import { onMount, tick } from "svelte";
     import { page } from "$app/state";
-    import {
-        getSessionId,
-        handleAuthError,
-        setSessionId,
-    } from "$lib/utils/auth";
     import Modal from "$lib/components/common/Modal.svelte";
     import Navbar from "$lib/components/layout/Navbar.svelte";
-    import { updateTheme } from "$lib/core/theme.svelte";
+    import { PUBLIC_API_URL } from "$lib/constants/index";
     import { initializeExtensionListener } from "$lib/core/extension.svelte";
+    import { updateTheme } from "$lib/core/theme.svelte";
+    import { setSessionId } from "$lib/utils/auth";
     import "prism-code-editor/themes/dracula.css";
     import "prism-code-editor/themes/github-light.css";
-    import { PUBLIC_API_URL } from "$lib/constants/index";
+    import { onMount, tick } from "svelte";
+    import "../app.scss";
 
     let { children } = $props();
 
@@ -52,8 +48,6 @@
             window.history.replaceState({}, "", newUrl);
         }
 
-        const sessionId = getSessionId();
-        if (!sessionId) return;
         try {
             const response = await fetch(`${PUBLIC_API_URL}/users/me`, {
                 credentials: "include",
@@ -61,7 +55,7 @@
             if (response.ok) {
                 currentUser = await response.json();
             } else if (response.status === 404 || response.status === 401) {
-                handleAuthError();
+                // Not authenticated
             }
         } catch {
             // unauthenticated
@@ -147,7 +141,10 @@
     />
 </svelte:head>
 
-<div class="app-container" class:is-preview-page={page.url.pathname.startsWith("/themes/preview")}>
+<div
+    class="app-container"
+    class:is-preview-page={page.url.pathname.startsWith("/themes/preview")}
+>
     {#if !isClient}
         <div class="loading-screen">
             <div class="spinner"></div>
