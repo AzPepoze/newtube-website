@@ -12,6 +12,7 @@
     import ThemeDetailStats from "$lib/components/theme/ThemeDetailStats.svelte";
     import ThemeDetailCommunity from "$lib/components/theme/ThemeDetailCommunity.svelte";
     import ThemeCreatorCard from "$lib/components/theme/ThemeCreatorCard.svelte";
+    import ThemePreviewMockup from "$lib/components/theme/ThemePreviewMockup.svelte";
     import MarkdownViewer from "$lib/components/common/MarkdownViewer.svelte";
     import QuickScrollNav, {
         type QuickScrollItem,
@@ -19,6 +20,7 @@
 
     const navigationItems: QuickScrollItem[] = [
         { id: "overview", label: "Overview" },
+        { id: "preview", label: "Preview" },
         { id: "description", label: "Description" },
         { id: "settings", label: "Settings" },
         { id: "reviews", label: "Reviews" },
@@ -151,6 +153,10 @@
 
                         <div class="gallery-wrapper">
                             <ThemeDetailGallery {theme} />
+                        </div>
+
+                        <div class="preview-wrapper" id="preview">
+                            <ThemePreviewMockup {theme} />
                         </div>
 
                         <div class="info-row">
