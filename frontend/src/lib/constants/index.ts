@@ -8,6 +8,7 @@ export const EXTENSION_EVENTS = {
     CHECK_INSTALL: "is_newtube_theme_installed",
     READY: "newtube_is_ready",
     INSTALL_STATUS: "newtube_theme_install_status",
+    CHECK_EXTENSION: "check_newtube_extension",
 };
 
 export const SUPPORTED_DOMAINS = ["youtube.com"];

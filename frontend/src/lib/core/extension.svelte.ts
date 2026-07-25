@@ -29,6 +29,8 @@ export function initializeExtensionListener() {
             extensionState.installedThemeId = null;
         }
     });
+
+    window.dispatchEvent(new CustomEvent(EXTENSION_EVENTS.CHECK_EXTENSION));
 }
 
 export function dispatchThemeInstallation(
