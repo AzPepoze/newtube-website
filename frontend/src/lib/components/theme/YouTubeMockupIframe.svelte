@@ -107,13 +107,11 @@
 			"#00000099";
 
 		const bgOpacityVal =
-			currentSettings.BackgroundOpacity !== undefined
-				? Number(currentSettings.BackgroundOpacity)
-				: currentSettings.BackgroundTintOpacity !== undefined
-					? Number(currentSettings.BackgroundTintOpacity)
-					: currentSettings.bgTintOpacity !== undefined
-						? Number(currentSettings.bgTintOpacity)
-						: undefined;
+			currentSettings.BackgroundTintOpacity !== undefined
+				? Number(currentSettings.BackgroundTintOpacity)
+				: currentSettings.bgTintOpacity !== undefined
+					? Number(currentSettings.bgTintOpacity)
+					: undefined;
 
 		const tintedRgba = parseHexColorWithOpacity(
 			bgTintColorRaw,
