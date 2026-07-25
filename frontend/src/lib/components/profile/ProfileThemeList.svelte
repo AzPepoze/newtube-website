@@ -9,10 +9,12 @@
         loading,
         myThemes,
         deleteTheme,
+        isOwnProfile = true,
     }: {
         loading: boolean;
         myThemes: Theme[];
         deleteTheme: (id: string) => void;
+        isOwnProfile?: boolean;
     } = $props();
 
     function confirmDelete(id: string, name: string) {
@@ -26,12 +28,14 @@
 </script>
 
 <section class="themes-section">
-    <h2 class="section-title premium-font">Your Creations</h2>
+    <h2 class="section-title premium-font">
+        {isOwnProfile ? "Your Creations" : "Creations"}
+    </h2>
 
     {#if loading}
         <div class="loading-state">
             <div class="spinner"></div>
-            <p>Fetching your creations...</p>
+            <p>Fetching creations...</p>
         </div>
     {:else}
         <div class="theme-grid" in:fade={{ duration: 600 }}>
@@ -41,26 +45,42 @@
                     class="theme-card-wrapper"
                 >
                     <ThemeCard {theme} />
-                    <div class="card-actions">
-                        <a href="/themes/edit/{theme.themeId}" class="edit-btn">
-                            <MaterialIcon name="edit" size={14} /> Edit
-                        </a>
-                        <button
-                            class="delete-btn"
-                            onclick={() =>
-                                confirmDelete(theme.themeId, theme.themeName)}
-                        >
-                            <MaterialIcon name="delete" size={14} /> Delete
-                        </button>
-                    </div>
+                    {#if isOwnProfile}
+                        <div class="card-actions">
+                            <a
+                                href="/themes/edit/{theme.themeId}"
+                                class="edit-btn"
+                            >
+                                <MaterialIcon name="edit" size={14} /> Edit
+                            </a>
+                            <button
+                                class="delete-btn"
+                                onclick={() =>
+                                    confirmDelete(
+                                        theme.themeId,
+                                        theme.themeName,
+                                    )}
+                            >
+                                <MaterialIcon name="delete" size={14} /> Delete
+                            </button>
+                        </div>
+                    {/if}
                 </div>
             {/each}
         </div>
 
         {#if myThemes.length === 0}
             <div class="empty-state">
-                <p>You haven't created any themes yet.</p>
-                <a href="/themes/create" class="create-btn">Start Designing</a>
+                <p>
+                    {isOwnProfile
+                        ? "You haven't created any themes yet."
+                        : "No public themes created yet."}
+                </p>
+                {#if isOwnProfile}
+                    <a href="/themes/create" class="create-btn"
+                        >Start Designing</a
+                    >
+                {/if}
             </div>
         {/if}
     {/if}

@@ -14,11 +14,6 @@ export function getSessionId(): string {
 }
 
 export function getUserId(): string {
-    if (typeof window !== "undefined") {
-        const urlParams = new URL(window.location.href).searchParams;
-        const urlUserId = urlParams.get("userId");
-        if (urlUserId) return urlUserId;
-    }
     if (typeof document === "undefined") return "";
     const userMatch = document.cookie.match(/(?:^|;\s*)userId=([^;]*)/);
     return userMatch ? decodeURIComponent(userMatch[1]) : "";

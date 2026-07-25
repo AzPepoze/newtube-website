@@ -1,14 +1,23 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { page } from "$app/state";
     import { scale } from "svelte/transition";
     import type { Theme } from "$lib/types/index";
     import { requireAuth, getSessionId, getUserId } from "$lib/utils/auth";
     import ProfileThemeList from "$lib/components/profile/ProfileThemeList.svelte";
     import ProfileHeader from "$lib/components/profile/ProfileHeader.svelte";
     import ProfileMarketplace from "$lib/components/profile/ProfileMarketplace.svelte";
+    import { PUBLIC_API_URL } from "$lib/constants/index";
+    import { ui } from "$lib/core/ui.svelte";
+
+    let targetUserId = $derived(page.url.searchParams.get("userId"));
+    let currentUserId = $derived(getUserId());
+    let isOwnProfile = $derived(
+        !targetUserId || (!!currentUserId && targetUserId === currentUserId),
+    );
 
     let myThemes = $state<Theme[]>([]);
     let userData = $state<{
+        id: string;
         name: string;
         avatarUrl: string;
         createdAt: string;
@@ -17,23 +26,30 @@
     let drafts = $state<any[]>([]);
     let reviews = $state<any[]>([]);
 
-    import { PUBLIC_API_URL } from "$lib/constants/index";
-    import { ui } from "$lib/core/ui.svelte";
-
-    async function fetchMyThemes() {
+    async function fetchProfileData(queryUserId: string | null) {
+        const loggedInUserId = getUserId();
         const sessionId = getSessionId();
-        const userId = getUserId();
 
-        if (!sessionId && !userId) {
+        if (!queryUserId && !sessionId && !loggedInUserId) {
+            requireAuth();
             loading = false;
             return;
         }
 
         loading = true;
         try {
-            const response = await fetch(`${PUBLIC_API_URL}/users/profile`, {
+            const fetchUrl = queryUserId
+                ? `${PUBLIC_API_URL}/users/profile?userId=${encodeURIComponent(queryUserId)}`
+                : `${PUBLIC_API_URL}/users/profile`;
+            const response = await fetch(fetchUrl, {
                 credentials: "include",
             });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(
+                    err.message || err.error || "Failed to fetch profile",
+                );
+            }
             const data = await response.json();
             myThemes = data.themes || [];
             drafts = data.drafts || [];
@@ -42,7 +58,7 @@
         } catch (error) {
             ui.showModal(
                 "Profile Error",
-                "Failed to fetch your themes. Please check your connection.",
+                "Failed to fetch profile data. Please check your connection.",
                 "error",
             );
         } finally {
@@ -50,10 +66,9 @@
         }
     }
 
-    onMount(() => {
-        if (requireAuth()) {
-            fetchMyThemes();
-        }
+    $effect(() => {
+        const queryUserId = page.url.searchParams.get("userId");
+        void fetchProfileData(queryUserId);
     });
 
     async function deleteTheme(themeId: string) {
@@ -79,10 +94,10 @@
     in:scale={{ delay: 200, start: 0.98, duration: 300 }}
     out:scale={{ start: 0.98, duration: 200 }}
 >
-    <ProfileHeader {userData} />
-    <ProfileThemeList {loading} {myThemes} {deleteTheme} />
+    <ProfileHeader {userData} {isOwnProfile} />
+    <ProfileThemeList {loading} {myThemes} {deleteTheme} {isOwnProfile} />
     {#if !loading}
-        <ProfileMarketplace {reviews} {drafts} />
+        <ProfileMarketplace {reviews} {drafts} {isOwnProfile} />
     {/if}
 </div>
 

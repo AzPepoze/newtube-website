@@ -4,9 +4,11 @@
     let {
         reviews = [],
         drafts = [],
+        isOwnProfile = true,
     }: {
         reviews?: any[];
         drafts?: any[];
+        isOwnProfile?: boolean;
     } = $props();
 
     function formatDate(value?: string) {
@@ -20,37 +22,41 @@
     }
 </script>
 
-<section class="marketplace-section">
-    <div class="section-heading">
-        <div>
-            <p class="eyebrow">Keep creating</p>
-            <h2 class="premium-font">Drafts</h2>
+{#if isOwnProfile}
+    <section class="marketplace-section">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Keep creating</p>
+                <h2 class="premium-font">Drafts</h2>
+            </div>
         </div>
-    </div>
-    {#if drafts.length}
-        <div class="theme-grid">
-            {#each drafts as draft (draft.themeId)}
-                <div class="draft-card">
-                    <ThemeCard theme={draft} /><a
-                        class="edit"
-                        href={`/themes/edit/${draft.themeId}`}
-                        >Continue editing</a
-                    >
-                </div>
-            {/each}
-        </div>
-    {:else}
-        <p class="empty">
-            No server drafts. Save a draft from the editor to return to it on
-            any device.
-        </p>
-    {/if}
-</section>
+        {#if drafts.length}
+            <div class="theme-grid">
+                {#each drafts as draft (draft.themeId)}
+                    <div class="draft-card">
+                        <ThemeCard theme={draft} /><a
+                            class="edit"
+                            href={`/themes/edit/${draft.themeId}`}
+                            >Continue editing</a
+                        >
+                    </div>
+                {/each}
+            </div>
+        {:else}
+            <p class="empty">
+                No server drafts. Save a draft from the editor to return to it
+                on any device.
+            </p>
+        {/if}
+    </section>
+{/if}
 
 <section class="marketplace-section">
     <div class="section-heading">
         <div>
-            <p class="eyebrow">Your voice</p>
+            <p class="eyebrow">
+                {isOwnProfile ? "Your voice" : "Feedback"}
+            </p>
             <h2 class="premium-font">Review activity</h2>
         </div>
     </div>
@@ -75,7 +81,11 @@
             {/each}
         </ul>
     {:else}
-        <p class="empty">Your published reviews will appear here.</p>
+        <p class="empty">
+            {isOwnProfile
+                ? "Your published reviews will appear here."
+                : "No published reviews yet."}
+        </p>
     {/if}
 </section>
 

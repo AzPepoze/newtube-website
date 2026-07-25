@@ -3,7 +3,10 @@
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
     import UserAvatar from "$lib/components/common/UserAvatar.svelte";
 
-    let { userData }: { userData: any } = $props();
+    let {
+        userData,
+        isOwnProfile = true,
+    }: { userData: any; isOwnProfile?: boolean } = $props();
 
     function formatDate(dateString: string) {
         const date = new Date(dateString);
@@ -33,9 +36,11 @@
             </div>
         </div>
 
-        <a href="/themes/create" class="create-btn">
-            <MaterialIcon name="add" size={18} /> Create New Theme
-        </a>
+        {#if isOwnProfile}
+            <a href="/themes/create" class="create-btn">
+                <MaterialIcon name="add" size={18} /> Create New Theme
+            </a>
+        {/if}
     </header>
 {/if}
 
