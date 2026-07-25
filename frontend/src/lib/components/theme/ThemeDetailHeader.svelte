@@ -69,6 +69,13 @@
         {/if}
     </div>
     <div class="actions-group">
+        <a
+            href="/themes/preview?id={theme.themeId}"
+            class="icon-action-btn preview"
+            title="Preview Theme"
+        >
+            <MaterialIcon name="visibility" size={18} />
+        </a>
         {#if currentUser === theme.ownerId}
             <a
                 href="/themes/edit/{theme.themeId}"
@@ -190,6 +197,11 @@
                 }
 
                 &.edit:hover {
+                    color: var(--primary-glow);
+                    border-color: rgba(var(--text-primary-rgb), 0.3);
+                }
+
+                &.preview:hover {
                     color: var(--primary-glow);
                     border-color: rgba(var(--text-primary-rgb), 0.3);
                 }

@@ -147,12 +147,12 @@
     />
 </svelte:head>
 
-<div class="app-container">
+<div class="app-container" class:is-preview-page={page.url.pathname.startsWith("/themes/preview")}>
     {#if !isClient}
         <div class="loading-screen">
             <div class="spinner"></div>
         </div>
-    {:else}
+    {:else if !page.url.pathname.startsWith("/themes/preview")}
         <Navbar
             bind:currentUser
             {isLightMode}
@@ -179,6 +179,16 @@
         min-height: 100vh;
         padding: 1.5rem 2rem;
         width: 100%;
+
+        &.is-preview-page {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+
+            main {
+                max-width: 100% !important;
+            }
+        }
     }
 
     main {

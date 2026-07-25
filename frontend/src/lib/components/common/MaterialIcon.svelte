@@ -13,7 +13,8 @@
 </script>
 
 <span
-    class="material-icons {className}"
+    class="material-icons notranslate {className}"
+    translate="no"
     style="font-size: {size}px; color: {color};"
 >
     {name}

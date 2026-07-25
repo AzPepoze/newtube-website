@@ -112,6 +112,9 @@
         }
     }
 </script>
+<svelte:head>
+	<title>{theme ? `${theme.themeName} - NewTube Store` : "Theme Details - NewTube Store"}</title>
+</svelte:head>
 
 <div
     class="theme-detail-container"

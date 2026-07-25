@@ -6,6 +6,7 @@ export interface Theme {
     images: string[];
     coverImage?: string;
     settings: any;
+    addOnStyleShiftItems?: any[];
     downloads: number;
     /** Marketplace metadata is optional while older API deployments are active. */
     tags?: string[];
