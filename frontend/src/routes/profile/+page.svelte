@@ -20,11 +20,18 @@
         id: string;
         name: string;
         avatarUrl: string;
+        bio?: string | null;
         createdAt: string;
     } | null>(null);
     let loading = $state(true);
     let drafts = $state<any[]>([]);
     let reviews = $state<any[]>([]);
+
+    function handleBioUpdated(newBio: string) {
+        if (userData) {
+            userData.bio = newBio;
+        }
+    }
 
     async function fetchProfileData(queryUserId: string | null) {
         const loggedInUserId = getUserId();
@@ -94,7 +101,7 @@
     in:scale={{ delay: 200, start: 0.98, duration: 300 }}
     out:scale={{ start: 0.98, duration: 200 }}
 >
-    <ProfileHeader {userData} {isOwnProfile} />
+    <ProfileHeader {userData} {isOwnProfile} onBioUpdated={handleBioUpdated} />
     <ProfileThemeList {loading} {myThemes} {deleteTheme} {isOwnProfile} />
     {#if !loading}
         <ProfileMarketplace {reviews} {drafts} {isOwnProfile} />

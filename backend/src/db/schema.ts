@@ -16,6 +16,7 @@ export const users = sqliteTable("Users", {
     email: text("email").notNull().unique(),
     name: text("name").notNull(),
     avatarUrl: text("avatar_url"),
+    bio: text("bio"),
     isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
     createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });

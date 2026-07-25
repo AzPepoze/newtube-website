@@ -8,6 +8,7 @@ export function getUserById(db: Database, userId: string) {
             id: users.id,
             name: users.name,
             avatarUrl: users.avatarUrl,
+            bio: users.bio,
             createdAt: users.createdAt,
         })
         .from(users)
@@ -26,6 +27,7 @@ export function getUserProfile(
                 id: users.id,
                 name: users.name,
                 avatarUrl: users.avatarUrl,
+                bio: users.bio,
                 createdAt: users.createdAt,
             })
             .from(users)
@@ -63,3 +65,16 @@ export function updateOrInsertUser(
             set: { name: userInput.name, avatarUrl: userInput.avatarUrl },
         });
 }
+
+export function updateUserBioInDb(
+    db: Database,
+    userId: string,
+    bio: string,
+) {
+    return db
+        .update(users)
+        .set({ bio })
+        .where(eq(users.id, userId))
+        .run();
+}
+

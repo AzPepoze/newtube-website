@@ -1,10 +1,11 @@
 import type { Database } from "../db";
-import { getCurrentUser, getProfileForViewer } from "../services/users";
+import { getCurrentUser, getProfileForViewer, updateUserBio } from "../services/users";
 import type { ResponseStatus } from "../types/http";
 
 type UserControllerContext = {
     db: Database;
     query: Record<string, unknown>;
+    body?: any;
     userId?: string;
     set: ResponseStatus;
 };
@@ -37,4 +38,22 @@ export const userController = {
         }
         return user;
     },
+
+    async updateBio({ body, userId, set, db }: UserControllerContext) {
+        if (!userId) {
+            set.status = 401;
+            return { error: "Unauthorized" };
+        }
+        if (!body || typeof body.bio !== "string") {
+            set.status = 400;
+            return { error: "Invalid request", message: "bio string is required" };
+        }
+        try {
+            return await updateUserBio(db, userId, body.bio);
+        } catch (err: any) {
+            set.status = 400;
+            return { error: "Bad Request", message: err.message || "Failed to update bio" };
+        }
+    },
 };
+

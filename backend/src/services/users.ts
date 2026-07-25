@@ -1,6 +1,6 @@
 import type { Database } from "../db";
 import { getUserReviewActivity, isUserAdmin } from "../db/marketplace";
-import { getUserById, getUserProfile } from "../db/users";
+import { getUserById, getUserProfile, updateUserBioInDb } from "../db/users";
 
 export async function getProfileForViewer(
     db: Database,
@@ -40,3 +40,17 @@ export async function getCurrentUser(db: Database, userId: string) {
 
     return { ...user, isAdmin: await isUserAdmin(db, userId) };
 }
+
+export async function updateUserBio(
+    db: Database,
+    userId: string,
+    rawBio: string,
+) {
+    const bio = rawBio.trim();
+    if (bio.length > 500) {
+        throw new Error("Bio cannot exceed 500 characters");
+    }
+    await updateUserBioInDb(db, userId, bio);
+    return { success: true, bio };
+}
+

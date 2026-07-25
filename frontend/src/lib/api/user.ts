@@ -4,6 +4,7 @@ export interface UserProfile {
     id: string;
     name: string;
     avatarUrl: string;
+    bio?: string | null;
 }
 
 class UserService {
@@ -46,6 +47,25 @@ class UserService {
 
         this.profileCache.set(userId, fetchPromise);
         return fetchPromise;
+    }
+
+    async updateBio(bio: string): Promise<{ success: boolean; bio: string }> {
+        const response = await fetch(`${PUBLIC_API_URL}/users/bio`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({ bio }),
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || err.error || "Failed to update bio");
+        }
+
+        this.clearCache();
+        return await response.json();
     }
 
     hydrateProfiles(profiles: UserProfile[]) {
