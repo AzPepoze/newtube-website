@@ -17,6 +17,13 @@
         onClose: () => void;
     } = $props();
 
+    let isInstalled = $derived(
+        Boolean(theme && extensionState.installedThemeId === theme.themeId)
+    );
+    let isInstalling = $derived(
+        Boolean(theme && extensionState.installingThemeId === theme.themeId)
+    );
+
     function handleInstall() {
         if (!theme) return;
         if (extensionState.isExtensionReady) {
@@ -60,10 +67,22 @@
 
                     <button
                         class="install-btn"
+                        class:installed={isInstalled}
+                        class:installing={isInstalling}
+                        class:locked={!extensionState.isExtensionReady}
+                        disabled={!extensionState.isExtensionReady || isInstalling}
                         onclick={handleInstall}
-                        title="Install Theme"
+                        title={!extensionState.isExtensionReady ? "Extension Required" : isInstalling ? "Installing Theme..." : isInstalled ? "Theme Installed" : "Install Theme"}
                     >
-                        <MaterialIcon name="download" size={16} /> Install
+                        {#if !extensionState.isExtensionReady}
+                            <MaterialIcon name="lock" size={16} /> Need Extension
+                        {:else if isInstalling}
+                            <MaterialIcon name="sync" size={16} class="spin-icon" /> Installing...
+                        {:else if isInstalled}
+                            <MaterialIcon name="check" size={16} /> Installed
+                        {:else}
+                            <MaterialIcon name="download" size={16} /> Install
+                        {/if}
                     </button>
 
                     <button
@@ -180,7 +199,29 @@
                     cursor: pointer;
                     transition: transform 0.2s;
 
-                    &:hover {
+                    :global(.spin-icon) {
+                        animation: spin 1s linear infinite;
+                    }
+
+                    &.installing {
+                        opacity: 0.8;
+                        cursor: wait;
+                    }
+
+                    &.installed {
+                        background: rgba(255, 255, 255, 0.1);
+                        color: #fff;
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                    }
+
+                    &.locked {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                        background: rgba(255, 255, 255, 0.1);
+                        color: #888;
+                    }
+
+                    &:hover:not(:disabled) {
                         transform: translateY(-1px);
                     }
                 }

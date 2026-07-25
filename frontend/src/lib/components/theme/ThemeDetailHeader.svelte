@@ -36,6 +36,9 @@
     let isInstalled = $derived(
         extensionState.installedThemeId === theme.themeId,
     );
+    let isInstalling = $derived(
+        extensionState.installingThemeId === theme.themeId,
+    );
 
     function handleInstall() {
         if (extensionState.isExtensionReady) {
@@ -123,15 +126,19 @@
             <button
                 class="install-btn premium-button"
                 class:locked={!extensionState.isExtensionReady}
+                class:installing={isInstalling}
                 title={extensionState.isExtensionReady
-                    ? "Install Theme"
+                    ? isInstalling ? "Installing Theme..." : "Install Theme"
                     : "Extension Required"}
-                disabled={!extensionState.isExtensionReady}
+                disabled={!extensionState.isExtensionReady || isInstalling}
                 onclick={handleInstall}
             >
                 {#if !extensionState.isExtensionReady}
                     <MaterialIcon name="lock" size={18} />
                     Need Extension
+                {:else if isInstalling}
+                    <MaterialIcon name="sync" size={18} class="spin-icon" />
+                    Installing...
                 {:else}
                     <MaterialIcon name="add" size={18} />
                     Install Theme
@@ -251,6 +258,15 @@
             gap: 0.5rem;
             transition: all 0.2s;
 
+            :global(.spin-icon) {
+                animation: spin 1s linear infinite;
+            }
+
+            &.installing {
+                opacity: 0.8;
+                cursor: wait;
+            }
+
             &.locked {
                 opacity: 0.5;
                 cursor: not-allowed;
@@ -259,7 +275,7 @@
                 border: 1px solid var(--border-glass);
             }
 
-            &:not(.locked):hover {
+            &:not(.locked):not(.installing):hover {
                 transform: translateY(-2px);
                 box-shadow: 0 5px 15px rgba(var(--primary-glow-rgb), 0.3);
             }

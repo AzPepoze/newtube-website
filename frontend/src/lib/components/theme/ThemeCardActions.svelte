@@ -18,6 +18,9 @@
 		handleInstall: (e: Event) => void;
 		onPreview?: (e: Event) => void;
 	} = $props();
+	let isInstalling = $derived(
+		Boolean(themeId && extensionState.installingThemeId === themeId)
+	);
 </script>
 
 <div class="footer">
@@ -63,23 +66,35 @@
 		<button
 			class="action-btn install-btn"
 			class:installed={isInstalled}
+			class:installing={isInstalling}
 			class:locked={!extensionState.isExtensionReady}
-			disabled={!extensionState.isExtensionReady}
+			disabled={!extensionState.isExtensionReady || isInstalling}
 			onclick={handleInstall}
 		>
 			{#if !extensionState.isExtensionReady}
 				<MaterialIcon name="lock" size={16} />
+			{:else if isInstalling}
+				<MaterialIcon name="sync" size={16} class="spin-icon" />
 			{:else if isInstalled}
 				<MaterialIcon name="check" size={16} />
 			{:else}
 				<MaterialIcon name="download" size={16} />
 			{/if}
-			<span>{isInstalled ? "Installed" : "Install"}</span>
+			<span>{isInstalling ? "Installing..." : isInstalled ? "Installed" : "Install"}</span>
 		</button>
 	</div>
 </div>
 
 <style lang="scss">
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
 	.footer {
 		display: flex;
 		align-items: center;

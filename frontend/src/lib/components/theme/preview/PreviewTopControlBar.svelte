@@ -2,6 +2,8 @@
 	import type { Theme } from "$lib/types/index";
 	import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
 
+	import { extensionState } from "$lib/core/extension.svelte";
+
 	let {
 		theme,
 		sourceType,
@@ -21,6 +23,13 @@
 		onSave: () => void;
 		onInstall: () => void;
 	} = $props();
+
+	let isInstalled = $derived(
+		Boolean(theme && extensionState.installedThemeId === theme.themeId)
+	);
+	let isInstalling = $derived(
+		Boolean(theme && extensionState.installingThemeId === theme.themeId)
+	);
 </script>
 
 <header class="top-control-bar">
@@ -119,15 +128,43 @@
 			<button class="icon-action-btn" onclick={onSave} title="Save Theme">
 				<MaterialIcon name="save" size={18} />
 			</button>
-			<button class="install-action-btn" onclick={onInstall}>
-				<MaterialIcon name="download" size={18} />
-				<span>Install</span>
+			<button
+				class="install-action-btn"
+				class:installed={isInstalled}
+				class:installing={isInstalling}
+				class:locked={!extensionState.isExtensionReady}
+				disabled={!extensionState.isExtensionReady || isInstalling}
+				onclick={onInstall}
+				title={!extensionState.isExtensionReady ? "Extension Required" : isInstalling ? "Installing Theme..." : isInstalled ? "Theme Installed" : "Install Theme"}
+			>
+				{#if !extensionState.isExtensionReady}
+					<MaterialIcon name="lock" size={18} />
+					<span>Need Extension</span>
+				{:else if isInstalling}
+					<MaterialIcon name="sync" size={18} class="spin-icon" />
+					<span>Installing...</span>
+				{:else if isInstalled}
+					<MaterialIcon name="check" size={18} />
+					<span>Installed</span>
+				{:else}
+					<MaterialIcon name="download" size={18} />
+					<span>Install</span>
+				{/if}
 			</button>
 		{/if}
 	</div>
 </header>
 
 <style lang="scss">
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
 	.top-control-bar {
 		height: 56px;
 		background: rgba(18, 18, 20, 0.95);
@@ -278,7 +315,29 @@
 				cursor: pointer;
 				transition: all 0.2s;
 
-				&:hover {
+				:global(.spin-icon) {
+					animation: spin 1s linear infinite;
+				}
+
+				&.installing {
+					opacity: 0.8;
+					cursor: wait;
+				}
+
+				&.installed {
+					background: rgba(255, 255, 255, 0.1);
+					color: #fff;
+					border: 1px solid rgba(255, 255, 255, 0.2);
+				}
+
+				&.locked {
+					opacity: 0.5;
+					cursor: not-allowed;
+					background: rgba(255, 255, 255, 0.1);
+					color: #888;
+				}
+
+				&:hover:not(:disabled) {
 					transform: translateY(-1px);
 					filter: brightness(1.1);
 				}

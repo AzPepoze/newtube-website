@@ -3,7 +3,10 @@ import { EXTENSION_EVENTS, PUBLIC_API_URL } from "$lib/constants/index";
 export const extensionState = $state({
     isExtensionReady: false,
     installedThemeId: null as string | null,
+    installingThemeId: null as string | null,
 });
+
+const installTimeoutMap = new Map<string, ReturnType<typeof setTimeout>>();
 
 export function initializeExtensionListener() {
     if (typeof window === "undefined") return;
@@ -20,6 +23,15 @@ export function initializeExtensionListener() {
         }>;
         const d = customEvent.detail;
         if (!d?.themeId) return;
+
+        if (extensionState.installingThemeId === d.themeId) {
+            extensionState.installingThemeId = null;
+            if (installTimeoutMap.has(d.themeId)) {
+                clearTimeout(installTimeoutMap.get(d.themeId));
+                installTimeoutMap.delete(d.themeId);
+            }
+        }
+
         if (d.isInstalled === true) {
             extensionState.installedThemeId = d.themeId;
         } else if (
@@ -40,6 +52,24 @@ export function dispatchThemeInstallation(
 ) {
     if (typeof window === "undefined") return;
 
+    extensionState.installingThemeId = themeId;
+
+    if (installTimeoutMap.has(themeId)) {
+        clearTimeout(installTimeoutMap.get(themeId));
+    }
+
+    const timeout = setTimeout(() => {
+        if (extensionState.installingThemeId === themeId) {
+            extensionState.installingThemeId = null;
+            if (targetDomains.length > 0) {
+                dispatchCheckThemeInstallation(themeId, targetDomains[0]);
+            }
+        }
+        installTimeoutMap.delete(themeId);
+    }, 8000);
+
+    installTimeoutMap.set(themeId, timeout);
+
     const event = new CustomEvent(EXTENSION_EVENTS.INSTALL, {
         detail: {
             themeId,
@@ -48,8 +78,6 @@ export function dispatchThemeInstallation(
         },
     });
     window.dispatchEvent(event);
-
-    extensionState.installedThemeId = themeId;
 
     void fetch(`${PUBLIC_API_URL}/themes/${themeId}/download`, {
         method: "POST",
