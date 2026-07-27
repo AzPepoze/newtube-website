@@ -5,6 +5,7 @@
     import ThemeEditor from "$lib/components/editor/ThemeEditor.svelte";
     import { requireAuth } from "$lib/utils/auth";
     import type { Theme } from "$lib/types/index";
+    import LoadingState from "$lib/components/common/LoadingState.svelte";
     import { parseApiError } from "$lib/utils/api";
     import { PUBLIC_API_URL } from "$lib/constants/index";
 
@@ -48,10 +49,7 @@
     out:scale={{ start: 0.98, duration: 200 }}
 >
     {#if loading}
-        <div class="loading-state glass-panel">
-            <div class="spinner"></div>
-            <p>Loading theme details...</p>
-        </div>
+        <LoadingState text="Loading theme details..." />
     {:else if error}
         <div class="error-state glass-panel">
             <div class="error-icon">⚠️</div>
@@ -74,7 +72,6 @@
         padding-top: 2rem;
     }
 
-    .loading-state,
     .error-state {
         max-width: 600px;
         margin: 4rem auto;
@@ -84,21 +81,6 @@
         flex-direction: column;
         align-items: center;
         gap: 1.5rem;
-    }
-
-    .spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid rgba(var(--text-primary-rgb), 0.1);
-        border-top-color: var(--primary-glow);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
     }
 
     .error-icon {

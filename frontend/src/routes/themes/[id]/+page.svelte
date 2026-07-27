@@ -18,6 +18,7 @@
         type QuickScrollItem,
     } from "$lib/components/common/QuickScrollNav.svelte";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+    import LoadingState from "$lib/components/common/LoadingState.svelte";
     import { parseApiError } from "$lib/utils/api";
 
     const navigationItems: QuickScrollItem[] = [
@@ -129,10 +130,7 @@
     out:scale={{ start: 0.98, duration: 200 }}
 >
     {#if loading}
-        <div class="loading-state">
-            <div class="spinner"></div>
-            <p>Loading theme details...</p>
-        </div>
+        <LoadingState text="Loading theme details..." />
     {:else if theme}
         <div in:fade={{ duration: 400 }}>
             <a href="/discover" class="back-link">← Back to Discover</a>
@@ -213,22 +211,6 @@
 <style lang="scss">
     .theme-detail-container {
         padding: 1.5rem 0 4rem;
-    }
-
-    .loading-state {
-        text-align: center;
-        padding: 6rem 0;
-        color: var(--text-muted);
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(var(--text-primary-rgb, 255, 255, 255), 0.1);
-            border-top-color: var(--primary-glow);
-            border-radius: 50%;
-            margin: 0 auto 1.5rem;
-            animation: spin 1s linear infinite;
-        }
     }
 
     .error-state {

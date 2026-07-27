@@ -7,6 +7,7 @@
     import ThemeDetailCodePreview from "$lib/components/theme/ThemeDetailCodePreview.svelte";
     import YouTubeMockupIframe from "$lib/components/theme/YouTubeMockupIframe.svelte";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+    import LoadingState from "$lib/components/common/LoadingState.svelte";
     import PreviewTopControlBar from "$lib/components/theme/preview/PreviewTopControlBar.svelte";
     import ThemeJsonInputModal from "$lib/components/theme/preview/ThemeJsonInputModal.svelte";
     import { SUPPORTED_DOMAINS } from "$lib/constants/index";
@@ -173,10 +174,7 @@
     <!-- Main Fullscreen Stage -->
     <main class="preview-stage">
         {#if loading}
-            <div class="loading-state">
-                <div class="spinner"></div>
-                <p>Loading theme preview...</p>
-            </div>
+            <LoadingState text="Loading theme preview..." />
         {:else if theme}
             {#if viewMode === "watch" || viewMode === "home" || viewMode === "channel"}
                 <div class="single-iframe-stage">
@@ -294,7 +292,6 @@
         height: calc(100vh - 56px);
         overflow: hidden;
 
-        .loading-state,
         .empty-state {
             display: flex;
             flex-direction: column;
@@ -305,15 +302,6 @@
             color: #aaa;
             text-align: center;
             padding: 2rem;
-
-            .spinner {
-                width: 36px;
-                height: 36px;
-                border: 3px solid rgba(255, 255, 255, 0.1);
-                border-top-color: var(--color-primary, #ff0055);
-                border-radius: 50%;
-                animation: spin 0.8s linear infinite;
-            }
         }
 
         .install-action-btn {

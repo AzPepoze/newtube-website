@@ -3,6 +3,7 @@
     import type { Theme } from "$lib/types/index";
     import ThemeCard from "$lib/components/theme/ThemeCard.svelte";
     import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
+    import LoadingState from "$lib/components/common/LoadingState.svelte";
     import DiscoverPagination from "./DiscoverPagination.svelte";
 
     let {
@@ -37,10 +38,7 @@
 </script>
 
 {#if loading}
-    <div class="loading-state">
-        <div class="spinner"></div>
-        <p>Curating themes for you...</p>
-    </div>
+    <LoadingState text="Curating themes for you..." />
 {:else if errorMessage}
     <div class="empty-state error-state" role="alert">
         <MaterialIcon name={errorMessage.toLowerCase().includes("rate limit") ? "schedule" : "error_outline"} size={48} />
@@ -94,22 +92,6 @@
 
         @media (max-width: 768px) {
             gap: 1rem;
-        }
-    }
-
-    .loading-state {
-        text-align: center;
-        padding: 5rem 0;
-        color: var(--text-muted);
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(var(--text-primary-rgb, 255, 255, 255), 0.1);
-            border-top-color: var(--primary-glow);
-            border-radius: 50%;
-            margin: 0 auto 1.5rem;
-            animation: spin 1s linear infinite;
         }
     }
 
