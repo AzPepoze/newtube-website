@@ -143,7 +143,8 @@
 
 <div
     class="app-container"
-    class:is-preview-page={page.url.pathname.startsWith("/themes/preview") || page.url.searchParams.get("embedded") === "true"}
+    class:is-preview-page={page.url.pathname.startsWith("/themes/preview")}
+    class:is-embedded={page.url.searchParams.get("embedded") === "true"}
 >
     {#if !isClient}
         <div class="loading-screen">
@@ -185,6 +186,11 @@
             main {
                 max-width: 100% !important;
             }
+        }
+
+        &.is-embedded:not(.is-preview-page) {
+            padding: 1.5rem 2rem;
+            box-sizing: border-box;
         }
     }
 

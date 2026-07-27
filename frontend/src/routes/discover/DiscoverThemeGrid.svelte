@@ -43,7 +43,7 @@
     </div>
 {:else if errorMessage}
     <div class="empty-state error-state" role="alert">
-        <MaterialIcon name="error" size={28} />
+        <MaterialIcon name={errorMessage.toLowerCase().includes("rate limit") ? "schedule" : "error_outline"} size={48} />
         <p>{errorMessage}</p>
         <button class="clear-btn premium-button glass-panel" onclick={onRetry}>
             <MaterialIcon name="refresh" size={16} /> Try Again

@@ -17,6 +17,7 @@
     import QuickScrollNav, {
         type QuickScrollItem,
     } from "$lib/components/common/QuickScrollNav.svelte";
+    import MaterialIcon from "$lib/components/common/MaterialIcon.svelte";
     import { parseApiError } from "$lib/utils/api";
 
     const navigationItems: QuickScrollItem[] = [
@@ -196,7 +197,9 @@
         </div>
     {:else}
         <div class="error-state glass-panel" in:fade>
-            <div class="error-icon">{fetchError.toLowerCase().includes("rate limit") ? "⏳" : "⚠️"}</div>
+            <div class="error-icon">
+                <MaterialIcon name={fetchError.toLowerCase().includes("rate limit") ? "schedule" : "error_outline"} size={48} />
+            </div>
             <h2>{fetchError.toLowerCase().includes("rate limit") ? "Rate Limit Exceeded" : "Unable to Load Theme"}</h2>
             <p>{fetchError || "Failed to fetch theme details."}</p>
             <div class="error-actions">
