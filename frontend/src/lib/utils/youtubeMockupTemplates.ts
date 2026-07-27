@@ -4,7 +4,7 @@
  */
 
 export function renderMastheadHtml(): string {
-	return `
+    return `
     <div id="masthead-container">
         <div id="masthead">
             <div id="start">
@@ -32,7 +32,7 @@ export function renderMastheadHtml(): string {
 }
 
 export function renderGuideSidebarHtml(): string {
-	return `
+    return `
     <div id="guide">
         <a class="guide-entry active" href="#">
             <span class="material-icons notranslate" translate="no" style="font-size: 20px;">home</span>
@@ -68,7 +68,7 @@ export function renderGuideSidebarHtml(): string {
 }
 
 export function renderWatchPageHtml(): string {
-	return `
+    return `
     <div id="page-manager">
         <ytd-watch-flexy>
             <div id="columns">
@@ -152,7 +152,7 @@ export function renderWatchPageHtml(): string {
 }
 
 export function renderHomePageHtml(): string {
-	return `
+    return `
     <div id="page-manager">
         <ytd-browse page-subtype="home">
             <div id="chips-wrapper">
@@ -169,8 +169,8 @@ export function renderHomePageHtml(): string {
             <ytd-rich-grid-renderer>
                 <div id="contents" class="grid-layout">
                     ${[1, 2, 3, 4]
-											.map(
-												(i) => `
+                        .map(
+                            (i) => `
                     <ytd-rich-item-renderer>
                         <ytd-rich-grid-media>
                             <div id="thumbnail">
@@ -189,9 +189,9 @@ export function renderHomePageHtml(): string {
                             </div>
                         </ytd-rich-grid-media>
                     </ytd-rich-item-renderer>
-                    `
-											)
-											.join("")}
+                    `,
+                        )
+                        .join("")}
                 </div>
             </ytd-rich-grid-renderer>
         </ytd-browse>
@@ -199,7 +199,7 @@ export function renderHomePageHtml(): string {
 }
 
 export function renderChannelPageHtml(): string {
-	return `
+    return `
     <div id="page-manager">
         <ytd-browse page-subtype="channels">
             <div id="channel-header">
@@ -225,8 +225,8 @@ export function renderChannelPageHtml(): string {
 
             <div id="contents" class="grid-layout" style="padding-top: 8px;">
                 ${[1, 2]
-									.map(
-										(i) => `
+                    .map(
+                        (i) => `
                 <ytd-rich-item-renderer>
                     <ytd-rich-grid-media>
                         <div id="thumbnail">
@@ -241,9 +241,9 @@ export function renderChannelPageHtml(): string {
                         </div>
                     </ytd-rich-grid-media>
                 </ytd-rich-item-renderer>
-                `
-									)
-									.join("")}
+                `,
+                    )
+                    .join("")}
             </div>
         </ytd-browse>
     </div>`;

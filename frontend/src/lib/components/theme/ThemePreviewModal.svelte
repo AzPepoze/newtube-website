@@ -18,10 +18,10 @@
     } = $props();
 
     let isInstalled = $derived(
-        Boolean(theme && extensionState.installedThemeId === theme.themeId)
+        Boolean(theme && extensionState.installedThemeId === theme.themeId),
     );
     let isInstalling = $derived(
-        Boolean(theme && extensionState.installingThemeId === theme.themeId)
+        Boolean(theme && extensionState.installingThemeId === theme.themeId),
     );
 
     function handleInstall() {
@@ -70,14 +70,25 @@
                         class:installed={isInstalled}
                         class:installing={isInstalling}
                         class:locked={!extensionState.isExtensionReady}
-                        disabled={!extensionState.isExtensionReady || isInstalling}
+                        disabled={!extensionState.isExtensionReady ||
+                            isInstalling}
                         onclick={handleInstall}
-                        title={!extensionState.isExtensionReady ? "Extension Required" : isInstalling ? "Installing Theme..." : isInstalled ? "Theme Installed" : "Install Theme"}
+                        title={!extensionState.isExtensionReady
+                            ? "Extension Required"
+                            : isInstalling
+                              ? "Installing Theme..."
+                              : isInstalled
+                                ? "Theme Installed"
+                                : "Install Theme"}
                     >
                         {#if !extensionState.isExtensionReady}
                             <MaterialIcon name="lock" size={16} /> Need Extension
                         {:else if isInstalling}
-                            <MaterialIcon name="sync" size={16} class="spin-icon" /> Installing...
+                            <MaterialIcon
+                                name="sync"
+                                size={16}
+                                class="spin-icon"
+                            /> Installing...
                         {:else if isInstalled}
                             <MaterialIcon name="check" size={16} /> Installed
                         {:else}

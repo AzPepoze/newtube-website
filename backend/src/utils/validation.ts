@@ -5,7 +5,7 @@ export interface ValidationError {
     message: string;
 }
 
-export interface ValidationSuccess {
+interface ValidationSuccess {
     valid: true;
 }
 
@@ -196,7 +196,7 @@ const ALLOWED_IMAGE_MIMES = [
     "image/gif",
 ];
 
-export function validateImageSize(
+function validateImageSize(
     dataUrl: string,
     mimeType?: string,
 ): ValidationResult {

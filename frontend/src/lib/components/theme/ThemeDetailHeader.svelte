@@ -128,7 +128,9 @@
                 class:locked={!extensionState.isExtensionReady}
                 class:installing={isInstalling}
                 title={extensionState.isExtensionReady
-                    ? isInstalling ? "Installing Theme..." : "Install Theme"
+                    ? isInstalling
+                        ? "Installing Theme..."
+                        : "Install Theme"
                     : "Extension Required"}
                 disabled={!extensionState.isExtensionReady || isInstalling}
                 onclick={handleInstall}

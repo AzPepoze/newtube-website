@@ -66,15 +66,6 @@ export function updateOrInsertUser(
         });
 }
 
-export function updateUserBioInDb(
-    db: Database,
-    userId: string,
-    bio: string,
-) {
-    return db
-        .update(users)
-        .set({ bio })
-        .where(eq(users.id, userId))
-        .run();
+export function updateUserBioInDb(db: Database, userId: string, bio: string) {
+    return db.update(users).set({ bio }).where(eq(users.id, userId)).run();
 }
-

@@ -46,7 +46,11 @@
 
     async function handleSaveBio() {
         if (bioInput.length > 500) {
-            ui.showModal("Validation Error", "Bio cannot exceed 500 characters.", "error");
+            ui.showModal(
+                "Validation Error",
+                "Bio cannot exceed 500 characters.",
+                "error",
+            );
             return;
         }
 
@@ -60,9 +64,17 @@
                 onBioUpdated(res.bio);
             }
             isEditingBio = false;
-            ui.showModal("Bio Updated", "Your biography has been saved.", "info");
+            ui.showModal(
+                "Bio Updated",
+                "Your biography has been saved.",
+                "info",
+            );
         } catch (err: any) {
-            ui.showModal("Save Failed", err.message || "Failed to update bio", "error");
+            ui.showModal(
+                "Save Failed",
+                err.message || "Failed to update bio",
+                "error",
+            );
         } finally {
             isSavingBio = false;
         }
@@ -94,10 +106,12 @@
                                 placeholder="Tell the community about yourself..."
                                 maxlength="500"
                                 rows="3"
-                                disabled={isSavingBio}
-                            ></textarea>
+                                disabled={isSavingBio}></textarea>
                             <div class="bio-editor-actions">
-                                <span class="char-count" class:limit={bioInput.length >= 500}>
+                                <span
+                                    class="char-count"
+                                    class:limit={bioInput.length >= 500}
+                                >
                                     {bioInput.length}/500
                                 </span>
                                 <div class="action-buttons">
@@ -113,7 +127,8 @@
                                         type="button"
                                         class="btn-save"
                                         onclick={handleSaveBio}
-                                        disabled={isSavingBio || bioInput.length > 500}
+                                        disabled={isSavingBio ||
+                                            bioInput.length > 500}
                                     >
                                         {isSavingBio ? "Saving..." : "Save Bio"}
                                     </button>
@@ -136,7 +151,11 @@
                                     aria-label="Edit bio"
                                 >
                                     <MaterialIcon name="edit" size={14} />
-                                    <span>{userData.bio ? "Edit Bio" : "Add Bio"}</span>
+                                    <span
+                                        >{userData.bio
+                                            ? "Edit Bio"
+                                            : "Add Bio"}</span
+                                    >
                                 </button>
                             {/if}
                         </div>
@@ -249,7 +268,10 @@
 
                     &:hover {
                         color: var(--text-primary);
-                        border-color: var(--border-glow, rgba(255, 255, 255, 0.3));
+                        border-color: var(
+                            --border-glow,
+                            rgba(255, 255, 255, 0.3)
+                        );
                         background: rgba(255, 255, 255, 0.05);
                     }
                 }
@@ -357,4 +379,3 @@
         }
     }
 </style>
-

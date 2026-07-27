@@ -1,5 +1,9 @@
 import type { Database } from "../db";
-import { getCurrentUser, getProfileForViewer, updateUserBio } from "../services/users";
+import {
+    getCurrentUser,
+    getProfileForViewer,
+    updateUserBio,
+} from "../services/users";
 import type { ResponseStatus } from "../types/http";
 
 type UserControllerContext = {
@@ -46,14 +50,19 @@ export const userController = {
         }
         if (!body || typeof body.bio !== "string") {
             set.status = 400;
-            return { error: "Invalid request", message: "bio string is required" };
+            return {
+                error: "Invalid request",
+                message: "bio string is required",
+            };
         }
         try {
             return await updateUserBio(db, userId, body.bio);
         } catch (err: any) {
             set.status = 400;
-            return { error: "Bad Request", message: err.message || "Failed to update bio" };
+            return {
+                error: "Bad Request",
+                message: err.message || "Failed to update bio",
+            };
         }
     },
 };
-

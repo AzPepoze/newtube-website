@@ -8,13 +8,8 @@ export const userRoute = new Elysia({ prefix: "/users" })
     .get("/profile", (context) => userController.profile(context))
     .use(authGuard)
     .get("/me", (context) => userController.me(context))
-    .patch(
-        "/bio",
-        (context) => userController.updateBio(context as any),
-        {
-            body: t.Object({
-                bio: t.String({ maxLength: 500 }),
-            }),
-        },
-    );
-
+    .patch("/bio", (context) => userController.updateBio(context as any), {
+        body: t.Object({
+            bio: t.String({ maxLength: 500 }),
+        }),
+    });

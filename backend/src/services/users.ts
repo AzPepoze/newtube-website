@@ -53,4 +53,3 @@ export async function updateUserBio(
     await updateUserBioInDb(db, userId, bio);
     return { success: true, bio };
 }
-

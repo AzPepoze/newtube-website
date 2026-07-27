@@ -49,12 +49,6 @@ export function clearSessionId() {
     document.cookie = "userId=; Path=/; Max-Age=0";
 }
 
-export function isAuthenticated(): boolean {
-    const sessionId = getSessionId();
-    const userId = getUserId();
-    return !!(sessionId || userId);
-}
-
 export function requireAuth(customPath?: string): string {
     const sessionId = getSessionId();
     const userId = getUserId();
