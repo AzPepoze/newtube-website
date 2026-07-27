@@ -9,6 +9,7 @@
     import DiscoverThemeGrid from "./DiscoverThemeGrid.svelte";
     import ThemePreviewModal from "$lib/components/theme/ThemePreviewModal.svelte";
     import { PUBLIC_API_URL } from "$lib/constants/index";
+    import { parseApiError } from "$lib/utils/api";
     import {
         asOffset,
         buildSearchParams as createParams,
@@ -127,10 +128,8 @@
                 signal: controller.signal,
             });
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(
-                    `Failed to fetch themes: ${response.status} ${errorText}`,
-                );
+                const errMsg = await parseApiError(response, "Failed to fetch themes.");
+                throw new Error(errMsg);
             }
             const data: unknown = await response.json();
             if (thisRequest !== requestId) return;
@@ -174,7 +173,9 @@
             if ((error as DOMException).name === "AbortError") return;
             if (thisRequest !== requestId) return;
             errorMessage =
-                "We couldn't load themes right now. Please try again.";
+                error instanceof Error && error.message
+                    ? error.message
+                    : "We couldn't load themes right now. Please try again.";
             themes = [];
             total = 0;
         } finally {

@@ -17,6 +17,7 @@
     import QuickScrollNav, {
         type QuickScrollItem,
     } from "$lib/components/common/QuickScrollNav.svelte";
+    import { parseApiError } from "$lib/utils/api";
 
     const navigationItems: QuickScrollItem[] = [
         { id: "overview", label: "Overview" },
@@ -61,10 +62,8 @@
             ]);
 
             if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                throw new Error(
-                    errData.message || errData.error || "Theme not found",
-                );
+                const errMsg = await parseApiError(response, "Theme not found.");
+                throw new Error(errMsg);
             }
 
             theme = await response.json();
@@ -197,14 +196,12 @@
         </div>
     {:else}
         <div class="error-state glass-panel" in:fade>
-            <div class="error-icon">⚠️</div>
-            <h2>Theme Not Found</h2>
+            <div class="error-icon">{fetchError.toLowerCase().includes("rate limit") ? "⏳" : "⚠️"}</div>
+            <h2>{fetchError.toLowerCase().includes("rate limit") ? "Rate Limit Exceeded" : "Unable to Load Theme"}</h2>
             <p>{fetchError || "Failed to fetch theme details."}</p>
             <div class="error-actions">
-                <a href="/discover" class="action-btn primary"
-                    >Back to Discover</a
-                >
-                <a href="/" class="action-btn secondary">Back to Home</a>
+                <button class="action-btn primary" onclick={fetchTheme}>Try Again</button>
+                <a href="/discover" class="action-btn secondary">Back to Discover</a>
             </div>
         </div>
     {/if}

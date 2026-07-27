@@ -21,6 +21,9 @@
     let isInstalling = $derived(
         Boolean(themeId && extensionState.installingThemeId === themeId),
     );
+    import { page } from "$app/state";
+
+    let isEmbedded = $derived(page.url.searchParams.get("embedded") === "true");
 </script>
 
 <div class="footer">
@@ -51,43 +54,45 @@
                 </a>
             {/if}
         {/if}
-        <button
-            class="action-btn icon-btn save-btn"
-            class:locked={!extensionState.isExtensionReady}
-            title={extensionState.isExtensionReady
-                ? "Save Theme"
-                : "Extension Required"}
-            disabled={!extensionState.isExtensionReady}
-            onclick={handleSave}
-        >
-            <MaterialIcon name="save" size={18} />
-        </button>
-
-        <button
-            class="action-btn install-btn"
-            class:installed={isInstalled}
-            class:installing={isInstalling}
-            class:locked={!extensionState.isExtensionReady}
-            disabled={!extensionState.isExtensionReady || isInstalling}
-            onclick={handleInstall}
-        >
-            {#if !extensionState.isExtensionReady}
-                <MaterialIcon name="lock" size={16} />
-            {:else if isInstalling}
-                <MaterialIcon name="sync" size={16} class="spin-icon" />
-            {:else if isInstalled}
-                <MaterialIcon name="check" size={16} />
-            {:else}
-                <MaterialIcon name="download" size={16} />
-            {/if}
-            <span
-                >{isInstalling
-                    ? "Installing..."
-                    : isInstalled
-                      ? "Installed"
-                      : "Install"}</span
+        {#if !isEmbedded}
+            <button
+                class="action-btn icon-btn save-btn"
+                class:locked={!extensionState.isExtensionReady}
+                title={extensionState.isExtensionReady
+                    ? "Save Theme"
+                    : "Extension Required"}
+                disabled={!extensionState.isExtensionReady}
+                onclick={handleSave}
             >
-        </button>
+                <MaterialIcon name="save" size={18} />
+            </button>
+
+            <button
+                class="action-btn install-btn"
+                class:installed={isInstalled}
+                class:installing={isInstalling}
+                class:locked={!extensionState.isExtensionReady}
+                disabled={!extensionState.isExtensionReady || isInstalling}
+                onclick={handleInstall}
+            >
+                {#if !extensionState.isExtensionReady}
+                    <MaterialIcon name="lock" size={16} />
+                {:else if isInstalling}
+                    <MaterialIcon name="sync" size={16} class="spin-icon" />
+                {:else if isInstalled}
+                    <MaterialIcon name="check" size={16} />
+                {:else}
+                    <MaterialIcon name="download" size={16} />
+                {/if}
+                <span
+                    >{isInstalling
+                        ? "Installing..."
+                        : isInstalled
+                          ? "Installed"
+                          : "Install"}</span
+                >
+            </button>
+        {/if}
     </div>
 </div>
 

@@ -143,13 +143,13 @@
 
 <div
     class="app-container"
-    class:is-preview-page={page.url.pathname.startsWith("/themes/preview")}
+    class:is-preview-page={page.url.pathname.startsWith("/themes/preview") || page.url.searchParams.get("embedded") === "true"}
 >
     {#if !isClient}
         <div class="loading-screen">
             <div class="spinner"></div>
         </div>
-    {:else if !page.url.pathname.startsWith("/themes/preview")}
+    {:else if !page.url.pathname.startsWith("/themes/preview") && page.url.searchParams.get("embedded") !== "true"}
         <Navbar
             bind:currentUser
             {isLightMode}

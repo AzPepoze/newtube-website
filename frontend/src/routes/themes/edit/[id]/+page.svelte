@@ -5,8 +5,9 @@
     import ThemeEditor from "$lib/components/editor/ThemeEditor.svelte";
     import { requireAuth } from "$lib/utils/auth";
     import type { Theme } from "$lib/types/index";
-
+    import { parseApiError } from "$lib/utils/api";
     import { PUBLIC_API_URL } from "$lib/constants/index";
+
     const { id } = page.params;
 
     let theme = $state<Theme | null>(null);
@@ -21,7 +22,10 @@
             const response = await fetch(`${PUBLIC_API_URL}/themes/${id}`, {
                 credentials: "include",
             });
-            if (!response.ok) throw new Error("Theme not found");
+            if (!response.ok) {
+                const errMsg = await parseApiError(response, "Theme not found");
+                throw new Error(errMsg);
+            }
             theme = await response.json();
 
             if (theme) {

@@ -1,5 +1,6 @@
 import { PUBLIC_API_URL } from "$lib/constants/index";
 import type { Theme } from "$lib/types/index";
+import { parseApiError } from "./api";
 
 export interface ParsedThemeResult {
     theme: Theme | null;
@@ -108,14 +109,11 @@ export async function parseThemeFromUrl(
                     source: "id",
                 };
             } else {
-                const errData = await res.json().catch(() => ({}));
+                const errMsg = await parseApiError(res, `Theme with ID "${themeId}" not found.`);
                 return {
                     theme: null,
                     source: "id",
-                    error:
-                        errData.message ||
-                        errData.error ||
-                        `Theme with ID "${themeId}" not found.`,
+                    error: errMsg,
                 };
             }
         } catch (err) {

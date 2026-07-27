@@ -9,6 +9,10 @@
         dispatchThemeSave,
     } from "$lib/core/extension.svelte";
 
+    import { page } from "$app/state";
+
+    let isEmbedded = $derived(page.url.searchParams.get("embedded") === "true");
+
     interface ThemeDetail extends Theme {
         creatorName?: string;
         creatorAvatar?: string;
@@ -71,83 +75,85 @@
             </div>
         {/if}
     </div>
-    <div class="actions-group">
-        <a
-            href="/themes/preview?id={theme.themeId}"
-            class="icon-action-btn preview"
-            title="Preview Theme"
-        >
-            <MaterialIcon name="visibility" size={18} />
-        </a>
-        {#if currentUser === theme.ownerId}
+    {#if !isEmbedded}
+        <div class="actions-group">
             <a
-                href="/themes/edit/{theme.themeId}"
-                class="icon-action-btn edit"
-                title="Edit Theme"
+                href="/themes/preview?id={theme.themeId}"
+                class="icon-action-btn preview"
+                title="Preview Theme"
             >
-                <MaterialIcon name="edit" size={18} />
+                <MaterialIcon name="visibility" size={18} />
             </a>
-            <button
-                class="icon-action-btn delete"
-                title="Delete Theme"
-                onclick={confirmDelete}
-            >
-                <MaterialIcon name="delete" size={18} />
-            </button>
-        {/if}
-        {#if isInstalled}
-            <div class="installed-status">
-                <MaterialIcon name="check" size={18} />
-                <span>Installed</span>
-            </div>
-            <button
-                class="icon-action-btn save"
-                class:locked={!extensionState.isExtensionReady}
-                title={extensionState.isExtensionReady
-                    ? "Save Theme"
-                    : "Extension Required"}
-                disabled={!extensionState.isExtensionReady}
-                onclick={handleSave}
-            >
-                <MaterialIcon name="save" size={18} />
-            </button>
-        {:else}
-            <button
-                class="icon-action-btn save"
-                class:locked={!extensionState.isExtensionReady}
-                title={extensionState.isExtensionReady
-                    ? "Save Theme"
-                    : "Extension Required"}
-                disabled={!extensionState.isExtensionReady}
-                onclick={handleSave}
-            >
-                <MaterialIcon name="save" size={18} />
-            </button>
-            <button
-                class="install-btn premium-button"
-                class:locked={!extensionState.isExtensionReady}
-                class:installing={isInstalling}
-                title={extensionState.isExtensionReady
-                    ? isInstalling
-                        ? "Installing Theme..."
-                        : "Install Theme"
-                    : "Extension Required"}
-                disabled={!extensionState.isExtensionReady || isInstalling}
-                onclick={handleInstall}
-            >
-                {#if !extensionState.isExtensionReady}
-                    <MaterialIcon name="lock" size={18} />
-                    Need Extension
-                {:else if isInstalling}
-                    <MaterialIcon name="sync" size={18} class="spin-icon" />
-                    Installing...
-                {:else}
-                    <MaterialIcon name="add" size={18} />
-                    Install Theme
-                {/if}
-            </button>
-        {/if}
-    </div>
+            {#if currentUser === theme.ownerId}
+                <a
+                    href="/themes/edit/{theme.themeId}"
+                    class="icon-action-btn edit"
+                    title="Edit Theme"
+                >
+                    <MaterialIcon name="edit" size={18} />
+                </a>
+                <button
+                    class="icon-action-btn delete"
+                    title="Delete Theme"
+                    onclick={confirmDelete}
+                >
+                    <MaterialIcon name="delete" size={18} />
+                </button>
+            {/if}
+            {#if isInstalled}
+                <div class="installed-status">
+                    <MaterialIcon name="check" size={18} />
+                    <span>Installed</span>
+                </div>
+                <button
+                    class="icon-action-btn save"
+                    class:locked={!extensionState.isExtensionReady}
+                    title={extensionState.isExtensionReady
+                        ? "Save Theme"
+                        : "Extension Required"}
+                    disabled={!extensionState.isExtensionReady}
+                    onclick={handleSave}
+                >
+                    <MaterialIcon name="save" size={18} />
+                </button>
+            {:else}
+                <button
+                    class="icon-action-btn save"
+                    class:locked={!extensionState.isExtensionReady}
+                    title={extensionState.isExtensionReady
+                        ? "Save Theme"
+                        : "Extension Required"}
+                    disabled={!extensionState.isExtensionReady}
+                    onclick={handleSave}
+                >
+                    <MaterialIcon name="save" size={18} />
+                </button>
+                <button
+                    class="install-btn premium-button"
+                    class:locked={!extensionState.isExtensionReady}
+                    class:installing={isInstalling}
+                    title={extensionState.isExtensionReady
+                        ? isInstalling
+                            ? "Installing Theme..."
+                            : "Install Theme"
+                        : "Extension Required"}
+                    disabled={!extensionState.isExtensionReady || isInstalling}
+                    onclick={handleInstall}
+                >
+                    {#if !extensionState.isExtensionReady}
+                        <MaterialIcon name="lock" size={18} />
+                        Need Extension
+                    {:else if isInstalling}
+                        <MaterialIcon name="sync" size={18} class="spin-icon" />
+                        Installing...
+                    {:else}
+                        <MaterialIcon name="add" size={18} />
+                        Install Theme
+                    {/if}
+                </button>
+            {/if}
+        </div>
+    {/if}
 </div>
 
 <style lang="scss">

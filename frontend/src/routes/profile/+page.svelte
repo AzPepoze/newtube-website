@@ -8,6 +8,7 @@
     import ProfileMarketplace from "$lib/components/profile/ProfileMarketplace.svelte";
     import { PUBLIC_API_URL } from "$lib/constants/index";
     import { ui } from "$lib/core/ui.svelte";
+    import { parseApiError } from "$lib/utils/api";
 
     let targetUserId = $derived(page.url.searchParams.get("userId"));
     let currentUserId = $derived(getUserId());
@@ -52,10 +53,8 @@
                 credentials: "include",
             });
             if (!response.ok) {
-                const err = await response.json().catch(() => ({}));
-                throw new Error(
-                    err.message || err.error || "Failed to fetch profile",
-                );
+                const errMsg = await parseApiError(response, "Failed to fetch profile");
+                throw new Error(errMsg);
             }
             const data = await response.json();
             myThemes = data.themes || [];
@@ -63,9 +62,10 @@
             reviews = data.reviews || [];
             userData = data.user;
         } catch (error) {
+            const msg = error instanceof Error && error.message ? error.message : "Failed to fetch profile data. Please check your connection.";
             ui.showModal(
                 "Profile Error",
-                "Failed to fetch profile data. Please check your connection.",
+                msg,
                 "error",
             );
         } finally {

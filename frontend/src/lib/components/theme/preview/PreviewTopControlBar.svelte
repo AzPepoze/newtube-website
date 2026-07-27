@@ -24,6 +24,10 @@
         onInstall: () => void;
     } = $props();
 
+    import { page } from "$app/state";
+
+    let isEmbedded = $derived(page.url.searchParams.get("embedded") === "true");
+
     let isInstalled = $derived(
         Boolean(theme && extensionState.installedThemeId === theme.themeId),
     );
@@ -34,10 +38,12 @@
 
 <header class="top-control-bar">
     <div class="bar-left">
-        <a href="/discover" class="back-link" title="Return to Store">
-            <MaterialIcon name="arrow_back" size={20} />
-            <span>Store</span>
-        </a>
+        {#if !isEmbedded}
+            <a href="/discover" class="back-link" title="Return to Store">
+                <MaterialIcon name="arrow_back" size={20} />
+                <span>Store</span>
+            </a>
+        {/if}
 
         {#if theme}
             <div class="title-meta">
@@ -109,64 +115,66 @@
     {/if}
 
     <!-- Action Buttons -->
-    <div class="bar-right">
-        <button
-            class="icon-action-btn"
-            onclick={onOpenModal}
-            title="Edit Setting JSON"
-        >
-            <MaterialIcon name="edit" size={18} />
-        </button>
+    {#if !isEmbedded}
+        <div class="bar-right">
+            <button
+                class="icon-action-btn"
+                onclick={onOpenModal}
+                title="Edit Setting JSON"
+            >
+                <MaterialIcon name="edit" size={18} />
+            </button>
 
-        {#if theme}
-            <button
-                class="icon-action-btn"
-                onclick={onShare}
-                title="Share Link"
-            >
-                <MaterialIcon name="share" size={18} />
-            </button>
-            <button
-                class="icon-action-btn"
-                onclick={onCopyJson}
-                title="Copy JSON"
-            >
-                <MaterialIcon name="content_copy" size={18} />
-            </button>
-            <button class="icon-action-btn" onclick={onSave} title="Save Theme">
-                <MaterialIcon name="save" size={18} />
-            </button>
-            <button
-                class="install-action-btn"
-                class:installed={isInstalled}
-                class:installing={isInstalling}
-                class:locked={!extensionState.isExtensionReady}
-                disabled={!extensionState.isExtensionReady || isInstalling}
-                onclick={onInstall}
-                title={!extensionState.isExtensionReady
-                    ? "Extension Required"
-                    : isInstalling
-                      ? "Installing Theme..."
-                      : isInstalled
-                        ? "Theme Installed"
-                        : "Install Theme"}
-            >
-                {#if !extensionState.isExtensionReady}
-                    <MaterialIcon name="lock" size={18} />
-                    <span>Need Extension</span>
-                {:else if isInstalling}
-                    <MaterialIcon name="sync" size={18} class="spin-icon" />
-                    <span>Installing...</span>
-                {:else if isInstalled}
-                    <MaterialIcon name="check" size={18} />
-                    <span>Installed</span>
-                {:else}
-                    <MaterialIcon name="download" size={18} />
-                    <span>Install</span>
-                {/if}
-            </button>
-        {/if}
-    </div>
+            {#if theme}
+                <button
+                    class="icon-action-btn"
+                    onclick={onShare}
+                    title="Share Link"
+                >
+                    <MaterialIcon name="share" size={18} />
+                </button>
+                <button
+                    class="icon-action-btn"
+                    onclick={onCopyJson}
+                    title="Copy JSON"
+                >
+                    <MaterialIcon name="content_copy" size={18} />
+                </button>
+                <button class="icon-action-btn" onclick={onSave} title="Save Theme">
+                    <MaterialIcon name="save" size={18} />
+                </button>
+                <button
+                    class="install-action-btn"
+                    class:installed={isInstalled}
+                    class:installing={isInstalling}
+                    class:locked={!extensionState.isExtensionReady}
+                    disabled={!extensionState.isExtensionReady || isInstalling}
+                    onclick={onInstall}
+                    title={!extensionState.isExtensionReady
+                        ? "Extension Required"
+                        : isInstalling
+                          ? "Installing Theme..."
+                          : isInstalled
+                            ? "Theme Installed"
+                            : "Install Theme"}
+                >
+                    {#if !extensionState.isExtensionReady}
+                        <MaterialIcon name="lock" size={18} />
+                        <span>Need Extension</span>
+                    {:else if isInstalling}
+                        <MaterialIcon name="sync" size={18} class="spin-icon" />
+                        <span>Installing...</span>
+                    {:else if isInstalled}
+                        <MaterialIcon name="check" size={18} />
+                        <span>Installed</span>
+                    {:else}
+                        <MaterialIcon name="download" size={18} />
+                        <span>Install</span>
+                    {/if}
+                </button>
+            {/if}
+        </div>
+    {/if}
 </header>
 
 <style lang="scss">
