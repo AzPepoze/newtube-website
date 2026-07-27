@@ -31,7 +31,7 @@
 
     let viewMode = $state<
         "watch" | "home" | "channel" | "grid" | "card" | "code"
-    >("watch");
+    >("grid");
     let showRawModal = $state(false);
     let rawInputCode = $state("");
     let copySuccess = $state("");

@@ -8,7 +8,7 @@ html, body {
     margin: 0; padding: 0; width: 100%; height: 100%;
     font-family: "Roboto", "Arial", sans-serif;
     background: #0f0f0f; color: #f1f1f1;
-    overflow-x: hidden;
+    overflow: auto;
 }
 .material-icons.notranslate {
     display: inline-flex;
@@ -40,9 +40,9 @@ ytd-app {
 #guide-button:hover { background: rgba(255,255,255,0.1); }
 #masthead #logo { display: flex; align-items: center; gap: 4px; font-weight: 700; font-size: 18px; text-decoration: none; color: inherit; }
 #logo-icon { fill: var(--MainThemeColor, #ff0000); width: 28px; height: 20px; }
-#masthead #center { flex: 1; max-width: 540px; margin: 0 16px; display: flex; align-items: center; gap: 12px; }
-#search-form { display: flex; align-items: center; flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 40px; overflow: hidden; padding-left: 14px; }
-#search-form input { flex: 1; background: transparent; border: none; outline: none; color: inherit; height: 38px; font-size: 14px; }
+#masthead #center { flex: 1 1 420px; min-width: 0; max-width: 640px; margin: 0 24px; display: flex; align-items: center; gap: 12px; }
+#search-form { display: flex; align-items: center; flex: 1; min-width: 0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 40px; overflow: hidden; padding-left: 14px; }
+#search-form input { flex: 1; min-width: 0; width: 0; background: transparent; border: none; outline: none; color: inherit; height: 38px; font-size: 14px; }
 #search-icon-legacy { width: 54px; height: 38px; background: rgba(255,255,255,0.08); border: none; border-left: 1px solid rgba(255,255,255,0.18); cursor: pointer; color: inherit; display: flex; align-items: center; justify-content: center; }
 #masthead #end { display: flex; align-items: center; gap: 14px; }
 .end-icon-btn { background: transparent; border: none; color: #fff; cursor: pointer; padding: 6px; border-radius: 50%; display: flex; align-items: center; }
@@ -50,7 +50,7 @@ ytd-app {
 .avatar-img { width: 32px; height: 32px; border-radius: 50%; background: var(--MainThemeColor, #9c80ea); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; color: #fff; }
 
 /* Main Page Manager & Layout Grid */
-#app-body-wrapper { display: flex; flex: 1; width: 100%; }
+#app-body-wrapper { display: flex; flex: 1; width: 100%; min-width: 0; }
 
 /* Left Collapsible Guide Sidebar */
 #guide {
@@ -68,7 +68,7 @@ ytd-app {
 .guide-entry.active { background: rgba(255, 255, 255, 0.15); font-weight: 700; }
 .guide-divider { height: 1px; background: rgba(255, 255, 255, 0.1); margin: 8px 0; }
 
-#page-manager { display: flex; flex-direction: column; flex: 1; padding: 20px; min-width: 0; }
+#page-manager { display: flex; flex-direction: column; flex: 1; padding: 20px; min-width: 0; overflow-x: hidden; }
 
 /* Watch Page Layout */
 ytd-watch-flexy { display: flex; width: 100%; margin: 0 auto; max-width: 1580px; }
@@ -148,6 +148,7 @@ ytd-rich-grid-media { display: flex; flex-direction: column; gap: 10px; cursor: 
     width: 100%; aspect-ratio: 16/9; background: rgba(255,255,255,0.12);
     border-radius: var(--GlobalCornerRadius, 12px); position: relative; overflow: hidden;
     border: 1px solid var(--GlobalBorderColor, rgba(255,255,255,0.08));
+    background-image: linear-gradient(135deg, var(--MainThemeColor, #7a5cff), rgba(0,0,0,0.5));
 }
 #details { display: flex; gap: 10px; }
 .channel-avatar-grid {
@@ -185,5 +186,17 @@ h1.ytd-watch-metadata, #video-title, .rec-title, .channel-title { text-shadow: 0
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85); pointer-events: none;
     width: max-content; max-width: calc(100% - 24px); box-sizing: border-box;
     line-height: 1.35;
+}
+@media (max-width: 720px) {
+    #masthead { padding: 0 10px; }
+    #masthead #start { gap: 8px; }
+    #masthead #logo span { display: none; }
+    #masthead #center { margin: 0 8px; }
+    #masthead #end { gap: 4px; }
+    #masthead .end-icon-btn { display: none; }
+    #guide { display: none; }
+    #page-manager { padding: 12px; }
+    #columns { grid-template-columns: minmax(0, 1fr); }
+    #secondary { display: none; }
 }
 `;

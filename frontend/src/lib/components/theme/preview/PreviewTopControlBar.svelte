@@ -64,6 +64,16 @@
         <div class="page-view-buttons">
             <button
                 class="view-btn"
+                class:active={viewMode === "grid"}
+                onclick={() => (viewMode = "grid")}
+                title="All Pages Grid View"
+            >
+                <MaterialIcon name="grid_view" size={16} />
+                <span>All Pages Grid</span>
+            </button>
+
+            <button
+                class="view-btn"
                 class:active={viewMode === "watch"}
                 onclick={() => (viewMode = "watch")}
                 title="Watch Page View"
@@ -92,15 +102,6 @@
                 <span>Channel Page</span>
             </button>
 
-            <button
-                class="view-btn"
-                class:active={viewMode === "grid"}
-                onclick={() => (viewMode = "grid")}
-                title="All Pages Grid View"
-            >
-                <MaterialIcon name="grid_view" size={16} />
-                <span>All Pages Grid</span>
-            </button>
 
             <button
                 class="view-btn"
