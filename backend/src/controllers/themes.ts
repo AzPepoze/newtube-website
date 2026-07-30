@@ -22,11 +22,8 @@ import {
     validateText,
     validateUuid,
 } from "../utils/validation";
-import {
-    invalidMessage,
-    parseDiscoverySlugs,
-    validateThemeInput,
-} from "../validators/themes";
+import { invalidMessage, parseDiscoverySlugs, validateThemeInput } from "../validators/themes";
+import { downloadDeduplicator } from "../utils/cache";
 
 const THEME_SORTS = ["popular", "newest", "alpha"] as const;
 
@@ -34,6 +31,7 @@ type ThemeControllerContext = {
     db: Database;
     env: Env;
     userId?: string;
+    request?: Request;
     set: ResponseStatus;
     params: Record<string, string>;
     query: Record<string, unknown>;
@@ -313,11 +311,15 @@ export const themeController = {
         set.status = 204;
     },
 
-    async download({ params, db, set }: ThemeControllerContext) {
+    async download({ params, userId, request, db, set }: ThemeControllerContext) {
         const idValidation = validateUuid(params.id, "theme ID");
         if (!idValidation.valid) {
             set.status = 400;
             return { error: "Invalid theme ID", message: idValidation.message };
+        }
+        const clientKey = userId || (request?.headers.get("cf-connecting-ip") || "unknown");
+        if (!downloadDeduplicator.shouldRecord(clientKey, params.id)) {
+            return { success: true, debounced: true };
         }
         const result = await recordThemeDownload(db, params.id);
         if (!result) {

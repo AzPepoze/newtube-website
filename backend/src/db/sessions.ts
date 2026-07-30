@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import type { Database } from "./index";
 import { sessions } from "./schema";
 
@@ -31,7 +31,6 @@ export async function getSession(db: Database, sessionId: string) {
 
     // Check if expired
     if (new Date(session.expiresAt) < new Date()) {
-        await deleteSession(db, sessionId);
         return null;
     }
 
@@ -40,4 +39,8 @@ export async function getSession(db: Database, sessionId: string) {
 
 export async function deleteSession(db: Database, sessionId: string) {
     await db.delete(sessions).where(eq(sessions.id, sessionId));
+}
+
+export async function purgeExpiredSessions(db: Database) {
+    await db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
 }

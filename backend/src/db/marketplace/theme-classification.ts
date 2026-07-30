@@ -28,13 +28,24 @@ export async function syncThemeTagsAndCategories(db: Database) {
     }
 }
 
+let isTagsSynced = false;
+
+export async function ensureTagsSynced(db: Database) {
+    if (isTagsSynced) return;
+    const existingCount = await db.select({ id: tags.id }).from(tags).limit(1).all();
+    if (existingCount.length === 0) {
+        await syncThemeTagsAndCategories(db);
+    }
+    isTagsSynced = true;
+}
+
 export async function listTags(db: Database) {
-    await syncThemeTagsAndCategories(db);
+    await ensureTagsSynced(db);
     return db.select().from(tags).orderBy(asc(tags.name)).all();
 }
 
 export async function findThemeTagsByNames(db: Database, tagNames: string[]) {
-    await syncThemeTagsAndCategories(db);
+    await ensureTagsSynced(db);
     const slugs = [
         ...new Set(tagNames.map(normalizeTagName).map(tagSlug).filter(Boolean)),
     ];

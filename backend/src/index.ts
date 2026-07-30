@@ -8,6 +8,8 @@ import { userRoute } from "./api/users";
 import { imageRoute } from "./api/images";
 import { sponsorsRoute } from "./api/sponsors";
 import { marketplaceRoute } from "./api/marketplace";
+import { createDb } from "./db";
+import { purgeExpiredSessions } from "./db/sessions";
 
 const app = new Elysia({ adapter: CloudflareAdapter })
     .use(
@@ -94,4 +96,14 @@ const app = new Elysia({ adapter: CloudflareAdapter })
     })
     .compile();
 
-export default app;
+export default {
+    fetch: app.fetch,
+    async scheduled(
+        _event: ScheduledEvent,
+        env: Env,
+        ctx: ExecutionContext,
+    ) {
+        const db = createDb(env.DB);
+        ctx.waitUntil(purgeExpiredSessions(db));
+    },
+};
