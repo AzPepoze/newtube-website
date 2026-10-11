@@ -8,37 +8,56 @@ export const extensionState = $state({
 
 const installTimeoutMap = new Map<string, ReturnType<typeof setTimeout>>();
 
+// Mirror of newtube/src/core/theme/storeProtocol.ts — keep byte-identical.
+const EXTENSION_MESSAGE_SOURCE = "newtube-extension";
+const EXTENSION_MESSAGE_DIRECTION = "ext-to-page";
+
+function markExtensionReady() {
+    console.log("NewTube extension detected!");
+    extensionState.isExtensionReady = true;
+}
+
+function applyInstallStatus(detail: {
+    themeId?: string;
+    isInstalled?: boolean;
+}) {
+    if (!detail?.themeId) return;
+
+    if (extensionState.installingThemeId === detail.themeId) {
+        extensionState.installingThemeId = null;
+        if (installTimeoutMap.has(detail.themeId)) {
+            clearTimeout(installTimeoutMap.get(detail.themeId));
+            installTimeoutMap.delete(detail.themeId);
+        }
+    }
+
+    if (detail.isInstalled === true) {
+        extensionState.installedThemeId = detail.themeId;
+    } else if (
+        detail.isInstalled === false &&
+        extensionState.installedThemeId === detail.themeId
+    ) {
+        extensionState.installedThemeId = null;
+    }
+}
+
 export function initializeExtensionListener() {
     if (typeof window === "undefined") return;
 
-    window.addEventListener(EXTENSION_EVENTS.READY, () => {
-        console.log("NewTube extension detected!");
-        extensionState.isExtensionReady = true;
-    });
-
-    window.addEventListener(EXTENSION_EVENTS.INSTALL_STATUS, (event: Event) => {
-        const customEvent = event as CustomEvent<{
-            themeId?: string;
-            isInstalled?: boolean;
-        }>;
-        const d = customEvent.detail;
-        if (!d?.themeId) return;
-
-        if (extensionState.installingThemeId === d.themeId) {
-            extensionState.installingThemeId = null;
-            if (installTimeoutMap.has(d.themeId)) {
-                clearTimeout(installTimeoutMap.get(d.themeId));
-                installTimeoutMap.delete(d.themeId);
-            }
-        }
-
-        if (d.isInstalled === true) {
-            extensionState.installedThemeId = d.themeId;
-        } else if (
-            d.isInstalled === false &&
-            extensionState.installedThemeId === d.themeId
+    window.addEventListener("message", (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        const msg = event.data;
+        if (typeof msg !== "object" || msg === null) return;
+        if (
+            msg.source !== EXTENSION_MESSAGE_SOURCE ||
+            msg.direction !== EXTENSION_MESSAGE_DIRECTION
         ) {
-            extensionState.installedThemeId = null;
+            return;
+        }
+        if (msg.type === EXTENSION_EVENTS.READY) {
+            markExtensionReady();
+        } else if (msg.type === EXTENSION_EVENTS.INSTALL_STATUS) {
+            applyInstallStatus(msg.detail);
         }
     });
 
